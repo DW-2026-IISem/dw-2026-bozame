@@ -117,8 +117,36 @@ Creación de la red Docker compartida:
 
     ![](images/clipboard-2489264226.png)
 
-7.  Levantar MySQL
+7.  Levantar Postgres
 
     ![](images/clipboard-1357104005.png)
+
+    vemos que ya está corriendo:
+
+### Oracle XE
+
+1.  Crear el archivo docker-compose.yml
+
+    ![](images/clipboard-1944222666.png)
+
+2.  Crear el archivo .env
+
+    y ejecutamos "docker compose up -d"
+
+    ![](images/clipboard-2954948021.png)
+
+3.  Crear README.md
+
+    ![](images/clipboard-73959567.png)
+
+4.  Conectar remotamente desde cualquier equipo
+
+5.  Crear un usuario propio con acceso remoto
+
+6.  Backup de una base de datos
+
+    para ello se crearon nuevas carpetas backups/postgres en el directorio de ia-lab
+
+7.  Levantar Oracle
 
     vemos que ya está corriendo:
