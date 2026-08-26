@@ -84,3 +84,41 @@ Creación de la red Docker compartida:
     ![](images/clipboard-2474461316.png)
 
     vemos que ya está corriendo:
+
+### SQL Server
+
+1.  Crear el archivo docker-compose.yml
+
+    ![](images/clipboard-2062062224.png)
+
+2.  Crear el archivo .env
+
+    ![](images/clipboard-415240670.png)y ejecutamos "docker compose up -d"
+
+    ![](images/clipboard-2400930065.png)
+
+3.  Crear README.md
+
+    ![](images/clipboard-3107432098.png)
+
+4.  Conectar remotamente desde cualquier equipo
+
+    ![](images/clipboard-3358588675.png)
+
+5.  Crear un usuario propio con acceso remoto
+
+    ![](images/clipboard-3493213979.png)
+
+6.  Backup de una base de datos
+
+    ![](images/clipboard-2705237250.png)
+
+    para ello se crearon nuevas carpetas backups/postgres en el directorio de ia-lab
+
+    ![](images/clipboard-2489264226.png)
+
+7.  Levantar MySQL
+
+    ![](images/clipboard-1357104005.png)
+
+    vemos que ya está corriendo:

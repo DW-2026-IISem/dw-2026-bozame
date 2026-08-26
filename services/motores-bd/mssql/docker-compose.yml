@@ -1,0 +1,18 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver-container
+    restart: unless-stopped
+    user: root
+    env_file:
+      - .env
+    ports:
+      - "1433:1433"
+    volumes:
+      - ../../../data/mssql:/var/opt/mssql
+    networks:
+      - ia-lab-network
+
+networks:
+  ia-lab-network:
+    external: true
