@@ -67,12 +67,20 @@ Creación de la red Docker compartida:
 
 4.  Conectar remotamente desde cualquier equipo
 
-5.  Crear un usuario propio con acceso remot
+    ![](images/clipboard-212391622.png)
+
+5.  Crear un usuario propio con acceso remoto
+
+    ![](images/clipboard-160212996.png)
 
 6.  Backup de una base de datos
 
-    para ello se crearon nuevas carpetas backups/mysql en el directorio de ia-lab
+    ![](images/clipboard-1835100358.png)
+
+    para ello se crearon nuevas carpetas backups/postgres en el directorio de ia-lab
 
 7.  Levantar MySQL
+
+    ![](images/clipboard-2474461316.png)
 
     vemos que ya está corriendo:
