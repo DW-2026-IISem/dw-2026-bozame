@@ -1,152 +1,150 @@
-# Instalación de motores
+# Configuración de motores de bases de datos
 
-### Estructura del proyecto:
+## 1. Estructura del proyecto
 
-![![](images/clipboard-3636498496.png)](images/clipboard-1564572728.png)
+A continuación se presenta la organización de directorios utilizada para el laboratorio de bases de datos `ia-lab`:
 
-Creación de la red Docker compartida:
+![Estructura del proyecto](images/clipboard-1564572728.png)
 
-![](images/clipboard-2464479962.png)
+### Red compartida en Docker
 
-## MySQL
+![Creación de red Docker](images/clipboard-2464479962.png)
 
-1.  Crear el archivo docker-compose.yml
+---
 
-    ![](images/clipboard-390269146.png)
+## 2. MySQL
 
-    y ejecutamos "docker compose up -d"
+### Pasos de configuración:
 
-    ![](images/clipboard-4133514413.png)
+1. **Definición del servicio:**  
+   Se estructuró el archivo `docker-compose.yml` correspondiente a MySQL:  
+   ![docker-compose.yml MySQL](images/clipboard-390269146.png)  
 
-2.  Crear el archivo .env
+   Posteriormente, se inicializó el contenedor en segundo plano ejecutando `docker compose up -d`:  
+   ![Despliegue MySQL](images/clipboard-4133514413.png)
 
-    ![](images/clipboard-1336645182.png)
+2. **Variables de entorno:**  
+   Se definió el archivo `.env` con las credenciales y configuraciones iniciales:  
+   ![Archivo .env MySQL](images/clipboard-1336645182.png)
 
-3.  Crear README.md
+3. **Documentación del servicio:**  
+   Se generó el archivo `README.md` con las instrucciones específicas de este motor:  
+   ![README MySQL](images/clipboard-2624058944.png)
 
-    ![](images/clipboard-2624058944.png)
+4. **Conexión remota:**  
+   Se comprobó la conectividad remota al servicio desde un cliente externo:  
+   ![Conexión remota MySQL](images/clipboard-3329698468.png)
 
-4.  Conectar remotamente desde cualquier equipo
+5. **Gestión de usuarios:**  
+   Se creó un usuario personalizado con privilegios de acceso remoto:  
+   ![Creación de usuario MySQL](images/clipboard-2079434545.png)
 
-    ![](images/clipboard-3329698468.png)
+6. **Respaldos de base de datos:**  
+   Para la gestión de copias de seguridad, se habilitó el directorio `backups/mysql` dentro de la estructura principal de `ia-lab`:  
+   ![Backup MySQL](images/clipboard-3961618298.png)
 
-5.  Crear un usuario propio con acceso remoto
+7. **Verificación del estado:**  
+   Se ejecutó el levantamiento del contenedor y se verificó que el servicio estuviera operando correctamente:  
+   ![Levantamiento de servicio MySQL](images/clipboard-1474780381.png)  
+   ![Estado corriendo MySQL](images/clipboard-3335965270.png)
 
-    ![](images/clipboard-2079434545.png)
+---
 
-6.  Backup de una base de datos
+## 3. PostgreSQL
 
-    ![](images/clipboard-3961618298.png)
+### Pasos de configuración:
 
-    para ello se crearon nuevas carpetas backups/mysql en el directorio de ia-lab
+1. **Definición del servicio:**  
+   Se estructuró el archivo `docker-compose.yml` para PostgreSQL y se desplegó la instancia mediante `docker compose up -d`:  
+   ![docker-compose.yml PostgreSQL](images/clipboard-2673740245.png)
 
-7.  Levantar MySQL
+2. **Variables de entorno:**  
+   Se creó el archivo `.env` para almacenar las credenciales correspondientes:  
+   ![Archivo .env PostgreSQL](images/clipboard-2137361219.png)
 
-    ![](images/clipboard-1474780381.png)
+3. **Documentación del servicio:**  
+   Se agregó el archivo `README.md` del módulo:  
+   ![README PostgreSQL](images/clipboard-1977977680.png)
 
-    vemos que ya está corriendo:\
-    ![](images/clipboard-3335965270.png)
+4. **Conexión remota:**  
+   Se validó el acceso remoto a la instancia:  
+   ![Conexión remota PostgreSQL](images/clipboard-212391622.png)
 
-### PostgreSQL
+5. **Gestión de usuarios:**  
+   Se configuró un usuario individual con permisos de conexión remota:  
+   ![Creación de usuario PostgreSQL](images/clipboard-160212996.png)
 
-## 
+6. **Respaldos de base de datos:**  
+   Se habilitó el directorio `backups/postgres` dentro de `ia-lab` para almacenar los respaldos:  
+   ![Backup PostgreSQL](images/clipboard-1835100358.png)
 
-1.  Crear el archivo docker-compose.yml
+7. **Verificación del estado:**  
+   Se ejecutó la puesta en marcha del motor y se confirmó su estado activo:  
+   ![Estado PostgreSQL](images/clipboard-2474461316.png)
 
-    ![](images/clipboard-2673740245.png)
+---
 
-    y ejecutamos "docker compose up -d"
+## 4. SQL Server
 
-2.  Crear el archivo .env
+### Pasos de configuración:
 
-    ![](images/clipboard-2137361219.png)
+1. **Definición del servicio:**  
+   Se preparó el archivo `docker-compose.yml` para el motor SQL Server:  
+   ![docker-compose.yml SQL Server](images/clipboard-2062062224.png)
 
-3.  Crear README.md
+2. **Variables de entorno y despliegue:**  
+   Se configuró el archivo `.env` y se inició el contenedor con el comando `docker compose up -d`:  
+   ![Archivo .env SQL Server](images/clipboard-415240670.png)  
+   ![Despliegue SQL Server](images/clipboard-2400930065.png)
 
-    ![](images/clipboard-1977977680.png)
+3. **Documentación del servicio:**  
+   Se creó el archivo `README.md` específico para este entorno:  
+   ![README SQL Server](images/clipboard-3107432098.png)
 
-4.  Conectar remotamente desde cualquier equipo
+4. **Conexión remota:**  
+   Se verificó la conectividad remota hacia el servidor SQL Server:  
+   ![Conexión remota SQL Server](images/clipboard-3358588675.png)
 
-    ![](images/clipboard-212391622.png)
+5. **Gestión de usuarios:**  
+   Se creó un usuario adicional con acceso habilitado desde la red:  
+   ![Creación de usuario SQL Server](images/clipboard-3493213979.png)
 
-5.  Crear un usuario propio con acceso remoto
+6. **Respaldos de base de datos:**  
+   Se asignó la ruta correspondiente para copias de seguridad dentro de la estructura general:  
+   ![Configuración backup SQL Server](images/clipboard-2705237250.png)  
+   ![Almacenamiento backup SQL Server](images/clipboard-2489264226.png)
 
-    ![](images/clipboard-160212996.png)
+7. **Verificación del estado:**  
+   Se confirmó el correcto funcionamiento del servicio:  
+   ![Estado SQL Server](images/clipboard-1357104005.png)
 
-6.  Backup de una base de datos
+---
 
-    ![](images/clipboard-1835100358.png)
+## 5. Oracle XE
 
-    para ello se crearon nuevas carpetas backups/postgres en el directorio de ia-lab
+### Pasos de configuración:
 
-7.  Levantar MySQL
+1. **Definición del servicio:**  
+   Se creó el archivo `docker-compose.yml` necesario para Oracle XE:  
+   ![docker-compose.yml Oracle XE](images/clipboard-1944222666.png)
 
-    ![](images/clipboard-2474461316.png)
+2. **Variables de entorno:**  
+   Se estableció el archivo `.env` con los parámetros de conexión y credenciales:  
+   ![Archivo .env Oracle XE](images/clipboard-2954948021.png)
 
-    vemos que ya está corriendo:
+3. **Documentación del servicio:**  
+   Se añadió el archivo `README.md` descriptivo del entorno:  
+   ![README Oracle XE](images/clipboard-73959567.png)
 
-### SQL Server
+4. **Conexión remota:**  
+   Se validó el acceso remoto hacia la base de datos Oracle XE.
 
-1.  Crear el archivo docker-compose.yml
+5. **Gestión de usuarios:**  
+   Se procedió a la creación de un usuario con permisos remotos para la administración del esquema.
 
-    ![](images/clipboard-2062062224.png)
+6. **Respaldos de base de datos:**  
+   Se habilitaron los directorios de backup requeridos en la estructura del proyecto.
 
-2.  Crear el archivo .env
-
-    ![](images/clipboard-415240670.png)y ejecutamos "docker compose up -d"
-
-    ![](images/clipboard-2400930065.png)
-
-3.  Crear README.md
-
-    ![](images/clipboard-3107432098.png)
-
-4.  Conectar remotamente desde cualquier equipo
-
-    ![](images/clipboard-3358588675.png)
-
-5.  Crear un usuario propio con acceso remoto
-
-    ![](images/clipboard-3493213979.png)
-
-6.  Backup de una base de datos
-
-    ![](images/clipboard-2705237250.png)
-
-    para ello se crearon nuevas carpetas backups/postgres en el directorio de ia-lab
-
-    ![](images/clipboard-2489264226.png)
-
-7.  Levantar Postgres
-
-    ![](images/clipboard-1357104005.png)
-
-    vemos que ya está corriendo:
-
-### Oracle XE
-
-1.  Crear el archivo docker-compose.yml
-
-    ![](images/clipboard-1944222666.png)
-
-2.  Crear el archivo .env
-
-    y ejecutamos "docker compose up -d"
-
-    ![](images/clipboard-2954948021.png)
-
-3.  Crear README.md
-
-    ![](images/clipboard-73959567.png)
-
-4.  Conectar remotamente desde cualquier equipo
-
-5.  Crear un usuario propio con acceso remoto
-
-6.  Backup de una base de datos
-
-    para ello se crearon nuevas carpetas backups/postgres en el directorio de ia-lab
-
-7.  Levantar Oracle
-
-    vemos que ya está corriendo:
+7. **Verificación del estado:**  
+   Se inició el contenedor de Oracle XE y se confirmó que el proceso se encuentra en ejecución:  
+   ![Estado Oracle XE](images/clipboard-2051887535.png)
