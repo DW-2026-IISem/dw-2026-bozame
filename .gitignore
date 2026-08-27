@@ -3,4 +3,6 @@ data/mssql/
 data/oracle/
 data/postgres/
 .env
+.env.*
+backups/
 
