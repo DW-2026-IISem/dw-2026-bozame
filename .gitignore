@@ -1,8 +1,16 @@
+# Datos de las bases de datos
 data/mysql/
 data/mssql/
 data/oracle/
 data/postgres/
+
+# Datos de las bases de datos del proyecto
+pry-sbarboza/app-entreganexo/data/
+
+# Variables de entorno
 .env
 .env.*
-backups/
 
+# Backups
+backups/
+pry-sbarboza/app-entreganexo/backup/
