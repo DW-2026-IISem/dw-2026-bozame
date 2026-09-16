@@ -195,3 +195,9 @@ Organizamos las carpetas dentro de `src/` según las responsabilidades de nuestr
 Comenzamos con la tarea **ISS-02**, encargada de la configuración global del backend (variables de entorno, errores, conexión a las bases de datos y Swagger).
 
 El primer paso que estamos realizando es crear el archivo `env.interface.ts` dentro de `src/config/environment/` para definir qué tipos de datos debe tener cada variable de entorno, asegurando que no falte ninguna antes de iniciar la aplicación.
+
+![](images/clipboard-1505834215.png)
+
+**4.1.2 Validación (`env.validation.ts`):**
+
+![](images/clipboard-1456714325.png)
