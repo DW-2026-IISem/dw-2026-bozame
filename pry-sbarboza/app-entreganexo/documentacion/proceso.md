@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para comenzar con el desarrollo del proyecto, organizamos el trabajo paso a paso: 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, dejando los datos guardados en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos las librerías necesarias, preparamos las herramientas de desarrollo y ordenamos las carpetas. 3. **Configuración Global (ISS-02 - En Proceso):** Comenzamos a preparar el manejo seguro y ordenado de las variables de entorno.
+Para comenzar con el desarrollo del proyecto, organizamos el trabajo paso a paso: 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, dejando los datos guardados en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos las librerías necesarias, preparamos las herramientas de desarrollo y ordenamos las carpetas. 3. **Configuración Global (ISS-02 - En Proceso):** Preparamos el tipado y la validación de las variables de entorno para que el arranque sea seguro y controlado.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -194,20 +194,32 @@ Organizamos las carpetas dentro de `src/` según las responsabilidades de nuestr
 
 Comenzamos con la tarea **ISS-02**, encargada de la configuración global del backend (variables de entorno, errores, conexión a las bases de datos y Swagger).
 
-El primer paso que estamos realizando es crear el archivo `env.interface.ts` dentro de `src/config/environment/` para definir qué tipos de datos debe tener cada variable de entorno, asegurando que no falte ninguna antes de iniciar la aplicación.
+El primer paso fue crear el archivo `env.interface.ts` dentro de `src/config/environment/` para definir qué tipos de datos debe tener cada variable de entorno (puerto, entorno de ejecución, dialecto y bloques de conexión para MySQL, PostgreSQL, SQL Server y Oracle), asegurando que el código esté fuertemente tipado en TypeScript.
 
 ![](images/clipboard-1505834215.png)
 
-**4.1.2 Validación (`env.validation.ts`):**
+------------------------------------------------------------------------
+
+### Paso 19: Validación de variables de entorno (`env.validation.ts`)
+
+Luego creamos el archivo `env.validation.ts` utilizando decoradores de `class-validator` y `class-transformer`.
+
+Con esto validamos que, según el dialecto de base de datos que elijamos en `DB_DIALECT`, las variables obligatorias de ese motor (host, usuario y nombre de la base de datos) estén presentes y no vacías. Así, si falta algún dato de configuración, la aplicación nos avisa con un mensaje claro al arrancar en lugar de fallar más adelante.
 
 ![](images/clipboard-1456714325.png)
 
 **4.1.3 Selector de BD (`db-env.ts`):**
 
-![](images/clipboard-3851503384.png)
+![](images/clipboard-576975800.png)
 
 **4.1.4 Carga (`env.config.ts`):**
 
-![](images/clipboard-160138231.png)
+![](images/clipboard-1906502883.png)
 
 **4.1.5 Módulo global (`environment.module.ts`):**
+
+![](images/clipboard-2054307835.png)
+
+**4.1.6 Barrel (`index.ts`):**
+
+![](images/clipboard-4017690196.png)
