@@ -345,3 +345,15 @@ Comenzamos definiendo la entidad de dominio para los productos, estableciendo su
 ### 2. Capa de Aplicación (`application`)
 
 ![](images/clipboard-564266017.png)
+
+### 3. Capa de Infraestructura (`infrastructure`)
+
+![](images/clipboard-308269270.png)
+
+### 4. Capa de Presentación y Registro (`presentation`)
+
+![](images/clipboard-1045436499.png)
+
+### 5. Añadir el modelo a Sequelize
+
+![](images/clipboard-3061043949.png)
