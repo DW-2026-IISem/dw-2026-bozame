@@ -2,7 +2,7 @@
 
 **Asignatura:** Desarrollo Web\
 **Proyecto:** EntregaNexo\
-**Documento:** Guía práctica del proceso de configuración
+**Documento:** Guía práctica del proceso de configuración y desarrollo
 
 ------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para comenzar con el desarrollo del proyecto, organizamos el trabajo paso a paso: 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, dejando los datos guardados en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos las librerías necesarias, preparamos las herramientas de desarrollo y ordenamos las carpetas. 3. **Configuración Global y Errores (ISS-02 - En Proceso):** Preparamos el tipado y validación de las variables de entorno, el módulo global de configuración, las excepciones personalizadas y el filtro global de errores.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04 - En Proceso):** Iniciamos el módulo de productos (`catalog`), estableciendo la relación entre comercios y productos.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -188,13 +188,11 @@ Organizamos las carpetas dentro de `src/` según las responsabilidades de nuestr
 
 ------------------------------------------------------------------------
 
-## 4. Fase 3: Capa de Configuración Global y Errores (ISS-02 - En Proceso)
+## 4. Fase 3: Capa de Configuración Global y Errores (ISS-02)
 
 ### Paso 18: Tipado de variables de entorno (`env.interface.ts`)
 
-Comenzamos con la tarea **ISS-02**, encargada de la configuración global del backend (variables de entorno, errores, conexión a las bases de datos y Swagger).
-
-El primer paso fue crear el archivo `env.interface.ts` dentro de `src/config/environment/` para definir qué tipos de datos debe tener cada variable de entorno (puerto, entorno de ejecución, dialecto y bloques de conexión para MySQL, PostgreSQL, SQL Server y Oracle), asegurando que el código esté fuertemente tipado en TypeScript.
+Iniciamos la tarea **ISS-02** encargada de la configuración global del backend. Creamos el archivo `env.interface.ts` en `src/config/environment/` para definir los tipos de datos de cada variable (puerto, entorno, dialecto y credenciales de las bases de datos), asegurando el tipado estricto con TypeScript.
 
 ![](images/clipboard-1505834215.png)
 
@@ -202,9 +200,7 @@ El primer paso fue crear el archivo `env.interface.ts` dentro de `src/config/env
 
 ### Paso 19: Validación de variables de entorno (`env.validation.ts`)
 
-Luego creamos el archivo `env.validation.ts` utilizando decoradores de `class-validator` y `class-transformer`.
-
-Con esto validamos que, según el dialecto de base de datos que elijamos en `DB_DIALECT`, las variables obligatorias de ese motor (host, usuario y nombre de la base de datos) estén presentes y no vacías. Así, si falta algún dato de configuración, la aplicación nos avisa con un mensaje claro al arrancar en lugar de fallar más adelante.
+Creamos el archivo `env.validation.ts` utilizando decoradores de `class-validator` y `class-transformer` para revisar que las variables obligatorias del dialecto activo (`DB_DIALECT`) estén completas al arrancar la aplicación, evitando errores en ejecución.
 
 ![](images/clipboard-1456714325.png)
 
@@ -212,7 +208,7 @@ Con esto validamos que, según el dialecto de base de datos que elijamos en `DB_
 
 ### Paso 20: Selector de base de datos activa (`db-env.ts`)
 
-Creamos la función en `db-env.ts` para seleccionar automáticamente los datos de conexión (host, puerto y credenciales) del motor que esté activo según la variable `DB_DIALECT`.
+Creamos la función en `db-env.ts` para elegir automáticamente las variables y datos de conexión según el motor que esté seleccionado en `DB_DIALECT`.
 
 ![](images/clipboard-576975800.png)
 
@@ -220,7 +216,7 @@ Creamos la función en `db-env.ts` para seleccionar automáticamente los datos d
 
 ### Paso 21: Carga centralizada de la configuración (`env.config.ts`)
 
-Creamos el archivo `env.config.ts` para leer y estructurar todas las variables de entorno validadas en un solo objeto de configuración accesible en toda la aplicación.
+Creamos el archivo `env.config.ts` para leer y estructurar todas las variables validadas en un solo objeto de configuración accesible en toda la aplicación.
 
 ![](images/clipboard-1906502883.png)
 
@@ -228,7 +224,7 @@ Creamos el archivo `env.config.ts` para leer y estructurar todas las variables d
 
 ### Paso 22: Módulo global de entorno (`environment.module.ts`)
 
-Definimos `environment.module.ts` como un módulo global (`@Global()`) de NestJS para que cualquier servicio pueda inyectar la configuración sin tener que importar este módulo una y otra vez.
+Definimos `environment.module.ts` como un módulo global (`@Global()`) de NestJS para que cualquier servicio pueda usar la configuración sin necesidad de volver a importar el módulo.
 
 ![](images/clipboard-2054307835.png)
 
@@ -236,15 +232,15 @@ Definimos `environment.module.ts` como un módulo global (`@Global()`) de NestJS
 
 ### Paso 23: Archivo de exportación centralizada (`index.ts`)
 
-Creamos `index.ts` en `src/config/environment/` para exportar de forma limpia las interfaces, clases y módulos de esta carpeta, facilitando su importación desde cualquier parte del proyecto.
+Creamos el archivo `index.ts` en `src/config/environment/` para exportar de forma limpia interfaces, clases y módulos de esta carpeta.
 
 ![](images/clipboard-2961400362.png)
 
 ------------------------------------------------------------------------
 
-### Paso 24: Excepciones personalizadas para el manejo de errores (`common/exceptions`)
+### Paso 24: Excepciones personalizadas (`common/exceptions`)
 
-Para no manejar los errores con códigos o mensajes genéricos, creamos excepciones personalizadas en la carpeta `common/exceptions`: \* `domain.exception.ts` y `application.exception.ts`: para los errores base del dominio y la aplicación. \* `business-rule.exception.ts`: para controlar cuando no se cumple una regla de negocio de EntregaNexo. \* `entity-not-found.exception.ts`: para responder claramente cuando no se encuentra un registro (como un pedido o comercio).
+Para no manejar errores con códigos genéricos, creamos excepciones propias en `common/exceptions`: \* `domain.exception.ts` y `application.exception.ts`: errores base del dominio y la aplicación. \* `business-rule.exception.ts`: para cuando se incumple una regla del negocio en EntregaNexo. \* `entity-not-found.exception.ts`: para indicar con claridad cuando un registro no existe.
 
 ![](images/clipboard-4017690196.png)
 
@@ -256,12 +252,96 @@ Para no manejar los errores con códigos o mensajes genéricos, creamos excepcio
 
 ### Paso 25: Filtro global de errores (`common/filters/global-exception.filter.ts`)
 
-Creamos el filtro global `global-exception.filter.ts` para atrapar cualquier error o excepción en la aplicación y devolver una respuesta limpia, estándar y ordenada al usuario (con código de estado, mensaje claro y fecha del error).
+Creamos el filtro `global-exception.filter.ts` para interceptar cualquier fallo en la aplicación y devolver una respuesta clara, estandarizada y ordenada (código de estado, mensaje y fecha).
 
 ![](images/clipboard-1628364076.png)
 
 ------------------------------------------------------------------------
 
-### Paso 26: Configuración de interceptores (`common/interceptors` - En proceso)
+### Paso 26: Interceptores para logs y respuestas (`common/interceptors`)
 
-Iniciamos la creación de los interceptores en `src/common/interceptors/` para registrar los tiempos de respuesta, los logs de las peticiones que llegan y unificar las respuestas exitosas de la API.
+Creamos los interceptores en `src/common/interceptors/` para monitorear el rendimiento de la aplicación y estandarizar las respuestas: \* `logging.interceptor.ts`: para registrar cada petición que entra y su duración. \* `response.interceptor.ts`: para dar un formato unificado a todas las respuestas exitosas de la API. \* `timeout.interceptor.ts`: para cancelar peticiones que tarden más de lo debido.
+
+![](images/clipboard-729599352.png)
+
+![](images/clipboard-3125453890.png)
+
+------------------------------------------------------------------------
+
+### Paso 27: Conexión y persistencia con Sequelize (`infrastructure/database`)
+
+Configuramos la capa de persistencia conectando Sequelize con la base de datos activa según las variables de entorno configuradas previamente.
+
+![](images/clipboard-3065265943.png)
+
+------------------------------------------------------------------------
+
+### Paso 28: Verificación y arranque del backend
+
+Completada la configuración global (**ISS-02**), probamos el servidor ejecutando `npm run start:dev` para certificar que compila correctamente, se conecta a la base de datos y queda escuchando peticiones sin errores.
+
+![](images/clipboard-188415831.png)
+
+------------------------------------------------------------------------
+
+## 5. Fase 4: Implementación de la Feature Comercios (ISS-03)
+
+Para construir las funcionalidades del negocio, implementamos la primera feature completa: **Comercios (`merchants`)**, aplicando el patrón de **Arquitectura Limpia (*Clean Architecture*)** dividido en cuatro capas ordenadas: `domain` → `application` → `infrastructure` → `presentation`.
+
+### Paso 29: Capa de dominio de comercios (`domain`)
+
+Definimos la entidad pura `Merchant` y sus reglas de negocio básicas, manteniéndola totalmente independiente de la base de datos y de frameworks externos.
+
+![](images/clipboard-1643829612.png)
+
+------------------------------------------------------------------------
+
+### Paso 30: Capa de aplicación (`application`)
+
+Implementamos los casos de uso y la lógica para crear, consultar y administrar los comercios aliados dentro de EntregaNexo.
+
+![](images/clipboard-2253130582.png)
+
+------------------------------------------------------------------------
+
+### Paso 31: Capa de infraestructura (`infrastructure`)
+
+Implementamos el acceso a datos conectando la entidad con la base de datos mediante los modelos y repositorios de Sequelize.
+
+![](images/clipboard-2411552716.png)
+
+------------------------------------------------------------------------
+
+### Paso 32: Capa de presentación (`presentation`)
+
+Creamos el controlador HTTP con sus endpoints para recibir las solicitudes web y delegar el trabajo a la capa de aplicación.
+
+![](images/clipboard-2021436139.png)
+
+------------------------------------------------------------------------
+
+### Paso 33: Módulo de la feature y registro en Sequelize
+
+Agrupamos todas las capas anteriores dentro de `merchants.module.ts` y registramos el modelo de comercios en la configuración de Sequelize para que la base de datos lo sincronice.
+
+![](images/clipboard-2359390075.png)
+
+![](images/clipboard-2252109006.png)
+
+------------------------------------------------------------------------
+
+## 6. Fase 5: Feature de Catálogo y Productos (ISS-04 - En Proceso)
+
+Iniciamos la tarea **ISS-04**, donde replicamos el mismo patrón de Arquitectura Limpia para la entidad **Producto** dentro del módulo `catalog`.
+
+En **EntregaNexo**, los productos tienen una relación directa **Comercio 1:N Producto**: un producto no puede existir sin estar asociado a un comercio aliado, y por regla de negocio no se pueden agregar productos a comercios inactivos.
+
+### Paso 34: Capa de dominio de productos (`domain` - En proceso)
+
+Comenzamos definiendo la entidad de dominio para los productos, estableciendo sus atributos principales (nombre, precio, stock, estado y el enlace con el comercio correspondiente).
+
+![](images/clipboard-777435265.png)
+
+### 2. Capa de Aplicación (`application`)
+
+![](images/clipboard-564266017.png)
