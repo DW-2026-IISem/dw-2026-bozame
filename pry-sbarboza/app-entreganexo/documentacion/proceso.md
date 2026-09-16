@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para comenzar con el desarrollo del proyecto, organizamos el trabajo paso a paso: 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, dejando los datos guardados en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos las librerías necesarias, preparamos las herramientas de desarrollo y ordenamos las carpetas. 3. **Configuración Global (ISS-02 - En Proceso):** Preparamos el tipado y la validación de las variables de entorno para que el arranque sea seguro y controlado.
+Para comenzar con el desarrollo del proyecto, organizamos el trabajo paso a paso: 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, dejando los datos guardados en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos las librerías necesarias, preparamos las herramientas de desarrollo y ordenamos las carpetas. 3. **Configuración Global y Errores (ISS-02 - En Proceso):** Preparamos el tipado y validación de las variables de entorno, el módulo global de configuración, las excepciones personalizadas y el filtro global de errores.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -188,7 +188,7 @@ Organizamos las carpetas dentro de `src/` según las responsabilidades de nuestr
 
 ------------------------------------------------------------------------
 
-## 4. Fase 3: Capa de Configuración Global (ISS-02 - En Proceso)
+## 4. Fase 3: Capa de Configuración Global y Errores (ISS-02 - En Proceso)
 
 ### Paso 18: Tipado de variables de entorno (`env.interface.ts`)
 
@@ -208,25 +208,43 @@ Con esto validamos que, según el dialecto de base de datos que elijamos en `DB_
 
 ![](images/clipboard-1456714325.png)
 
-**4.1.3 Selector de BD (`db-env.ts`):**
+------------------------------------------------------------------------
+
+### Paso 20: Selector de base de datos activa (`db-env.ts`)
+
+Creamos la función en `db-env.ts` para seleccionar automáticamente los datos de conexión (host, puerto y credenciales) del motor que esté activo según la variable `DB_DIALECT`.
 
 ![](images/clipboard-576975800.png)
 
-**4.1.4 Carga (`env.config.ts`):**
+------------------------------------------------------------------------
+
+### Paso 21: Carga centralizada de la configuración (`env.config.ts`)
+
+Creamos el archivo `env.config.ts` para leer y estructurar todas las variables de entorno validadas en un solo objeto de configuración accesible en toda la aplicación.
 
 ![](images/clipboard-1906502883.png)
 
-**4.1.5 Módulo global (`environment.module.ts`):**
+------------------------------------------------------------------------
+
+### Paso 22: Módulo global de entorno (`environment.module.ts`)
+
+Definimos `environment.module.ts` como un módulo global (`@Global()`) de NestJS para que cualquier servicio pueda inyectar la configuración sin tener que importar este módulo una y otra vez.
 
 ![](images/clipboard-2054307835.png)
 
-**4.1.6 Barrel (`index.ts`):**
+------------------------------------------------------------------------
+
+### Paso 23: Archivo de exportación centralizada (`index.ts`)
+
+Creamos `index.ts` en `src/config/environment/` para exportar de forma limpia las interfaces, clases y módulos de esta carpeta, facilitando su importación desde cualquier parte del proyecto.
 
 ![](images/clipboard-2961400362.png)
 
-![](images/clipboard-4017690196.png)
+------------------------------------------------------------------------
 
-### 4.2 Excepciones `common/exceptions`
+### Paso 24: Excepciones personalizadas para el manejo de errores (`common/exceptions`)
+
+Para no manejar los errores con códigos o mensajes genéricos, creamos excepciones personalizadas en la carpeta `common/exceptions`: \* `domain.exception.ts` y `application.exception.ts`: para los errores base del dominio y la aplicación. \* `business-rule.exception.ts`: para controlar cuando no se cumple una regla de negocio de EntregaNexo. \* `entity-not-found.exception.ts`: para responder claramente cuando no se encuentra un registro (como un pedido o comercio).
 
 ![](images/clipboard-4017690196.png)
 
@@ -234,8 +252,16 @@ Con esto validamos que, según el dialecto de base de datos que elijamos en `DB_
 
 ![](images/clipboard-3966589914.png)
 
-### 4.3 Filtro global de errores
+------------------------------------------------------------------------
+
+### Paso 25: Filtro global de errores (`common/filters/global-exception.filter.ts`)
+
+Creamos el filtro global `global-exception.filter.ts` para atrapar cualquier error o excepción en la aplicación y devolver una respuesta limpia, estándar y ordenada al usuario (con código de estado, mensaje claro y fecha del error).
 
 ![](images/clipboard-1628364076.png)
 
-### 4.4 Interceptores
+------------------------------------------------------------------------
+
+### Paso 26: Configuración de interceptores (`common/interceptors` - En proceso)
+
+Iniciamos la creación de los interceptores en `src/common/interceptors/` para registrar los tiempos de respuesta, los logs de las peticiones que llegan y unificar las respuestas exitosas de la API.
