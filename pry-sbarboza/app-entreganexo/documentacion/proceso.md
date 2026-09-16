@@ -222,4 +222,20 @@ Con esto validamos que, según el dialecto de base de datos que elijamos en `DB_
 
 **4.1.6 Barrel (`index.ts`):**
 
+![](images/clipboard-2961400362.png)
+
 ![](images/clipboard-4017690196.png)
+
+### 4.2 Excepciones `common/exceptions`
+
+![](images/clipboard-4017690196.png)
+
+![](images/clipboard-3121209796.png)
+
+![](images/clipboard-3966589914.png)
+
+### 4.3 Filtro global de errores
+
+![](images/clipboard-1628364076.png)
+
+### 4.4 Interceptores
