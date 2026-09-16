@@ -201,3 +201,13 @@ El primer paso que estamos realizando es crear el archivo `env.interface.ts` den
 **4.1.2 Validación (`env.validation.ts`):**
 
 ![](images/clipboard-1456714325.png)
+
+**4.1.3 Selector de BD (`db-env.ts`):**
+
+![](images/clipboard-3851503384.png)
+
+**4.1.4 Carga (`env.config.ts`):**
+
+![](images/clipboard-160138231.png)
+
+**4.1.5 Módulo global (`environment.module.ts`):**
