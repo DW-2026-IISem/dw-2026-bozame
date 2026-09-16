@@ -1,5 +1,5 @@
 import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from 'sequelize-typescript';
-import { MerchantModel } from '../../../merchants/infrastructure/persistence/models/merchant.model.js';
+import { MerchantModel } from '../../../../merchants/infrastructure/persistence/models/merchant.model.js';
 
 @Table({ tableName: 'products', timestamps: true })
 export class ProductModel extends Model {

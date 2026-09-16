@@ -357,3 +357,33 @@ Comenzamos definiendo la entidad de dominio para los productos, estableciendo su
 ### 5. Añadir el modelo a Sequelize
 
 ![](images/clipboard-3061043949.png)
+
+npm run d ev funcionando correctamente
+
+![](images/clipboard-43644877.png)
+
+## 7. Fase 6: Feature de clientes (ISS-05)
+
+Lo que sigue por obligación técnica es construir la feature de **Clientes**.
+
+¿Por qué? Porque la feature más importante e interesante que nos falta es la de **Pedidos** (que es la que hace la transacción compleja de descontar stock que enseña el ISS-06 de la guía). Pero un Pedido necesita obligatoriamente dos llaves foráneas: un Producto (que ya lo tenemos) y un Cliente. Si intentamos hacer el pedido sin tener la tabla de clientes, la base de datos nos va a lanzar un error.
+
+### 1. Capa de Dominio (`domain`)
+
+![](images/clipboard-4185589411.png)
+
+### 2. Capa de Aplicación (`application`)
+
+![](images/clipboard-56136849.png)
+
+### 3. Capa de Infraestructura (`infrastructure`)
+
+![](images/clipboard-1047076292.png)
+
+4.  4\. Capa de Presentación (`presentation`)
+
+![](images/clipboard-1412458033.png)
+
+registramos en sequelize
+
+![](images/clipboard-2407280965.png)
