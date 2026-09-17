@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`, verificando la conexión y sincronización de las 5 tablas en cada motor.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -535,3 +535,47 @@ Por último, probamos la conexión con **Oracle** ajustando la configuración a 
 Comprobamos en los registros de la terminal que el cliente `oracledb` se conecta de forma exitosa a la instancia de Oracle y que el servidor queda activo y listo para operar:
 
 ![](images/clipboard-3243058714.png)
+
+------------------------------------------------------------------------
+
+## 11. Fase 10: Comprobación Visual de Tablas en DBeaver
+
+Para tener una confirmación visual directa del estado de las bases de datos en los contenedores Docker, abrimos el gestor **DBeaver** y nos conectamos a cada uno de los cuatro motores. De esta manera, verificamos que las 5 tablas creadas por el backend (`merchants`, `products`, `clients`, `orders` y `order_details`) existen físicamente con sus columnas y relaciones en cada sistema gestor.
+
+![](images/clipboard-988046604.png)
+
+### Paso 55: Verificación de tablas en MySQL (DBeaver)
+
+Comprobamos en DBeaver la conexión al contenedor de MySQL y verificamos la presencia de las tablas del marketplace:
+
+![](images/clipboard-3522718187.png)
+
+------------------------------------------------------------------------
+
+### Paso 56: Verificación de tablas en PostgreSQL (DBeaver)
+
+Revisamos en el esquema de PostgreSQL que las tablas y sus tipos de datos se crearon correctamente:![](images/clipboard-3737651871.png)
+
+![](images/clipboard-3737651871.png)
+
+------------------------------------------------------------------------
+
+### Paso 57: Verificación de tablas en Microsoft SQL Server (DBeaver)
+
+Nos conectamos a la base de datos de SQL Server y comprobamos las tablas generadas bajo el esquema correspondiente:
+
+![](images/clipboard-4023028902.png)
+
+------------------------------------------------------------------------
+
+### Paso 58: Verificación de tablas en Oracle Database (DBeaver)
+
+Finalmente, accedemos a la instancia de Oracle y corroboramos que todas las tablas y restricciones quedaron registradas en el esquema de la base de datos:
+
+![](images/clipboard-2754250114.png)
+
+------------------------------------------------------------------------
+
+## 12. Conclusión del Avance Actual
+
+Hasta este punto, hemos completado con éxito la base técnica y operativa que permite a **EntregaNexo** funcionar como un marketplace transaccional: \* **Comercios (`merchants`):** Registro y control de tiendas aliadas. \* **Catálogo (`catalog`):** Gestión de productos vinculados a sus respectivos comercios. \* **Clientes (`clients`):** Registro de compradores en la plataforma. \* **Pedidos (`orders`):** Procesamiento de compras mediante transacciones atómicas para asegurar la cabecera y el detalle sin inconsistencias financieras. \* **Interoperabilidad Multibase:** Verificación en terminal y mediante el gestor gráfico DBeaver en los cuatro motores: **MySQL**, **PostgreSQL**, **Microsoft SQL Server** y **Oracle Database**.
