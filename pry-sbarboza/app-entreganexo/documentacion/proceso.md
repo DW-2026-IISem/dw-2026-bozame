@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`, verificando la conexión y sincronización de las 5 tablas en cada motor.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -466,24 +466,72 @@ Construimos el controlador HTTP para recibir las solicitudes de pedidos a travé
 
 ### Paso 48: Registro de los modelos de pedidos en Sequelize
 
-Finalmente, añadimos `OrderModel` y `OrderDetailModel` al arreglo de modelos de Sequelize en `sequelize.factory.ts`, dejando registradas ambas tablas para su sincronización en las bases de datos.
+Añadimos `OrderModel` y `OrderDetailModel` al arreglo de modelos en `sequelize.factory.ts`, dejando registradas ambas tablas para su sincronización con la base de datos.
 
-[ya se realizo no tome evidencias]
+------------------------------------------------------------------------
 
-### 1. Configurar las Pruebas (Vitest)
+## 9. Fase 8: Pruebas Automatizadas y Validación con Swagger
 
-La guía pide dejar configurado el entorno de pruebas automatizadas. Copia y pega este bloque para crear los archivos de configuración de Vitest y tu primera prueba e2e, tal como lo exige el manual\
+### Paso 49: Configuración y ejecución de pruebas con Vitest
 
-![![](images/clipboard-1028348338.png)](images/clipboard-1364593190.png)
+Configuramos el entorno de pruebas automatizadas con Vitest y ejecutamos una prueba de integración (E2E) para verificar que los componentes y endpoints de la aplicación respondan de forma consistente.
 
-### 2. ¡Probar tu API!
+![](images/clipboard-1028348338.png)
 
-El manual sugiere probar el negocio usando comandos `curl` en la terminal, pero como nosotros instalamos **Swagger** desde el principio, tienes una interfaz gráfica lista para usar que es mucho más amigable.
+![](images/clipboard-1364593190.png)
 
-1.  Asegúrate de que el servidor esté corriendo en tu terminal (`npm run start:dev`).
+------------------------------------------------------------------------
 
-2.  Abre tu navegador web y entra a: [**`http://localhost:3002/api/docs`**](http://localhost:3002/api/docs)
+### Paso 50: Verificación visual de endpoints mediante Swagger UI
 
-Ahí verás documentados todos los endpoints de `merchants`, `catalog`, `clients` y `orders`. ¡Incluso puedes probar crear un pedido desde ahí mismo interactuando con los botones!
+Para probar la API de forma interactiva, aprovechamos la integración con Swagger accediendo desde el navegador a `http://localhost:3002/api/docs`. Allí encontramos documentados todos los endpoints creados para `merchants`, `catalog`, `clients` y `orders`.
+
+![](images/clipboard-926507668.png)
 
 ![](images/clipboard-680027137.png)
+
+------------------------------------------------------------------------
+
+### Paso 51: Ejecución de peticiones y respuesta exitosa (HTTP 200)
+
+Realizamos pruebas sobre los endpoints directamente desde la interfaz de Swagger y comprobamos que las solicitudes se procesan correctamente, retornando un código de estado `200 OK` con los datos esperados.
+
+![](images/clipboard-2784400618.png)
+
+------------------------------------------------------------------------
+
+## 10. Fase 9: Pruebas y Validación Multibase de Datos
+
+Una de las ventajas clave de la arquitectura desacoplada que configuramos con Sequelize y variables de entorno es la **portabilidad total**: podemos alternar entre los distintos motores de base de datos relacionales simplemente cambiando una variable en el archivo `.env`, sin necesidad de modificar el código de la aplicación.
+
+### Paso 52: Validación y sincronización en PostgreSQL
+
+Cambiamos la variable `DB_DIALECT` a `postgres` en el archivo `.env`:
+
+![](images/clipboard-4001576782.png)
+
+Iniciamos el servidor en modo desarrollo (`npm run start:dev`) y comprobamos en la consola que la conexión con el contenedor `entreganexo-postgres` se establece sin problemas, sincronizando y creando automáticamente las 5 tablas del proyecto (`merchants`, `products`, `clients`, `orders` y `order_details`):
+
+![](images/clipboard-2418275698.png)
+
+------------------------------------------------------------------------
+
+### Paso 53: Validación y sincronización en Microsoft SQL Server (MSSQL)
+
+Repetimos la prueba configurando el dialecto para SQL Server (`DB_DIALECT=mssql`) en el archivo `.env`:
+
+![](images/clipboard-2298676173.png)
+
+Verificamos en la terminal que el driver `tedious` se conecta correctamente al contenedor `entreganexo-mssql`, levantando el servidor y dejando las tablas sincronizadas en la base de datos:
+
+![](images/clipboard-3170095620.png)
+
+------------------------------------------------------------------------
+
+### Paso 54: Validación y sincronización en Oracle Database
+
+Por último, probamos la conexión con **Oracle** ajustando la configuración a `DB_DIALECT=oracle` en el archivo `.env`.
+
+Comprobamos en los registros de la terminal que el cliente `oracledb` se conecta de forma exitosa a la instancia de Oracle y que el servidor queda activo y listo para operar:
+
+![](images/clipboard-3243058714.png)
