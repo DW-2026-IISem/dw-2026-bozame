@@ -4,11 +4,15 @@ import { IEnvConfig } from '../../../config/environment/env.interface.js';
 import { MerchantModel } from '../../../features/business/merchants/infrastructure/persistence/models/merchant.model.js';
 import { ProductModel } from '../../../features/business/catalog/infrastructure/persistence/models/product.model.js';
 import { ClientModel } from '../../../features/business/clients/infrastructure/persistence/models/client.model.js';
+import { OrderModel } from '../../../features/business/orders/infrastructure/persistence/models/order.model.js';
+import { OrderDetailModel } from '../../../features/business/orders/infrastructure/persistence/models/order-detail.model.js';
 
 export const ALL_MODELS: any[] = [
   MerchantModel,
   ProductModel,
   ClientModel,
+  OrderModel,
+  OrderDetailModel,
 ];
 
 export function sequelizeFactory(cfg: IEnvConfig): Sequelize {

@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04 - En Proceso):** Iniciamos el módulo de productos (`catalog`), estableciendo la relación entre comercios y productos.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -330,60 +330,160 @@ Agrupamos todas las capas anteriores dentro de `merchants.module.ts` y registram
 
 ------------------------------------------------------------------------
 
-## 6. Fase 5: Feature de Catálogo y Productos (ISS-04 - En Proceso)
+## 6. Fase 5: Feature de Catálogo y Productos (ISS-04)
 
-Iniciamos la tarea **ISS-04**, donde replicamos el mismo patrón de Arquitectura Limpia para la entidad **Producto** dentro del módulo `catalog`.
+En la tarea **ISS-04**, replicamos el patrón de Arquitectura Limpia para la entidad **Producto** dentro del módulo `catalog`.
 
-En **EntregaNexo**, los productos tienen una relación directa **Comercio 1:N Producto**: un producto no puede existir sin estar asociado a un comercio aliado, y por regla de negocio no se pueden agregar productos a comercios inactivos.
+En **EntregaNexo**, los productos tienen una relación **Comercio 1:N Producto**: un producto no puede existir sin estar asociado a un comercio aliado, y por regla de negocio no se pueden agregar productos a comercios inactivos.
 
-### Paso 34: Capa de dominio de productos (`domain` - En proceso)
+### Paso 34: Capa de dominio de productos (`domain`)
 
-Comenzamos definiendo la entidad de dominio para los productos, estableciendo sus atributos principales (nombre, precio, stock, estado y el enlace con el comercio correspondiente).
+Definimos la entidad `Product` y sus interfaces de dominio, especificando sus atributos (nombre, precio, stock, estado y el enlace con el comercio correspondiente).
 
 ![](images/clipboard-777435265.png)
 
-### 2. Capa de Aplicación (`application`)
+------------------------------------------------------------------------
+
+### Paso 35: Capa de aplicación (`application`)
+
+Creamos los casos de uso para registrar nuevos productos, validar que el comercio exista y consultar el catálogo de productos disponibles.
 
 ![](images/clipboard-564266017.png)
 
-### 3. Capa de Infraestructura (`infrastructure`)
+------------------------------------------------------------------------
+
+### Paso 36: Capa de infraestructura (`infrastructure`)
+
+Implementamos la persistencia creando el modelo de Sequelize con su relación hacia la tabla de comercios y el repositorio correspondiente.
 
 ![](images/clipboard-308269270.png)
 
-### 4. Capa de Presentación y Registro (`presentation`)
+------------------------------------------------------------------------
+
+### Paso 37: Capa de presentación y módulo (`presentation`)
+
+Creamos el controlador HTTP para exponer las rutas del catálogo y agrupamos todo dentro de `catalog.module.ts`.
 
 ![](images/clipboard-1045436499.png)
 
-### 5. Añadir el modelo a Sequelize
+------------------------------------------------------------------------
+
+### Paso 38: Registro del modelo en Sequelize y verificación del servidor
+
+Añadimos el modelo `ProductModel` a la configuración global de Sequelize y comprobamos con `npm run start:dev` que el servidor levanta y sincroniza la nueva tabla sin inconvenientes.
 
 ![](images/clipboard-3061043949.png)
 
-npm run d ev funcionando correctamente
-
 ![](images/clipboard-43644877.png)
 
-## 7. Fase 6: Feature de clientes (ISS-05)
+------------------------------------------------------------------------
 
-Lo que sigue por obligación técnica es construir la feature de **Clientes**.
+## 7. Fase 6: Feature de Clientes (ISS-05)
 
-¿Por qué? Porque la feature más importante e interesante que nos falta es la de **Pedidos** (que es la que hace la transacción compleja de descontar stock que enseña el ISS-06 de la guía). Pero un Pedido necesita obligatoriamente dos llaves foráneas: un Producto (que ya lo tenemos) y un Cliente. Si intentamos hacer el pedido sin tener la tabla de clientes, la base de datos nos va a lanzar un error.
+Continuamos con la tarea **ISS-05** implementando la feature de **Clientes (`clients`)**.
 
-### 1. Capa de Dominio (`domain`)
+Esta feature es un requisito indispensable antes de construir la feature de **Pedidos** (ISS-06). Cada pedido necesita asociar obligatoriamente dos llaves foráneas: un Producto y un Cliente. Sin la tabla de clientes lista, el sistema no permitiría registrar pedidos en la base de datos.
+
+### Paso 39: Capa de dominio de clientes (`domain`)
+
+Definimos la entidad pura `Client` con los atributos esenciales del comprador (nombre, correo, teléfono y dirección).
 
 ![](images/clipboard-4185589411.png)
 
-### 2. Capa de Aplicación (`application`)
+------------------------------------------------------------------------
 
-![](images/clipboard-56136849.png)
+### Paso 40: Capa de aplicación (`application`)
 
-### 3. Capa de Infraestructura (`infrastructure`)
+Implementamos los casos de uso para registrar y consultar clientes en la plataforma.
+
+![](images/clipboard-561364117.png)
+
+------------------------------------------------------------------------
+
+### Paso 41: Capa de infraestructura (`infrastructure`)
+
+Creamos el modelo y repositorio de Sequelize para gestionar la persistencia de los clientes en la base de datos.
 
 ![](images/clipboard-1047076292.png)
 
-4.  4\. Capa de Presentación (`presentation`)
+------------------------------------------------------------------------
+
+### Paso 42: Capa de presentación (`presentation`)
+
+Definimos el controlador HTTP con los endpoints para clientes y agrupamos la feature en `clients.module.ts`.
 
 ![](images/clipboard-1412458033.png)
 
-registramos en sequelize
+------------------------------------------------------------------------
+
+### Paso 43: Registro del modelo de clientes en Sequelize
+
+Registramos el modelo `ClientModel` en la configuración de Sequelize, dejando la base de datos lista para soportar la creación de pedidos en el siguiente paso.
 
 ![](images/clipboard-2407280965.png)
+
+------------------------------------------------------------------------
+
+## 8. Fase 7: Feature de Pedidos y Transacciones Atómicas (ISS-06)
+
+En la tarea **ISS-06**, desarrollamos la feature de **Pedidos (`orders`)**, que agrupa las entidades `Order` (cabecera del pedido) y `OrderDetail` (productos y cantidades solicitadas).
+
+Esta feature es una de las más críticas de la plataforma, ya que maneja reglas financieras y de consistencia: \* Comprueba que el cliente solicitante exista en el sistema. \* Valida que el comercio origen esté registrado y activo. \* Calcula subtotales, comisión de la plataforma y el total final. \* Aplica una **transacción atómica en base de datos**: la cabecera del pedido y todos sus detalles se guardan juntos de manera indivisible. Si ocurre algún error a mitad de camino, la base de datos ejecuta un *rollback* automático (deshace los cambios) para evitar inconsistencias financieras.
+
+### Paso 44: Capa de dominio de pedidos (`domain`)
+
+Definimos las entidades de dominio `Order` y `OrderDetail`, junto con sus estados posibles (pendiente, confirmado, entregado, cancelado) y los métodos para calcular los totales de la compra.
+
+![](images/clipboard-510917357.png)
+
+------------------------------------------------------------------------
+
+### Paso 45: Capa de aplicación de pedidos (`application`)
+
+Implementamos los DTOs, mappers y el caso de uso para crear pedidos, coordinando la validación del cliente, del comercio y del cálculo de importes.
+
+![](images/clipboard-2573580510.png)
+
+------------------------------------------------------------------------
+
+### Paso 46: Capa de infraestructura y transacciones atómicas (`infrastructure`)
+
+Creamos los modelos `OrderModel` y `OrderDetailModel` en Sequelize, y desarrollamos el repositorio implementando transacciones de base de datos (`transaction`). De esta manera, aseguramos que la orden y sus detalles se guarden con atomicidad (todo o nada).
+
+![](images/clipboard-3568792631.png)
+
+![](images/clipboard-2513636659.png)
+
+------------------------------------------------------------------------
+
+### Paso 47: Capa de presentación y módulo (`presentation`)
+
+Construimos el controlador HTTP para recibir las solicitudes de pedidos a través de los endpoints de la API y empaquetamos todo dentro de `orders.module.ts`.
+
+![](images/clipboard-426447687.png)
+
+------------------------------------------------------------------------
+
+### Paso 48: Registro de los modelos de pedidos en Sequelize
+
+Finalmente, añadimos `OrderModel` y `OrderDetailModel` al arreglo de modelos de Sequelize en `sequelize.factory.ts`, dejando registradas ambas tablas para su sincronización en las bases de datos.
+
+[ya se realizo no tome evidencias]
+
+### 1. Configurar las Pruebas (Vitest)
+
+La guía pide dejar configurado el entorno de pruebas automatizadas. Copia y pega este bloque para crear los archivos de configuración de Vitest y tu primera prueba e2e, tal como lo exige el manual\
+
+![![](images/clipboard-1028348338.png)](images/clipboard-1364593190.png)
+
+### 2. ¡Probar tu API!
+
+El manual sugiere probar el negocio usando comandos `curl` en la terminal, pero como nosotros instalamos **Swagger** desde el principio, tienes una interfaz gráfica lista para usar que es mucho más amigable.
+
+1.  Asegúrate de que el servidor esté corriendo en tu terminal (`npm run start:dev`).
+
+2.  Abre tu navegador web y entra a: [**`http://localhost:3002/api/docs`**](http://localhost:3002/api/docs)
+
+Ahí verás documentados todos los endpoints de `merchants`, `catalog`, `clients` y `orders`. ¡Incluso puedes probar crear un pedido desde ahí mismo interactuando con los botones!
+
+![](images/clipboard-680027137.png)
