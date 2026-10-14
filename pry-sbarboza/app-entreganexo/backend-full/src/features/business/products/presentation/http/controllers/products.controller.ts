@@ -1,35 +1,36 @@
-import { Controller, Get, Post, Body, Param, Query, HttpCode, ParseIntPipe } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateProductDto } from '../../../application/dto/create-product.dto.js';
 import { CreateProductUseCase } from '../../../application/use-cases/create-product.use-case.js';
-import { ListProductsUseCase } from '../../../application/use-cases/list-products.use-case.js';
-import { GetProductByIdUseCase } from '../../../application/use-cases/get-product-by-id.use-case.js';
-import { ProductMapper } from '../../../application/mappers/product.mapper.js';
+import { GetProductsUseCase } from '../../../application/use-cases/get-products.use-case.js';
+import { JwtAuthGuard } from '../../../../../../common/guards/jwt-auth.guard.js';
+import { RbacGuard } from '../../../../../../common/guards/rbac.guard.js';
 
 @ApiTags('products')
-@Controller('products')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RbacGuard) // ¡AQUÍ ESTÁ EL ESCUDO!
+@Controller('productos')
 export class ProductsController {
   constructor(
     private readonly createProduct: CreateProductUseCase,
-    private readonly listProducts: ListProductsUseCase,
-    private readonly getProduct: GetProductByIdUseCase,
+    private readonly getProducts: GetProductsUseCase,
   ) {}
 
   @Post()
-  @HttpCode(201)
   async create(@Body() dto: CreateProductDto) {
     const product = await this.createProduct.execute(dto);
-    return ProductMapper.toResponse(product);
+    return { product };
   }
 
   @Get()
-  async list(@Query('page') page = '1', @Query('limit') limit = '10') {
-    return this.listProducts.execute(Number(page), Number(limit));
+  async list() {
+    const products = await this.getProducts.findAll();
+    return { products };
   }
 
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    const product = await this.getProduct.execute(id);
-    return ProductMapper.toResponse(product);
+    const product = await this.getProducts.findOne(id);
+    return { product };
   }
 }

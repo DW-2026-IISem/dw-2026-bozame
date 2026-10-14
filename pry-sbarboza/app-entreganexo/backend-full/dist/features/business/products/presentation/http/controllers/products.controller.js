@@ -10,37 +10,36 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, Query, HttpCode, ParseIntPipe } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+var _a;
+import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateProductDto } from '../../../application/dto/create-product.dto.js';
 import { CreateProductUseCase } from '../../../application/use-cases/create-product.use-case.js';
-import { ListProductsUseCase } from '../../../application/use-cases/list-products.use-case.js';
-import { GetProductByIdUseCase } from '../../../application/use-cases/get-product-by-id.use-case.js';
-import { ProductMapper } from '../../../application/mappers/product.mapper.js';
+import { GetProductsUseCase } from '../../../application/use-cases/get-products.use-case.js';
+import { JwtAuthGuard } from '../../../../../../common/guards/jwt-auth.guard.js';
+import { RbacGuard } from '../../../../../../common/guards/rbac.guard.js';
 let ProductsController = class ProductsController {
     createProduct;
-    listProducts;
-    getProduct;
-    constructor(createProduct, listProducts, getProduct) {
+    getProducts;
+    constructor(createProduct, getProducts) {
         this.createProduct = createProduct;
-        this.listProducts = listProducts;
-        this.getProduct = getProduct;
+        this.getProducts = getProducts;
     }
     async create(dto) {
         const product = await this.createProduct.execute(dto);
-        return ProductMapper.toResponse(product);
+        return { product };
     }
-    async list(page = '1', limit = '10') {
-        return this.listProducts.execute(Number(page), Number(limit));
+    async list() {
+        const products = await this.getProducts.findAll();
+        return { products };
     }
     async findOne(id) {
-        const product = await this.getProduct.execute(id);
-        return ProductMapper.toResponse(product);
+        const product = await this.getProducts.findOne(id);
+        return { product };
     }
 };
 __decorate([
     Post(),
-    HttpCode(201),
     __param(0, Body()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [CreateProductDto]),
@@ -48,10 +47,8 @@ __decorate([
 ], ProductsController.prototype, "create", null);
 __decorate([
     Get(),
-    __param(0, Query('page')),
-    __param(1, Query('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "list", null);
 __decorate([
@@ -63,10 +60,10 @@ __decorate([
 ], ProductsController.prototype, "findOne", null);
 ProductsController = __decorate([
     ApiTags('products'),
-    Controller('products'),
-    __metadata("design:paramtypes", [CreateProductUseCase,
-        ListProductsUseCase,
-        GetProductByIdUseCase])
+    ApiBearerAuth(),
+    UseGuards(JwtAuthGuard, RbacGuard),
+    Controller('productos'),
+    __metadata("design:paramtypes", [CreateProductUseCase, typeof (_a = typeof GetProductsUseCase !== "undefined" && GetProductsUseCase) === "function" ? _a : Object])
 ], ProductsController);
 export { ProductsController };
 //# sourceMappingURL=products.controller.js.map

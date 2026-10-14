@@ -9,4 +9,8 @@ export declare class ResourceRoleRepository {
     findAllByRole(roleId: number, transaction?: Transaction): Promise<ResourceRole[]>;
     create(data: Partial<ResourceRole>, transaction?: Transaction): Promise<ResourceRole>;
     update(resourceRole: ResourceRole, data: Partial<ResourceRole>, transaction?: Transaction): Promise<ResourceRole>;
+    findEffectiveForUser(userId: number): Promise<{
+        method: string;
+        path: string;
+    }[]>;
 }

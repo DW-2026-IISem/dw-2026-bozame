@@ -1372,4 +1372,38 @@ Finalmente, registramos estos dos módulos puente en nuestra app y configuramos 
 **Solución:** 1. Se añadió la constante derivada `SELLER_RESOURCES` al final del `resource-catalog.ts`, la cual filtra los recursos operativos (`seller: true`) de la matriz base. 2. Se corrigió la ruta de importación de la inyección de dependencias `SEQUELIZE` en `resource-roles.service.ts`, ajustando la profundidad relativa de 6 a 5 niveles (`../../../../../`).
 
 ![\
-](images/clipboard-2460898366.png)
+Prueba 1 (Ver quién tiene asignado qué rol):](images/clipboard-2460898366.png)
+
+![](images/clipboard-1581052693.png)
+
+**Prueba 2 (Ver los permisos concedidos):**
+
+![](images/clipboard-1549435060.png)
+
+ISSUE 13----
+
+**ISS-13 (Middlewares de acceso y Modalidades):** Se implementó la seguridad a nivel de rutas utilizando *Guards* de NestJS (el equivalente moderno a los middlewares de Express). Se desarrollaron dos barreras modulares: `JwtAuthGuard` (modalidad JWT) que verifica criptográficamente la validez del token extraído del encabezado HTTP y asigna la identidad a la petición, y `RbacGuard` (modalidad JWT + RBAC) que intercepta la petición, evalúa la ruta concreta y el método HTTP, y los contrasta contra los permisos efectivos del usuario en la base de datos (resolviendo la cadena completa de asignaciones y concesiones). Se aplicó el principio de *Deny by Default*, retornando errores 401 (No Autenticado) y 403 (Prohibido) según corresponda, y se protegieron los controladores de negocio.
+
+### Utilidades de Match y el Guard de Autenticación
+
+Vamos a crear la herramienta que sabe comparar rutas (ej. sabe que `/api/productos/1` encaja en la regla `/api/productos/:id`) y la barrera del JWT.
+
+![](images/clipboard-190599644.png)
+
+![](images/clipboard-4012815338.png)
+
+### Consulta RBAC Efectiva y el Guard de Autorización
+
+Añadimos la consulta SQL ultrarrápida al repositorio para leer la cadena de permisos completa y creamos la segunda barrera (RBAC).
+
+![](images/clipboard-681192178.png)
+
+![](images/clipboard-839697818.png)
+
+### Proteger los Controladores
+
+Para que lo puedas probar, vamos a proteger los controladores de **Productos** y **Usuarios**. Le pondremos el escudo `@UseGuards(JwtAuthGuard, RbacGuard)`.
+
+![](images/clipboard-344520646.png)
+
+![](images/clipboard-3235711046.png)

@@ -12,6 +12,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
+import { QueryTypes } from 'sequelize';
 import { ResourceRole } from '../../../resource-role.model.js';
 import { SEQUELIZE } from '../../../../../../infrastructure/database/sequelize/sequelize.module.js';
 let ResourceRoleRepository = class ResourceRoleRepository {
@@ -29,6 +30,24 @@ let ResourceRoleRepository = class ResourceRoleRepository {
     }
     async update(resourceRole, data, transaction) {
         return resourceRole.update(data, { transaction });
+    }
+    async findEffectiveForUser(userId) {
+        const query = `
+      SELECT r.method, r.path
+      FROM resource_roles rr
+      INNER JOIN roles ro ON rr.role_id = ro.id
+      INNER JOIN role_users ru ON ro.id = ru.role_id
+      INNER JOIN resources r ON rr.resource_id = r.id
+      WHERE rr.status = 'active'
+        AND ro.status = 'active'
+        AND ru.status = 'active'
+        AND r.status = 'active'
+        AND ru.user_id = :userId
+    `;
+        return this.sequelize.query(query, {
+            replacements: { userId },
+            type: QueryTypes.SELECT
+        });
     }
 };
 ResourceRoleRepository = __decorate([

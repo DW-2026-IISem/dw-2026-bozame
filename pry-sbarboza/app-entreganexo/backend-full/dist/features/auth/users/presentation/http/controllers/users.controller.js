@@ -10,11 +10,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, HttpCode, ParseIntPipe } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, HttpCode, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateUserDto } from '../../../application/dto/create-user.dto.js';
 import { CreateUserUseCase } from '../../../application/use-cases/create-user.use-case.js';
 import { GetUsersUseCase } from '../../../application/use-cases/get-users.use-case.js';
+import { JwtAuthGuard } from '../../../../../../common/guards/jwt-auth.guard.js';
+import { RbacGuard } from '../../../../../../common/guards/rbac.guard.js';
 let UsersController = class UsersController {
     createUser;
     getUsers;
@@ -58,6 +60,8 @@ __decorate([
 ], UsersController.prototype, "findOne", null);
 UsersController = __decorate([
     ApiTags('users'),
+    ApiBearerAuth(),
+    UseGuards(JwtAuthGuard, RbacGuard),
     Controller('usuarios'),
     __metadata("design:paramtypes", [CreateUserUseCase,
         GetUsersUseCase])
