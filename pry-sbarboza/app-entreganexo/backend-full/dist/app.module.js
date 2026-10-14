@@ -8,10 +8,8 @@ import { Module } from '@nestjs/common';
 import { EnvironmentModule } from './config/environment/environment.module.js';
 import { SequelizeModule } from './infrastructure/database/sequelize/sequelize.module.js';
 import { HealthController } from './health/health.controller.js';
-import { ClientsModule } from './features/business/clients/clients.module.js';
-import { ProductTypesModule } from './features/business/product-types/product-types.module.js';
-import { ProductsModule } from './features/business/products/products.module.js';
-import { SalesModule } from './features/business/sales/sales.module.js';
+import { BusinessModule } from './features/business/business.module.js';
+import { SeedersRunner } from './features/business/seeders.runner.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -19,13 +17,10 @@ AppModule = __decorate([
         imports: [
             EnvironmentModule,
             SequelizeModule,
-            ClientsModule,
-            ProductTypesModule,
-            ProductsModule,
-            SalesModule
+            BusinessModule
         ],
         controllers: [HealthController],
-        providers: [],
+        providers: [SeedersRunner],
     })
 ], AppModule);
 export { AppModule };

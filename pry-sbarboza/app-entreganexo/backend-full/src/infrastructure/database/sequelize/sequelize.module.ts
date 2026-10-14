@@ -14,7 +14,8 @@ export const SEQUELIZE = 'SEQUELIZE';
       useFactory: async (cfg: IEnvConfig) => {
         const sequelize = sequelizeFactory(cfg);
         await sequelize.authenticate();
-        await sequelize.sync({ alter: false });
+        // Al poner alter: true, Sequelize agregará las columnas faltantes (como address) automáticamente
+        await sequelize.sync({ alter: true });
         return sequelize;
       },
     },
