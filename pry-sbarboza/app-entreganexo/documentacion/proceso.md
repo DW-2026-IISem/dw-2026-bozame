@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03):** Implementamos las cuatro capas completas de Arquitectura Limpia para el módulo de clientes (Dominio, Aplicación, Infraestructura y Presentación), incluyendo entidad, puerto, casos de uso, DTOs, modelo Sequelize, repositorio concreto, seeder idempotente, controlador HTTP y su registro en la fábrica de base de datos y en el módulo raíz.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03):** Implementamos las cuatro capas completas de Arquitectura Limpia para el módulo de clientes (Dominio, Aplicación, Infraestructura y Presentación), verificando su funcionamiento en consola y en Swagger UI. 14. **Feature Tipos de Productos en `backend-full` (ISS-04 - En Proceso):** Implementamos las capas de Dominio, Aplicación, Infraestructura y el controlador en Presentación para el módulo de categorías y tipos de productos (`product-types`).
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -882,60 +882,142 @@ Finalmente, registramos `ClientsModule` en el arreglo `imports` de `src/app.modu
 
 ------------------------------------------------------------------------
 
-ejecutamos run dev
+### Paso 95: Verificación del backend y mapeo de rutas en consola
+
+Ejecutamos el comando `npm run start:dev` y confirmamos en la terminal que `backend-full` inicia correctamente sin errores, carga los módulos `EnvironmentModule`, `SequelizeModule` y `ClientsModule`, y mapea adecuadamente las rutas para el controlador de clientes (`POST /api/clients`, `GET /api/clients`, `GET /api/clients/:id`) junto con la ruta de salud (`/api/health`).
 
 ![](images/clipboard-1392727739.png)
 
-y podemos ver en <http://localhost:3002/api/docs>
+------------------------------------------------------------------------
+
+### Paso 96: Comprobación interactiva en Swagger UI
+
+Abrimos el navegador en `http://localhost:3002/api/docs` y corroboramos que la documentación interactiva de Swagger UI refleja el bloque de endpoints para **clients**, permitiendo probar la creación, el listado y la consulta por ID, además de validar el esquema `CreateClientDto`.
 
 ![](images/clipboard-4273590055.png)
 
-ISSUE 4 EMPIEZA AQUI--
+------------------------------------------------------------------------
 
-# **Domain: ProductType y su contrato**
+## 15. Fase 14: Feature de Tipos de Productos en `backend-full` (ISS-04 - En Proceso)
 
-**product-type.entity.ts**
+Para avanzar con la estructuración del catálogo de productos en `backend-full`, comenzamos la construcción del módulo de **Tipos de Productos (`product-types`)** aplicando Arquitectura Limpia (*Clean Architecture*) en sus cuatro capas:
 
-![**product-type.repository.ts**](images/clipboard-4117774527.png)
+### Paso 97: Entidad de dominio de tipos de producto (`product-type.entity.ts`)
+
+En la capa de Dominio (`src/features/business/product-types/domain/entities/`), definimos la entidad pura `ProductType` y el tipo `ProductTypeStatus`, encapsulando los atributos fundamentales (`id`, `name`, `description` y `status`) y asignando por defecto el estado `'active'`.
+
+![](images/clipboard-4117774527.png)
+
+------------------------------------------------------------------------
+
+### Paso 98: Puerto del repositorio de tipos de producto (`product-type.repository.ts`)
+
+En `domain/interfaces/`, declaramos el contrato `IProductTypeRepository` y la constante de inyección `PRODUCT_TYPE_REPOSITORY`. Este puerto define los métodos de persistencia requeridos (`create`, `findAll`, `findById`, `findByName` y `count`) sin acoplarse a ningún ORM específico.
 
 ![](images/clipboard-515091790.png)
 
-Excepciones de la feature
+------------------------------------------------------------------------
+
+### Paso 99: Excepciones de dominio para tipos de producto (`product-type.exceptions.ts`)
+
+En `domain/exceptions/`, creamos las excepciones personalizadas del módulo: `ProductTypeNotFoundException` (extendiendo de `EntityNotFoundException`) para cuando no se encuentra un registro por su ID, y `ProductTypeNameAlreadyExistsException` (extendiendo de `BusinessRuleException`) para evitar nombres duplicados.
 
 ![](images/clipboard-3482351172.png)
 
-# **Application: entrada, traducción y casos de uso**
+------------------------------------------------------------------------
 
-**create-product-type.dto.ts**
+### Paso 100: DTO de entrada para creación de tipos de producto (`create-product-type.dto.ts`)
 
-![product-type.mapper.ts](images/clipboard-181117078.png)
+En la capa de Aplicación (`application/dto/`), definimos `CreateProductTypeDto` aplicando decoradores de Swagger (`@ApiProperty`, `@ApiPropertyOptional`) y validadores de `class-validator` (`@IsString`, `@IsNotEmpty`, `@MaxLength`, `@IsOptional`) para garantizar la integridad de los datos entrantes.
+
+![](images/clipboard-181117078.png)
+
+------------------------------------------------------------------------
+
+### Paso 101: Mapper de tipos de producto (`product-type.mapper.ts`)
+
+En `application/mappers/`, implementamos `ProductTypeMapper` con los métodos estáticos `toEntity` (para convertir el DTO en una entidad de negocio) y `toResponse` (para dar formato limpio a los datos que se retornan al cliente).
 
 ![](images/clipboard-3337555345.png)
 
-**CreateProductTypeUseCase**
+------------------------------------------------------------------------
+
+### Paso 102: Caso de uso para crear tipos de producto (`CreateProductTypeUseCase`)
+
+En `application/use-cases/`, creamos `CreateProductTypeUseCase` inyectando el puerto `PRODUCT_TYPE_REPOSITORY`. Antes de registrar el tipo de producto, verifica que no exista otro con el mismo nombre; si ya existe lanza `ProductTypeNameAlreadyExistsException`, y si es válido lo persiste y lo retorna.
 
 ![](images/clipboard-3287301155.png)
 
-**GetProductTypeByIdUseCase + ListProductTypesUseCase**
+------------------------------------------------------------------------
+
+### Paso 103: Casos de uso para consultar por ID y listar tipos de producto
+
+Implementamos en `application/use-cases/` los casos de uso de lectura: `GetProductTypeByIdUseCase` para buscar por identificador y lanzar `ProductTypeNotFoundException` si no existe, y `ListProductTypesUseCase` para paginar los resultados calculando el total de páginas y formateando la salida mediante el mapper.
 
 ![](images/clipboard-3894115374.png)
 
-# **Infrastructure: tabla, repositorio y seeder**
+------------------------------------------------------------------------
 
-**product-type.model.ts**
+### Paso 104: Modelo ORM de tipos de producto con Sequelize (`product-type.model.ts`)
+
+En la capa de Infraestructura (`infrastructure/persistence/models/`), definimos `ProductTypeModel` mapeado a la tabla `product_types` mediante decoradores de `sequelize-typescript`, estableciendo clave primaria autoincremental, nombre único no nulo, descripción opcional, estado por defecto `'active'` y marcas de tiempo automáticas.
 
 ![](images/clipboard-1381634182.png)
 
-**product-type.repository.ts**
+------------------------------------------------------------------------
+
+### Paso 105: Implementación concreta del repositorio de tipos de producto (`product-type.repository.ts`)
+
+En `infrastructure/persistence/repositories/`, implementamos `ProductTypeRepository` cumpliendo con la interfaz `IProductTypeRepository`. Inyectamos la conexión Sequelize (`@Inject(SEQUELIZE)`), interactuamos con `ProductTypeModel` para realizar las operaciones CRUD y mapeamos los modelos devueltos a entidades puras de dominio.
 
 ![](images/clipboard-2121395114.png)
 
-**product-type.seeder.ts**
+------------------------------------------------------------------------
+
+### Paso 106: Seeder para datos iniciales de tipos de producto (`product-type.seeder.ts`)
+
+En `infrastructure/persistence/seeders/`, creamos `ProductTypeSeeder` para poblar la base de datos con una categoría inicial de prueba (`'Bebidas'`). La ejecución es idempotente, revisando primero si ya existe para evitar inserciones redundantes.
 
 ![](images/clipboard-2184940826.png)
 
-# **Presentation y módulo**
+------------------------------------------------------------------------
 
-**product-types.controller.ts**
+### Paso 107: Controlador HTTP de tipos de producto (`product-types.controller.ts`)
+
+En la capa de Presentación (`presentation/http/controllers/`), definimos `ProductTypesController` con la ruta base `@Controller('product-types')` y etiquetas para Swagger (`@ApiTags('product-types')`). Exponemos las rutas REST: `POST /product-types` (creación con código HTTP 201), `GET /product-types` (listado paginado por query params) y `GET /product-types/:id` (búsqueda por ID con `ParseIntPipe`).
 
 ![](images/clipboard-3996428410.png)
+
+------------------------------------------------------------------------
+
+## 
+
+ejecutamos run dev y vemos que ya aparece nuestra tabla product_types
+
+![![](images/clipboard-1144059305.png)](images/clipboard-4110600696.png)
+
+**ISS-05 · Feature products**
+
+Guía didáctica detallada: FK a product-types y regla de stock
+
+# **Domain: Product y reduceStock()**
+
+**product.entity.ts**
+
+![](images/clipboard-1953043203.png)
+
+**product.repository.ts**
+
+![](images/clipboard-1344973735.png)
+
+# **Application: DTO y validación cruzada**
+
+**create-product.dto.ts (resumen)**
+
+![](images/clipboard-1724698254.png)
+
+**CreateProductUseCase**
+
+![](images/clipboard-2708465177.png)
+
+![](images/clipboard-445525447.png)
