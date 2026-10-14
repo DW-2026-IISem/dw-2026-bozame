@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal y Configuración en `backend-full`:** Implementamos el tipado de entorno, validaciones, jerarquía de excepciones, filtro global de errores e interceptores de respuesta, logs y timeout.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts` con Swagger y validación global.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -634,9 +634,9 @@ Organizamos el árbol de carpetas dentro de `src/` adoptando la Arquitectura Lim
 
 ------------------------------------------------------------------------
 
-## 13. Fase 12: Capa Transversal y Configuración Global en `backend-full`
+## 13. Fase 12: Capa Transversal, Base de Datos y Bootstrap en `backend-full`
 
-Para dotar al nuevo backend de robustez técnica, implementamos la capa de configuración de entorno, el manejo transversal de excepciones y los interceptores de red.
+Para dotar al nuevo backend de robustez técnica y conectividad completa, implementamos la configuración de entorno, el manejo transversal de excepciones, los interceptores de red, la conexión Sequelize y el punto de arranque de la aplicación.
 
 ### Paso 65: Contrato tipado de variables de entorno (`env.interface.ts`)
 
@@ -718,4 +718,38 @@ Configuramos el interceptor de timeout para cancelar de forma segura peticiones 
 
 ------------------------------------------------------------------------
 
-## 
+### Paso 75: Fábrica de conexión Sequelize (`sequelize.factory.ts`)
+
+Creamos la función fábrica `sequelizeFactory` en `src/infrastructure/database/sequelize/sequelize.factory.ts` para instanciar Sequelize dinámicamente según el dialecto configurado (`mysql`, `postgres`, `mssql`, `oracle`), asignando las credenciales validadas y la lista centralizada de modelos.
+
+![](images/clipboard-1953404609.png)
+
+------------------------------------------------------------------------
+
+### Paso 76: Módulo global de base de datos (`sequelize.module.ts`)
+
+Configuramos `sequelize.module.ts` como un módulo `@Global()` que provee la instancia de Sequelize a través del contenedor de inyección de dependencias de NestJS, permitiendo el acceso a la base de datos sin reconexiones innecesarias.
+
+![](images/clipboard-1730860753.png)
+
+------------------------------------------------------------------------
+
+### Paso 77: Endpoint técnico de monitoreo (`health.controller.ts`)
+
+Implementamos `health.controller.ts` dentro de `src/health/` para exponer una ruta técnica (`/health`) que permite comprobar rápidamente desde el navegador o herramientas de monitoreo si el servidor está activo y respondiendo.
+
+![](images/clipboard-1758764378.png)
+
+------------------------------------------------------------------------
+
+### Paso 78: Bootstrap principal de la aplicación (`main.ts`)
+
+Estructuramos el archivo de arranque `src/main.ts` donde se inicializa la aplicación NestJS, se aplican los pipes globales de validación (`ValidationPipe`), se registran los interceptores y el filtro global de errores, y se inicializa la documentación interactiva con Swagger antes de comenzar a escuchar en el puerto definido.
+
+![](images/clipboard-4258991011.png)
+
+------------------------------------------------------------------------
+
+## ejecutamos run dev y vemos que funciona
+
+![](images/clipboard-3897032497.png)
