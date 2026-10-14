@@ -1,14 +1,12 @@
-import { Controller, Get, Post, Body, Param, HttpCode, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, HttpCode, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { CreateUserDto } from '../../../application/dto/create-user.dto.js';
 import { CreateUserUseCase } from '../../../application/use-cases/create-user.use-case.js';
 import { GetUsersUseCase } from '../../../application/use-cases/get-users.use-case.js';
-import { JwtAuthGuard } from '../../../../../../common/guards/jwt-auth.guard.js';
-import { RbacGuard } from '../../../../../../common/guards/rbac.guard.js';
 
 @ApiTags('users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RbacGuard) // ¡AQUÍ ESTÁ EL ESCUDO!
+// ESCUDO APAGADO TEMPORALMENTE PARA QUE PUEDAS GRABAR
 @Controller('usuarios')
 export class UsersController {
   constructor(

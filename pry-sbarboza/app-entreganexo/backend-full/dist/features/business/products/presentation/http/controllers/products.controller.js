@@ -10,31 +10,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-var _a;
-import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { CreateProductDto } from '../../../application/dto/create-product.dto.js';
-import { CreateProductUseCase } from '../../../application/use-cases/create-product.use-case.js';
-import { GetProductsUseCase } from '../../../application/use-cases/get-products.use-case.js';
 import { JwtAuthGuard } from '../../../../../../common/guards/jwt-auth.guard.js';
 import { RbacGuard } from '../../../../../../common/guards/rbac.guard.js';
+import { CreateProductDto } from '../../../application/dto/create-product.dto.js';
+import { CreateProductUseCase } from '../../../application/use-cases/create-product.use-case.js';
+import { ListProductsUseCase } from '../../../application/use-cases/list-products.use-case.js';
+import { GetProductByIdUseCase } from '../../../application/use-cases/get-product-by-id.use-case.js';
 let ProductsController = class ProductsController {
     createProduct;
-    getProducts;
-    constructor(createProduct, getProducts) {
+    listProducts;
+    getProductById;
+    constructor(createProduct, listProducts, getProductById) {
         this.createProduct = createProduct;
-        this.getProducts = getProducts;
+        this.listProducts = listProducts;
+        this.getProductById = getProductById;
     }
     async create(dto) {
         const product = await this.createProduct.execute(dto);
         return { product };
     }
-    async list() {
-        const products = await this.getProducts.findAll();
+    async list(page = '1', limit = '10') {
+        const products = await this.listProducts.execute(Number(page), Number(limit));
         return { products };
     }
     async findOne(id) {
-        const product = await this.getProducts.findOne(id);
+        const product = await this.getProductById.execute(id);
         return { product };
     }
 };
@@ -47,8 +49,10 @@ __decorate([
 ], ProductsController.prototype, "create", null);
 __decorate([
     Get(),
+    __param(0, Query('page')),
+    __param(1, Query('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "list", null);
 __decorate([
@@ -63,7 +67,9 @@ ProductsController = __decorate([
     ApiBearerAuth(),
     UseGuards(JwtAuthGuard, RbacGuard),
     Controller('productos'),
-    __metadata("design:paramtypes", [CreateProductUseCase, typeof (_a = typeof GetProductsUseCase !== "undefined" && GetProductsUseCase) === "function" ? _a : Object])
+    __metadata("design:paramtypes", [CreateProductUseCase,
+        ListProductsUseCase,
+        GetProductByIdUseCase])
 ], ProductsController);
 export { ProductsController };
 //# sourceMappingURL=products.controller.js.map

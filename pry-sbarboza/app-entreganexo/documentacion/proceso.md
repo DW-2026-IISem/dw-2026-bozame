@@ -16,7 +16,23 @@ Para este proyecto utilizamos las siguientes herramientas y tecnologías: \* **D
 
 ### Organización del trabajo
 
-El desarrollo documentado está organizado por fases y tareas (*issues*): 1. **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver. 2. **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues: \* **Issue 1:** Creación del proyecto base y herramientas de desarrollo. \* **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor. \* **Issue 3:** Feature de Clientes (`clients`). \* **Issue 4:** Feature de Tipos de Productos (`product-types`). \* **Issue 5:** Feature de Productos y Gestión de Stock (`products`). \* **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`). \* **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest. 3. **Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC):** \* **Issue 9:** Base de seguridad compartida (Bcrypt, JWT) y modelos de base de datos para usuarios, roles, recursos y sesiones (ISS-09). \* **Issue 10:** Módulo de gestión de usuarios (`users`) con DTOs seguros, hashing automático, seeder canónico y solución a dependencias circulares (ISS-10). \* **Issue 11:** Módulos de Roles y Recursos (`roles` y `resources`) para el control de autorización RBAC (ISS-11).
+El desarrollo documentado está organizado por fases y tareas (*issues*):
+
+1.  **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver.
+2.  **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues:
+    - **Issue 1:** Creación del proyecto base y herramientas de desarrollo.
+    - **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor.
+    - **Issue 3:** Feature de Clientes (`clients`).
+    - **Issue 4:** Feature de Tipos de Productos (`product-types`).
+    - **Issue 5:** Feature de Productos y Gestión de Stock (`products`).
+    - **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`).
+    - **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest.
+3.  **Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC):**
+    - **Issue 9:** Base de seguridad compartida (Bcrypt, JWT) y modelos de base de datos para usuarios, roles, recursos y sesiones (ISS-09).
+    - **Issue 10:** Módulo de gestión de usuarios (`users`) con DTOs seguros, hashing automático, seeder canónico y solución a dependencias circulares (ISS-10).
+    - **Issue 11:** Módulos de Roles y Recursos (`roles` y `resources`) para el control de autorización RBAC (ISS-11).
+    - **Issue 12:** Asignaciones de roles a usuarios y concesión de permisos RBAC sobre recursos (ISS-12).
+    - **Issue 13:** Middlewares de acceso, guards de autenticación (JWT) y autorización basada en roles (RBAC) con política Deny by Default (ISS-13).
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -1349,61 +1365,152 @@ En `src/features/auth/resource-roles/infrastructure/persistence/seeders/resource
 
 ### Paso 155: Módulo de concesión de permisos en NestJS (`resource-roles.module.ts`)
 
-En `src/features/auth/resource-roles/resource-roles.module.ts`, encapsulamos todos los componentes en `ResourceRolesModule`. Declaramos el controlador `ResourceRolesController`, registramos los proveedores `ResourceRolesService`, `ResourceRoleRepository` y `ResourceRoleSeeder`, y exportamos `ResourceRoleSeeder` para que el ejecutor global sincronice los permisos en el ciclo de arranque de NestJS.
+En `src/features/auth/resource-roles/resource-roles.module.ts`, encapsulamos todos los componentes en `ResourceRolesModule`. Declaramos el controlador `ResourceRolesController`, registramos los proveedores `ResourceRolesService`, `ResourceRoleRepository` y `ResourceRoleSeeder`. Además, decoramos el módulo con `@Global()` y exportamos tanto el seeder como el repositorio `ResourceRoleRepository`, permitiendo que el ejecutor global sincronice los permisos en el arranque y que el guard de autorización (`RbacGuard`) pueda inyectar el repositorio para verificar permisos desde cualquier módulo del backend (como productos y usuarios).
 
 ![](images/clipboard-3566739128.png)
 
 ------------------------------------------------------------------------
 
-### Integración en la App
+### Integración en la App y Seeders Globales
 
-Finalmente, registramos estos dos módulos puente en nuestra app y configuramos los seeders para que se ejecuten.
+Registramos los módulos pivote `RoleUsersModule` y `ResourceRolesModule` en el archivo principal de la aplicación e integramos sus seeders en el ciclo de arranque.
+
+------------------------------------------------------------------------
+
+### Paso 156: Registro de módulos pivote en el módulo raíz (`app.module.ts`)
+
+En `src/app.module.ts`, importamos `RoleUsersModule` y `ResourceRolesModule` y los añadimos al arreglo `imports` de `AppModule`. Con esta configuración, NestJS carga los controladores y servicios encargados de la asignación de roles a usuarios y la administración de concesiones de recursos en la API.
 
 ![](images/clipboard-4015196855.png)
 
+------------------------------------------------------------------------
+
+### Paso 157: Inyección de seeders RBAC en el orquestador global (`seeders.runner.ts`)
+
+En `src/features/business/seeders.runner.ts`, actualizamos la clase `SeedersRunner` inyectando `RoleUserSeeder` y `ResourceRoleSeeder`. En el método `onApplicationBootstrap()`, ejecutamos ambos seeders tras la creación de usuarios, roles y recursos, garantizando que las asignaciones a usuarios (`admin` y `seller`) y las concesiones de la matriz de permisos queden completamente pobladas al iniciar el servidor.
+
 ![](images/clipboard-2456008550.png)
+
+------------------------------------------------------------------------
+
+### Paso 158: Diagnóstico de errores de compilación TypeScript (`TS2305` y `TS2307`)
+
+Al ejecutar el servidor en modo desarrollo (`npm run start:dev`), el compilador de TypeScript arrojó los errores `TS2305: Module has no exported member 'SELLER_RESOURCES'` y `TS2307: Cannot find module 'sequelize.module.js'`. El primer fallo se debía a la ausencia de la exportación de la lista filtrada de recursos para vendedores en el catálogo, y el segundo a una profundidad incorrecta de niveles en la ruta relativa de importación de `SEQUELIZE`.
 
 ![](images/clipboard-4116874528.png)
 
-### 🐛 Fix: Exportación de constantes y rutas relativas
+------------------------------------------------------------------------
 
-**Problema:** El compilador detectó dos errores: `TS2305` (falta de exportación de `SELLER_RESOURCES` en el catálogo) y `TS2307` (módulo `sequelize.module.js` no encontrado).
+### Paso 159: Corrección de exportación del catálogo y ruta relativa de Sequelize
 
-**Solución:** 1. Se añadió la constante derivada `SELLER_RESOURCES` al final del `resource-catalog.ts`, la cual filtra los recursos operativos (`seller: true`) de la matriz base. 2. Se corrigió la ruta de importación de la inyección de dependencias `SEQUELIZE` en `resource-roles.service.ts`, ajustando la profundidad relativa de 6 a 5 niveles (`../../../../../`).
+Para resolver ambos errores, aplicamos dos correcciones: exportamos la constante derivada `SELLER_RESOURCES` al final de `resource-catalog.ts` para filtrar los recursos operativos (`seller: true`), y ajustamos la ruta relativa de `SEQUELIZE` en `resource-roles.service.ts` subiendo 5 niveles en lugar de 6:
 
-![\
-Prueba 1 (Ver quién tiene asignado qué rol):](images/clipboard-2460898366.png)
+``` typescript
+// 1. Exportación de recursos comerciales en resource-catalog.ts:
+export const SELLER_RESOURCES: readonly CatalogResource[] = RESOURCE_CATALOG.filter(
+  (resource) => resource.seller === true
+);
+
+// 2. Corrección de la ruta de inyección en resource-roles.service.ts:
+import { SEQUELIZE } from '../../../../../infrastructure/database/sequelize/sequelize.module.js';
+```
+
+Con estas dos modificaciones, la compilación incremental finalizó exitosamente sin errores de tipado ni de resolución de módulos.
+
+------------------------------------------------------------------------
+
+### Paso 160: Verificación del arranque del servidor y reconciliación de la matriz RBAC en consola
+
+Levantamos nuevamente la aplicación con `npm run start:dev`. En la consola observamos que NestJS inicializó correctamente todos los módulos y el `SeedersRunner` ejecutó de forma secuencial los seeders, confirmando que las asignaciones de roles a los usuarios canónicos y las concesiones RBAC (58 permisos para `ADMIN` y 7 para `SELLER`) quedaron conciliadas en la base de datos.
+
+![](images/clipboard-2460898366.png)
+
+------------------------------------------------------------------------
+
+### Paso 161: Comprobación de asignación de roles a usuarios en Thunder Client
+
+Realizamos una petición HTTP `GET http://localhost:3002/api/usuarios-roles/usuario/1` utilizando Thunder Client para verificar los roles vinculados al usuario administrador. El servidor respondió con código `200 OK`, devolviendo el registro activo que confirma que el usuario `admin` tiene concedido el rol `ADMIN` con sus metadatos correspondientes.
 
 ![](images/clipboard-1581052693.png)
 
-**Prueba 2 (Ver los permisos concedidos):**
+------------------------------------------------------------------------
+
+### Paso 162: Comprobación de concesiones de permisos a roles en Thunder Client
+
+Consultamos el endpoint `GET http://localhost:3002/api/concesiones-rol` en Thunder Client para validar la matriz de permisos persistida. El servicio retornó estado `200 OK` y el listado de asociaciones activas entre roles y recursos, comprobando que la base de datos cuenta con la estructura completa de autorización previa a la activación de los filtros de seguridad.
 
 ![](images/clipboard-1549435060.png)
 
-ISSUE 13----
+------------------------------------------------------------------------
 
-**ISS-13 (Middlewares de acceso y Modalidades):** Se implementó la seguridad a nivel de rutas utilizando *Guards* de NestJS (el equivalente moderno a los middlewares de Express). Se desarrollaron dos barreras modulares: `JwtAuthGuard` (modalidad JWT) que verifica criptográficamente la validez del token extraído del encabezado HTTP y asigna la identidad a la petición, y `RbacGuard` (modalidad JWT + RBAC) que intercepta la petición, evalúa la ruta concreta y el método HTTP, y los contrasta contra los permisos efectivos del usuario en la base de datos (resolviendo la cadena completa de asignaciones y concesiones). Se aplicó el principio de *Deny by Default*, retornando errores 401 (No Autenticado) y 403 (Prohibido) según corresponda, y se protegieron los controladores de negocio.
+## Issue 13: Middlewares de Acceso, Guards y Modalidades de Seguridad (ISS-13)
 
-### Utilidades de Match y el Guard de Autenticación
+Implementamos la seguridad a nivel de rutas utilizando *Guards* de NestJS (el equivalente moderno y tipado a los middlewares de Express). Desarrollamos dos barreras modulares de protección: `JwtAuthGuard` (modalidad JWT) para validar criptográficamente la autenticidad del token de acceso Bearer recibido en los encabezados HTTP y asociar el payload del usuario autenticado a la solicitud, y `RbacGuard` (modalidad JWT + RBAC) para resolver la cadena completa de permisos efectivos en la base de datos y contrastar el método HTTP y la ruta solicitada. Aplicamos estrictamente el principio de *Deny by Default*, respondiendo con códigos `401 Unauthorized` cuando el usuario no está autenticado y `403 Forbidden` si carece de concesión activa para el recurso solicitado, protegiendo con estos escudos los controladores de la aplicación.
 
-Vamos a crear la herramienta que sabe comparar rutas (ej. sabe que `/api/productos/1` encaja en la regla `/api/productos/:id`) y la barrera del JWT.
+### Utilidades de Coincidencia de Rutas y Guard de Autenticación JWT
+
+Desarrollamos la lógica de comparación de endpoints y la primera barrera de seguridad basada en tokens de sesión.
+
+------------------------------------------------------------------------
+
+### Paso 163: Utilidad de normalización y coincidencia de rutas dinámicas (`resource-match.util.ts`)
+
+En `src/common/auth/resource-match.util.ts`, creamos las funciones `normalizePath()` y `pathMatches()`. Esta utilidad se encarga de sanear las URLs eliminando parámetros de consulta y barras dobles, y compara expresiones de rutas dinámicas (como `/api/productos/:id`) contra peticiones concretas (como `/api/productos/1`), permitiendo que el sistema de autorización evalúe correctamente los endpoints parametrizados de la API.
 
 ![](images/clipboard-190599644.png)
 
+------------------------------------------------------------------------
+
+### Paso 164: Guard de autenticación mediante tokens JWT (`jwt-auth.guard.ts`)
+
+En `src/common/guards/jwt-auth.guard.ts`, implementamos la clase `JwtAuthGuard` implementando la interfaz `CanActivate` de NestJS. Intercepta la petición HTTP, extrae el token del encabezado `Authorization: Bearer <token>`, valida su firma criptográfica y vigencia mediante `verifyAccessToken()` e inyecta la identidad del usuario en `request.auth`, lanzando `UnauthorizedException` (código HTTP 401) si el token falta, ha caducado o fue alterado.
+
 ![](images/clipboard-4012815338.png)
 
-### Consulta RBAC Efectiva y el Guard de Autorización
+------------------------------------------------------------------------
 
-Añadimos la consulta SQL ultrarrápida al repositorio para leer la cadena de permisos completa y creamos la segunda barrera (RBAC).
+### Consulta RBAC Efectiva y Guard de Autorización
+
+Implementamos la consulta optimizada de permisos en la base de datos y la segunda barrera de control de acceso.
+
+------------------------------------------------------------------------
+
+### Paso 165: Consulta SQL de permisos efectivos en el repositorio (`resource-role.repository.ts`)
+
+En `src/features/auth/resource-roles/infrastructure/persistence/repositories/resource-role.repository.ts`, incorporamos el método `findEffectiveForUser(userId)`. Ejecuta una consulta SQL relacional de alto rendimiento uniendo las cuatro tablas clave (`resource_roles`, `roles`, `role_users` y `resources`) y filtrando únicamente registros con estado `active`, resolviendo en una sola operación todos los métodos y rutas que un usuario tiene autorizados a través de sus roles asignados.
 
 ![](images/clipboard-681192178.png)
 
+------------------------------------------------------------------------
+
+### Paso 166: Guard de autorización basado en roles con política Deny by Default (`rbac.guard.ts`)
+
+En `src/common/guards/rbac.guard.ts`, creamos el guard `RbacGuard`. Obtiene el usuario autenticado desde la solicitud, consulta sus permisos efectivos mediante `findEffectiveForUser()` y evalúa si el método HTTP y la ruta solicitada coinciden con alguna regla autorizada utilizando `pathMatches()`. Siguiendo el principio de *Deny by Default*, si no se encuentra una concesión activa, bloquea el paso arrojando `ForbiddenException` (código HTTP 403).
+
 ![](images/clipboard-839697818.png)
 
-### Proteger los Controladores
+------------------------------------------------------------------------
 
-Para que lo puedas probar, vamos a proteger los controladores de **Productos** y **Usuarios**. Le pondremos el escudo `@UseGuards(JwtAuthGuard, RbacGuard)`.
+### Protección de Controladores con Escudos de Seguridad
+
+Aplicamos los escudos de seguridad en los controladores para restringir el acceso no autorizado a los recursos comerciales y de usuarios.
+
+------------------------------------------------------------------------
+
+### Paso 167: Protección del controlador de usuarios con `@UseGuards` (`users.controller.ts`)
+
+En `src/features/auth/users/presentation/http/controllers/users.controller.ts`, decoramos la clase con `@UseGuards(JwtAuthGuard, RbacGuard)` y `@ApiBearerAuth()`. De esta forma, todas las operaciones de consulta y administración de usuarios quedan resguardadas bajo la doble barrera: exigen un token de acceso válido y la concesión explícita del recurso dentro de los permisos del usuario solicitante.
 
 ![](images/clipboard-344520646.png)
 
+------------------------------------------------------------------------
+
+### Paso 168: Protección del controlador de productos con `@UseGuards` (`products.controller.ts`)
+
+En `src/features/business/products/presentation/http/controllers/products.controller.ts`, conectamos los casos de uso oficiales (`CreateProductUseCase`, `ListProductsUseCase` y `GetProductByIdUseCase`) con soporte para paginación mediante `@Query('page')` y `@Query('limit')` convirtiendo los parámetros de la URL a números, y aplicamos los decoradores `@UseGuards(JwtAuthGuard, RbacGuard)` y `@ApiBearerAuth()`. Con este escudo, el catálogo comercial de productos queda blindado frente a peticiones anónimas y restringe las acciones de creación, actualización o consulta según el rol operativo asignado al usuario en el sistema.
+
 ![](images/clipboard-3235711046.png)
+
+------------------------------------------------------------------------
+
+**Próxima tarea:** Continuación de **ISS-13** (Pruebas de acceso autorizado y denegación en Thunder Client).
