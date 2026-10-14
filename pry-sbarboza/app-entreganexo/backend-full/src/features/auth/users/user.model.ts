@@ -1,7 +1,9 @@
-import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
-import { hashPassword } from '../../../../common/auth/password.util.js';
+import { Table, Column, Model, DataType, HasMany, BeforeCreate, BeforeUpdate } from 'sequelize-typescript';
+import { hashPassword } from '../../../common/auth/password.util.js';
 import { RoleUser } from '../role-users/role-user.model.js';
+import type { RoleUser as IRoleUser } from '../role-users/role-user.model.js';
 import { RefreshToken } from '../refresh-tokens/refresh-token.model.js';
+import type { RefreshToken as IRefreshToken } from '../refresh-tokens/refresh-token.model.js';
 
 @Table({ tableName: 'users', timestamps: true })
 export class User extends Model {
@@ -24,16 +26,16 @@ export class User extends Model {
   declare status: string;
 
   @HasMany(() => RoleUser)
-  declare roleUsers?: RoleUser[];
+  declare roleUsers?: IRoleUser[];
 
   @HasMany(() => RefreshToken)
-  declare refreshTokens?: RefreshToken[];
+  declare refreshTokens?: IRefreshToken[];
 
+  @BeforeCreate
+  @BeforeUpdate
   static async hookHashPassword(user: User) {
     if (user.changed('password') && user.password) {
       user.password = await hashPassword(user.password);
     }
   }
 }
-User.addHook('beforeCreate', User.hookHashPassword);
-User.addHook('beforeUpdate', User.hookHashPassword);

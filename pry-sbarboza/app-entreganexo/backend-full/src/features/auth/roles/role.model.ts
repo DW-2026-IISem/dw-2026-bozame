@@ -1,6 +1,8 @@
 import { Table, Column, Model, DataType, HasMany } from 'sequelize-typescript';
 import { RoleUser } from '../role-users/role-user.model.js';
+import type { RoleUser as IRoleUser } from '../role-users/role-user.model.js';
 import { ResourceRole } from '../resource-roles/resource-role.model.js';
+import type { ResourceRole as IResourceRole } from '../resource-roles/resource-role.model.js';
 
 @Table({ tableName: 'roles', timestamps: true })
 export class Role extends Model {
@@ -17,8 +19,8 @@ export class Role extends Model {
   declare status: string;
 
   @HasMany(() => RoleUser)
-  declare roleUsers?: RoleUser[];
+  declare roleUsers?: IRoleUser[];
 
   @HasMany(() => ResourceRole)
-  declare resourceRoles?: ResourceRole[];
+  declare resourceRoles?: IResourceRole[];
 }

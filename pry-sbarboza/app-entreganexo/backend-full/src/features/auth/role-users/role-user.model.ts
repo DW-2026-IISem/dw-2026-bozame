@@ -1,18 +1,24 @@
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo, Index } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { User } from '../users/user.model.js';
+import type { User as IUser } from '../users/user.model.js';
 import { Role } from '../roles/role.model.js';
+import type { Role as IRole } from '../roles/role.model.js';
 
-@Table({ tableName: 'role_users', timestamps: true })
+@Table({
+  tableName: 'role_users',
+  timestamps: true,
+  indexes: [
+    { name: 'uq_role_users_user_role', unique: true, fields: ['user_id', 'role_id'] }
+  ]
+})
 export class RoleUser extends Model {
   @Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true })
   declare id: number;
 
-  @Index({ name: 'uq_role_users_user_role', unique: true })
   @ForeignKey(() => User)
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false, field: 'user_id' })
   declare userId: number;
 
-  @Index({ name: 'uq_role_users_user_role', unique: true })
   @ForeignKey(() => Role)
   @Column({ type: DataType.INTEGER.UNSIGNED, allowNull: false, field: 'role_id' })
   declare roleId: number;
@@ -21,8 +27,8 @@ export class RoleUser extends Model {
   declare status: string;
 
   @BelongsTo(() => User)
-  declare user?: User;
+  declare user?: IUser;
 
   @BelongsTo(() => Role)
-  declare role?: Role;
+  declare role?: IRole;
 }

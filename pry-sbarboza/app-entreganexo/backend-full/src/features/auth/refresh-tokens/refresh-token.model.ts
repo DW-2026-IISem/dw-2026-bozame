@@ -1,5 +1,6 @@
 import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { User } from '../users/user.model.js';
+import type { User as IUser } from '../users/user.model.js';
 
 @Table({ tableName: 'refresh_tokens', timestamps: true })
 export class RefreshToken extends Model {
@@ -26,5 +27,5 @@ export class RefreshToken extends Model {
   declare status: string;
 
   @BelongsTo(() => User)
-  declare user?: User;
+  declare user?: IUser;
 }

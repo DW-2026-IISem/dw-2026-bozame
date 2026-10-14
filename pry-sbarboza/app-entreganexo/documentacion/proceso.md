@@ -12,11 +12,11 @@ EntregaNexo es una plataforma de entregas a domicilio pensada para conectar come
 
 ### Tecnologías que utilizamos
 
-Para este proyecto utilizamos las siguientes herramientas y tecnologías: \* **Docker y Docker Compose:** Para levantar y gestionar los contenedores de las bases de datos de forma aislada y reproducible. \* **Bases de datos relacionales:** Preparamos el entorno para soportar cuatro motores diferentes (**MySQL**, **PostgreSQL**, **Microsoft SQL Server** y **Oracle Database**). \* **DBeaver:** Gestor gráfico para conectarnos a las bases de datos y verificar que los servicios y las tablas estuvieran funcionando. \* **NestJS:** Framework de Node.js con TypeScript que usamos para estructurar todo el backend siguiendo una arquitectura modular y limpia. \* **Sequelize y Sequelize-TypeScript:** ORM para definir los modelos de datos, las relaciones y gestionar las transacciones en la base de datos. \* **Swagger:** Documentación interactiva para probar los endpoints directamente desde el navegador.
+Para este proyecto utilizamos las siguientes herramientas y tecnologías: \* **Docker y Docker Compose:** Para levantar y gestionar los contenedores de las bases de datos de forma aislada y reproducible. \* **Bases de datos relacionales:** Preparamos el entorno para soportar cuatro motores diferentes (**MySQL**, **PostgreSQL**, **Microsoft SQL Server** y **Oracle Database**). \* **DBeaver:** Gestor gráfico para conectarnos a las bases de datos y verificar que los servicios y las tablas estuvieran funcionando. \* **NestJS:** Framework de Node.js con TypeScript que usamos para estructurar todo el backend siguiendo una arquitectura modular y limpia. \* **Sequelize y Sequelize-TypeScript:** ORM para definir los modelos de datos, las relaciones y gestionar las transacciones en la base de datos. \* **JWT y Bcrypt:** Para la generación de tokens de sesión y encriptación segura de contraseñas. \* **Swagger:** Documentación interactiva para probar los endpoints directamente desde el navegador.
 
 ### Organización del trabajo
 
-El desarrollo documentado hasta el momento corresponde a la primera etapa del proyecto y está organizado de la siguiente manera: 1. **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver. 2. **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues: \* **Issue 1:** Creación del proyecto base y herramientas de desarrollo. \* **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor. \* **Issue 3:** Feature de Clientes (`clients`). \* **Issue 4:** Feature de Tipos de Productos (`product-types`). \* **Issue 5:** Feature de Productos y Gestión de Stock (`products`). \* **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`). \* **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest.
+El desarrollo documentado está organizado por fases y tareas (*issues*): 1. **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver. 2. **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues: \* **Issue 1:** Creación del proyecto base y herramientas de desarrollo. \* **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor. \* **Issue 3:** Feature de Clientes (`clients`). \* **Issue 4:** Feature de Tipos de Productos (`product-types`). \* **Issue 5:** Feature de Productos y Gestión de Stock (`products`). \* **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`). \* **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest. 3. **Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC):** \* **Issue 9:** Base de seguridad compartida (Bcrypt, JWT) y modelos de base de datos para usuarios, roles, recursos y sesiones (ISS-09).
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -820,34 +820,138 @@ Configuramos las pruebas de extremo a extremo en `test/app.e2e-spec.ts` utilizan
 
 ![](images/clipboard-1398414219.png)
 
-Fase II: Auth con RBAC
+------------------------------------------------------------------------
 
-**ISS-09 (Base de seguridad compartida y modelos Auth)**.
+## 4. Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC)
 
-Se instalaron las librerías `jsonwebtoken` (para generar los tokens de sesión) y `bcryptjs` (para encriptar las contraseñas). Además, se configuraron las variables de entorno (`JWT_SECRET`, `JWT_ACCESS_TTL`, etc.) que definirán el tiempo de vida de las sesiones.
+## Issue 9: Base de Seguridad Compartida y Modelos de Autenticación (ISS-09)
+
+### Paso 98: Instalación de dependencias de seguridad y variables de entorno JWT
+
+Instalamos las librerías `jsonwebtoken` (para generar y verificar los tokens de sesión) y `bcryptjs` (para encriptar las contraseñas), junto con sus definiciones de tipos para TypeScript. Además, configuramos en el archivo `.env` las variables de seguridad requeridas (`JWT_SECRET`, `JWT_ACCESS_TTL`, etc.) que definen la clave de cifrado y el tiempo de expiración de las sesiones.
 
 ![](images/clipboard-1538810356.png)
 
-*Se implementó la capa compartida de seguridad en `src/common/auth`. Aquí se centralizó la lógica de encriptación de contraseñas usando bcrypt con 12 rondas de salto (coste alto para evitar ataques de fuerza bruta) y la lógica de firma y verificación de los tokens JWT usando el algoritmo HS256.*
+------------------------------------------------------------------------
+
+### Paso 99: Utilidad para encriptación segura de contraseñas (`password.util.ts`)
+
+En `src/common/auth/password.util.ts`, creamos el módulo de utilidades criptográficas. Implementamos la función `hashPassword()` utilizando bcrypt con 12 rondas de sal para proteger las credenciales contra ataques de fuerza bruta, y la función `comparePassword()` para verificar si la contraseña ingresada en el login coincide con el hash almacenado.
 
 ![](images/clipboard-1231406653.png)
 
+------------------------------------------------------------------------
+
+### Paso 100: Utilidad para firma y verificación de tokens JWT (`jwt.util.ts`)
+
+En `src/common/auth/jwt.util.ts`, implementamos las funciones para gestionar los tokens JWT. La función `signAccessToken()` genera el token de acceso firmado con el algoritmo HS256, asignándole un identificador único aleatorio (`jti`), emisor, audiencia y tiempo de vida en segundos. Por su parte, `verifyAccessToken()` valida la autenticidad y vigencia del token recibido en cada petición protegida.
+
 ![](images/clipboard-138264200.png)
 
-*Se crearon los 6 modelos de base de datos que soportan el sistema RBAC (Role-Based Access Control): `User`, `Role`, `Resource`, `RoleUser`, `ResourceRole` y `RefreshToken`. Se configuraron los hooks de Sequelize para encriptar automáticamente la contraseña antes de guardar cualquier usuario, asegurando que nunca se persistan contraseñas en texto claro."*
+------------------------------------------------------------------------
+
+### Paso 101: Modelo de usuarios con encriptación automática (`user.model.ts`)
+
+En `src/features/auth/users/user.model.ts`, creamos el modelo Sequelize para la tabla `users` con los campos `username`, `email`, `password`, `avatar` y `status`. Configuramos los hooks automáticos de Sequelize (`beforeCreate` y `beforeUpdate`) para que cualquier contraseña sea hasheada automáticamente antes de guardarse, garantizando que nunca se persistan contraseñas en texto claro.
 
 ![](images/clipboard-2020083649.png)
 
+------------------------------------------------------------------------
+
+### Paso 102: Modelo de roles del sistema (`role.model.ts`)
+
+En `src/features/auth/roles/role.model.ts`, definimos el modelo Sequelize para la tabla `roles` con las columnas `name`, `description` y `status`. Este modelo permite clasificar a los usuarios en diferentes niveles de acceso (por ejemplo: administrador, cliente o repartidor) dentro de la arquitectura de seguridad RBAC.
+
 ![](images/clipboard-993504983.png)
+
+------------------------------------------------------------------------
+
+### Paso 103: Modelo de recursos protegidos (`resource.model.ts`)
+
+En `src/features/auth/resources/resource.model.ts`, creamos el modelo para la tabla `resources`. Modela cada ruta o endpoint del backend mediante un índice único compuesto por método HTTP y ruta (`method` y `path`), permitiendo registrar individualmente las operaciones del sistema que requieren autorización.
 
 ![](images/clipboard-2386162482.png)
 
+------------------------------------------------------------------------
+
+### Paso 104: Modelo intermedio para asignación de roles a usuarios (`role-user.model.ts`)
+
+En `src/features/auth/role-users/role-user.model.ts`, creamos la tabla intermedia `role_users` con claves foráneas hacia `User` y `Role`. Esta relación de muchos a muchos permite que un usuario pueda tener uno o más roles activos en la plataforma.
+
 ![](images/clipboard-772458172.png)
+
+------------------------------------------------------------------------
+
+### Paso 105: Modelo intermedio para permisos de rol sobre recursos (`resource-role.model.ts`)
+
+En `src/features/auth/resource-roles/resource-role.model.ts`, definimos la tabla intermedia `resource_roles` con claves foráneas a `Role` y `Resource`. Establece la matriz de permisos de la aplicación, determinando con precisión a qué endpoints tiene permitido acceder cada rol.
 
 ![](images/clipboard-516829631.png)
 
+------------------------------------------------------------------------
+
+### Paso 106: Modelo de tokens de refresco de sesión (`refresh-token.model.ts`)
+
+En `src/features/auth/refresh-tokens/refresh-token.model.ts`, creamos el modelo para la tabla `refresh_tokens`. Gestiona las sesiones persistentes vinculadas a un usuario (`user_id`), almacenando el hash del token de refresco (`token_hash`), la familia de rotación (`family_id`), metadatos del dispositivo y su fecha de caducidad para permitir la renovación segura de tokens de acceso sin pedir login repetido.
+
 ![](images/clipboard-3032400273.png)
 
-*Se registraron las nuevas 6 entidades de seguridad en la configuración principal de Sequelize (`sequelize.factory.ts`). Esto permite que el ORM detecte los modelos y cree las tablas correspondientes (`users`, `roles`, etc.) en la base de datos de manera automática."*
+------------------------------------------------------------------------
+
+### Paso 107: Registro de los modelos de seguridad en Sequelize (`sequelize.factory.ts`)
+
+En `src/infrastructure/database/sequelize/sequelize.factory.ts`, importamos los seis nuevos modelos de autenticación (`User`, `Role`, `Resource`, `RoleUser`, `ResourceRole` y `RefreshToken`) y los añadimos al arreglo global `ALL_MODELS`. Al arrancar el servidor, Sequelize detecta las entidades y crea automáticamente las seis tablas de seguridad con sus relaciones en la base de datos seleccionada.
 
 ![](images/clipboard-10915902.png)
+
+iSSUE 10:
+
+Se construyó el módulo de Usuarios (Feature Users) implementando la arquitectura en 4 capas. En la capa de Aplicación, se definieron los DTOs para la creación y actualización de usuarios, así como un DTO específico para el cambio de contraseña (`ChangePasswordDto`) que exige la contraseña actual como medida de seguridad en profundidad. El `UserMapper` garantiza que la contraseña encriptada nunca sea expuesta en las respuestas HTTP.
+
+![![](images/clipboard-4115357291.png)](images/clipboard-4078089674.png)
+
+![](images/clipboard-3148452212.png)
+
+![](images/clipboard-3971220156.png)
+
+En la capa de Dominio e Infraestructura, se implementó el Repositorio de Usuarios con un método específico `findByUsernameOrEmail` para futuras autenticaciones. Los Casos de Uso aseguran que los nombres de usuario y correos electrónicos sean únicos (lanzando un error 409 en caso de duplicados) y controlan que el borrado de usuarios sea estrictamente lógico (`status = 'inactive'`) para mantener la integridad referencial.
+
+![](images/clipboard-509195680.png)
+
+![![](images/clipboard-4052546719.png)](images/clipboard-678952335.png)
+
+![](images/clipboard-729421507.png)
+
+Controlador, Módulo y el Seeder Principal
+
+Se integró el controlador HTTP para exponer las rutas del CRUD de usuarios. Adicionalmente, se programó un `UserSeeder` que inyecta por defecto a los usuarios canónicos requeridos para la demostración de los permisos (`admin` y `seller`). Estos usuarios nacen con contraseñas encriptadas de forma segura
+
+![![](images/clipboard-550768242.png)](images/clipboard-1646743559.png)
+
+![](images/clipboard-206219808.png)
+
+![](images/clipboard-3669531543.png)
+
+![](images/clipboard-1571551645.png)
+
+nos estaba saliendo este error
+
+![hicimos esto](images/clipboard-3262791161.png)
+
+###  Fix: Dependencia Circular en Modelos de Seguridad (Auth)
+
+**Problema:** Al levantar el servidor, Node.js arrojó el error de ejecución `ReferenceError: Cannot access 'Role' before initialization`. Esto ocurrió debido a una **dependencia circular** entre los modelos de la base de datos (por ejemplo, `Role` necesita a `ResourceRole` y viceversa), lo que bloqueaba la inicialización en el sistema de módulos ESM.
+
+**Solución:** Se aplicó el patrón `import type` nativo de TypeScript en las 6 entidades de seguridad (`User`, `Role`, `Resource`, `RoleUser`, `ResourceRole`, `RefreshToken`). Esto le indica al compilador que cargue la interfaz solo como referencia de tipado, rompiendo el ciclo infinito de carga.
+
+**Ejemplo del cambio arquitectónico aplicado:** \`\`\`typescript // 1. Se importa el modelo real para el decorador de Sequelize import { Role } from '../roles/role.model.js'; // 2. Se importa solo el tipo (Type-only import) para la declaración de la propiedad import type { Role as IRole } from '../roles/role.model.js';
+
+@Table({ tableName: 'resource_roles' }) export class ResourceRole extends Model { // ... @BelongsTo(() =\> Role) declare role?: IRole; // Se usa la interfaz IRole en lugar de la clase real }
+
+prueba GET
+
+![![](images/clipboard-2847600474.png)](images/clipboard-3310987387.png)
+
+![vemos que funciona correctamente](images/clipboard-3146076057.png)
+
+**ISS-11** (Roles y Recursos).

@@ -1,5 +1,6 @@
 import { Table, Column, Model, DataType, HasMany, Index } from 'sequelize-typescript';
 import { ResourceRole } from '../resource-roles/resource-role.model.js';
+import type { ResourceRole as IResourceRole } from '../resource-roles/resource-role.model.js';
 
 @Table({ tableName: 'resources', timestamps: true })
 export class Resource extends Model {
@@ -21,5 +22,5 @@ export class Resource extends Model {
   declare status: string;
 
   @HasMany(() => ResourceRole)
-  declare resourceRoles?: ResourceRole[];
+  declare resourceRoles?: IResourceRole[];
 }

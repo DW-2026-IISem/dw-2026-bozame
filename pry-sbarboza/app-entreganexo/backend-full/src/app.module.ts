@@ -4,12 +4,14 @@ import { SequelizeModule } from './infrastructure/database/sequelize/sequelize.m
 import { HealthController } from './health/health.controller.js';
 import { BusinessModule } from './features/business/business.module.js';
 import { SeedersRunner } from './features/business/seeders.runner.js';
+import { UsersModule } from './features/auth/users/users.module.js';
 
 @Module({
   imports: [
     EnvironmentModule, 
     SequelizeModule, 
-    BusinessModule
+    BusinessModule,
+    UsersModule
   ],
   controllers: [HealthController],
   providers: [SeedersRunner],
