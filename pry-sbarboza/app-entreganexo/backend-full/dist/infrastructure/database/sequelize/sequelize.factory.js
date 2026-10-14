@@ -2,9 +2,11 @@ import { Sequelize } from 'sequelize-typescript';
 import { getDbBlock } from '../../../config/environment/db-env.js';
 import { ClientModel } from '../../../features/business/clients/infrastructure/persistence/models/client.model.js';
 import { ProductTypeModel } from '../../../features/business/product-types/infrastructure/persistence/models/product-type.model.js';
+import { ProductModel } from '../../../features/business/products/infrastructure/persistence/models/product.model.js';
 export const ALL_MODELS = [
     ClientModel,
-    ProductTypeModel
+    ProductTypeModel,
+    ProductModel
 ];
 export function sequelizeFactory(cfg) {
     const block = getDbBlock(cfg);

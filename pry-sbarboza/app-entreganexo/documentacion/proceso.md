@@ -1021,3 +1021,37 @@ Guía didáctica detallada: FK a product-types y regla de stock
 ![](images/clipboard-2708465177.png)
 
 ![](images/clipboard-445525447.png)
+
+# **Infrastructure: FK real**
+
+**Fragmento de product.model.ts**
+
+![](images/clipboard-976394963.png)
+
+![](images/clipboard-4076455548.png)
+
+# **Seeder y módulo**
+
+**product.seeder.ts**
+
+![](images/clipboard-3619074067.png)
+
+![](images/clipboard-1151970402.png)
+
+### El Ensamblaje Final
+
+Observa que el `ProductsModule` ahora importa expresamente el `ProductTypesModule` para poder utilizar su repositorio.
+
+![](images/clipboard-258491903.png)
+
+![](images/clipboard-2612446697.png)
+
+![](images/clipboard-2422783382.png)
+
+vemos nuestras ttablas actualizadas
+
+![](images/clipboard-3590732119.png)
+
+**ISS-06 · Sales y stock ——**
+
+caso transaccional, servicio de dominio y bloqueo

@@ -1,5 +1,5 @@
 import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
-import { ProductTypeModel } from '../../../product-types/infrastructure/persistence/models/product-type.model.js';
+import { ProductTypeModel } from '../../../../product-types/infrastructure/persistence/models/product-type.model.js';
 
 @Table({ tableName: 'products', timestamps: true })
 export class ProductModel extends Model {

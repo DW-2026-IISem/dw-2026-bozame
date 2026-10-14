@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Product } from '../../../domain/entities/product.entity.js';
 import { PRODUCT_REPOSITORY, type IProductRepository } from '../../../domain/interfaces/product.repository.js';
-import { PRODUCT_TYPE_REPOSITORY, type IProductTypeRepository } from '../../../product-types/domain/interfaces/product-type.repository.js';
+import { PRODUCT_TYPE_REPOSITORY, type IProductTypeRepository } from '../../../../product-types/domain/interfaces/product-type.repository.js';
 
 @Injectable()
 export class ProductSeeder {
