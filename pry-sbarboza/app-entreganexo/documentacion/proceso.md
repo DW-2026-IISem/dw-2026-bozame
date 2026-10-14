@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03):** Implementamos las cuatro capas completas de Arquitectura Limpia para el módulo de clientes (Dominio, Aplicación, Infraestructura y Presentación), verificando su funcionamiento en consola y en Swagger UI. 14. **Feature Tipos de Productos en `backend-full` (ISS-04):** Construimos el módulo de categorías y tipos de productos (`product-types`) en sus cuatro capas, validando su registro en Sequelize y Swagger UI. 15. **Feature Productos y Gestión de Stock en `backend-full` (ISS-05):** Implementamos el módulo de productos (`products`) con relación de clave foránea a `product-types`, regla de dominio para reducción de stock (`reduceStock`), validación cruzada en casos de uso, seeder idempotente, exportación de dependencias cruzadas y verificación integral en Swagger UI.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03):** Implementamos las cuatro capas completas de Arquitectura Limpia para el módulo de clientes (Dominio, Aplicación, Infraestructura y Presentación), verificando su funcionamiento en consola y en Swagger UI. 14. **Feature Tipos de Productos en `backend-full` (ISS-04):** Construimos el módulo de categorías y tipos de productos (`product-types`) en sus cuatro capas, validando su registro en Sequelize y Swagger UI. 15. **Feature Productos y Gestión de Stock en `backend-full` (ISS-05):** Implementamos el módulo de productos (`products`) con relación de clave foránea a `product-types`, regla de dominio para reducción de stock (`reduceStock`), validación cruzada en casos de uso, seeder idempotente y exportación de dependencias cruzadas. 16. **Feature Ventas y Transacciones Atómicas en `backend-full` (ISS-06):** Desarrollamos el módulo de ventas (`sales`) con cabecera y detalle (`product_sales`), servicio de dominio `SaleCalculator`, orquestación con reducción de stock y validación cruzada entre clientes y productos, transacciones atómicas con Sequelize y comprobación integral en Swagger UI.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -1114,55 +1114,110 @@ Abrimos el navegador en `http://localhost:3002/api/docs` y comprobamos que Swagg
 
 ------------------------------------------------------------------------
 
-## 
+## 17. Fase 16: Feature de Ventas y Transacciones Atómicas en `backend-full` (ISS-06)
 
-ISSUE 06 EMPIEZA AQUI
+### Paso 123: Entidad de dominio de detalle de venta (`product-sale.entity.ts`)
 
-### Dominio (Modelos de Venta, Detalle y Calculadora)
+En `src/features/business/sales/domain/entities/product-sale.entity.ts`, implementamos la entidad inmutable de detalle `ProductSale`. Modela la línea de venta con las propiedades `id`, `saleId`, `productId`, `quantity`, `unitPrice` y `total`. Al mantenerla como clase pura de TypeScript desacoplada de la base de datos, encapsulamos los datos específicos del ítem adquirido.
 
-**product-sale.entity.ts**
+![](images/clipboard-876311955.png)
 
-![**sale.entity.ts**](images/clipboard-876311955.png)
+------------------------------------------------------------------------
+
+### Paso 124: Entidad agregada de dominio de venta (`sale.entity.ts`)
+
+En `src/features/business/sales/domain/entities/sale.entity.ts`, creamos la raíz agregada `Sale`. Define el estado del pedido (`'completed' | 'canceled'`), la fecha (`saleDate`), los totales financieros (`subtotal`, `tax`, `discounts`, `total`), el cliente asociado (`clientId`) y la colección de líneas de detalle (`items: ProductSale[]`), asegurando la integridad estructural de la transacción.
 
 ![](images/clipboard-83828015.png)
 
-sale-calculator.ts
+------------------------------------------------------------------------
+
+### Paso 125: Servicio de dominio de cálculo financiero (`sale-calculator.ts`)
+
+En `src/features/business/sales/domain/services/sale-calculator.ts`, implementamos el servicio de dominio `SaleCalculator`. Contiene la lógica financiera central: el método `subtotal()` calcula la sumatoria acumulada de cada ítem (`quantity * unitPrice`), mientras que `total()` consolida el subtotal agregando los impuestos (`tax`) y restando los descuentos aplicados (`discounts`).
 
 ![](images/clipboard-3697403577.png)
 
-**sale.repository.ts**
+------------------------------------------------------------------------
+
+### Paso 126: Puerto del repositorio de ventas (`sale.repository.ts`)
+
+En `src/features/business/sales/domain/interfaces/sale.repository.ts`, definimos el contrato `ISaleRepository` junto con el token de inyección de dependencias `SALE_REPOSITORY = 'ISaleRepository'`. Establecemos los métodos asíncronos `create(sale: Sale): Promise<Sale>` y `findById(id: number): Promise<Sale | null>`, permitiendo que la capa de aplicación opere de forma abstracta respecto al motor de persistencia.
 
 ![](images/clipboard-2513220454.png)
 
-### Aplicación (DTOs anidados y Mappers)
+------------------------------------------------------------------------
 
-**create-sale.dto.ts**
+### Paso 127: DTOs de entrada y validación anidada (`create-sale.dto.ts`)
 
-![![](images/clipboard-194921426.png)](images/clipboard-1030416540.png)
+En `src/features/business/sales/application/dto/create-sale.dto.ts`, diseñamos los objetos de transferencia de datos con decoradores de `class-validator` y `@nestjs/swagger`. Creamos `SaleItemDto` para validar cada ítem (`productId`, cantidad mínima 1 y precio opcional) y `CreateSaleDto` para validar el `clientId` y la lista de ítems mediante `@ValidateNested({ each: true })`, `@Type(() => SaleItemDto)` y `@ArrayMinSize(1)`, asegurando que no se procesen ventas vacías.
 
-Casos de Uso (Orquestación entre Módulos)
+![](images/clipboard-1030416540.png)
 
-Aquí importamos explícitamente los repositorios de `clients` y `products` para validar todo antes de guardar.
+------------------------------------------------------------------------
 
-**create-sale.use-case.ts**
+### Paso 128: Transformador de respuesta (`sale.mapper.ts`)
 
-![\
-![](images/clipboard-2406850565.png)](images/clipboard-2861804225.png)
+En `src/features/business/sales/application/mappers/sale.mapper.ts`, creamos la clase estática `SaleMapper` con el método `toResponse()`. Transforma la entidad agregada de dominio `Sale` y sus ítems `ProductSale` en un objeto de respuesta JSON plano y estructurado para ser devuelto a los clientes HTTP de la API.
 
-Infraestructura Transaccional y Controlador
+![](images/clipboard-194921426.png)
 
-Aquí está la magia de Sequelize. El método `create` hará todo dentro de un `Transaction` y bloqueará los productos con `LOCK.UPDATE`.
+------------------------------------------------------------------------
+
+### Paso 129: Caso de uso transaccional de creación de venta (`create-sale.use-case.ts`)
+
+En `src/features/business/sales/application/use-cases/create-sale.use-case.ts`, implementamos la orquestación de negocio en `CreateSaleUseCase`. Inyectamos los repositorios de ventas, clientes y productos (`SALE_REPOSITORY`, `CLIENT_REPOSITORY`, `PRODUCT_REPOSITORY`). Validamos la existencia del cliente, la no vacuidad de la venta, la disponibilidad de cada producto, ejecutamos la regla de dominio `product.reduceStock(quantity)` y calculamos los totales con `SaleCalculator` antes de persistir la venta.
+
+![](images/clipboard-2861804225.png)
+
+------------------------------------------------------------------------
+
+### Paso 130: Caso de uso de consulta de venta por ID (`get-sale-by-id.use-case.ts`)
+
+En `src/features/business/sales/application/use-cases/get-sale-by-id.use-case.ts`, construimos `GetSaleByIdUseCase`. Recibe el identificador numérico de la venta, consulta al repositorio `ISaleRepository` y lanza una excepción de dominio `SaleNotFoundException` con código HTTP 404 en caso de no encontrarse el registro solicitado.
+
+![](images/clipboard-2406850565.png)
+
+------------------------------------------------------------------------
+
+### Paso 131: Modelo ORM Sequelize de cabecera de venta (`sale.model.ts`)
+
+En `src/features/business/sales/infrastructure/persistence/models/sale.model.ts`, creamos el modelo Sequelize `SaleModel` mapeado a la tabla `sales`. Configuramos las columnas `saleDate`, `subtotal`, `tax`, `discounts`, `total` y `status`, estableciendo la clave foránea `@ForeignKey(() => ClientModel)` con `@BelongsTo(() => ClientModel)` y la relación uno a muchos `@HasMany(() => ProductSaleModel)` hacia los detalles de la venta.
 
 ![](images/clipboard-2678589959.png)
 
+------------------------------------------------------------------------
+
+### Paso 132: Modelo ORM de detalle y repositorio transaccional (`product-sale.model.ts` y `sale.repository.ts`)
+
+En `src/features/business/sales/infrastructure/persistence/models/product-sale.model.ts`, definimos el modelo `ProductSaleModel` mapeado a `product_sales` con claves foráneas a `SaleModel` y `ProductModel`. Complementariamente, en `infrastructure/persistence/repositories/sale.repository.ts`, implementamos la persistencia atómica ejecutando `this.sequelize.transaction()` con bloqueo pesimista `Transaction.LOCK.UPDATE` para descontar el stock de los productos de forma concurrente y segura, revirtiendo la operación automáticamente si surge alguna inconsistencia.
+
 ![](images/clipboard-3807812288.png)
+
+------------------------------------------------------------------------
+
+### Paso 133: Controlador REST de ventas (`sales.controller.ts`)
+
+En `src/features/business/sales/presentation/http/controllers/sales.controller.ts`, implementamos `SalesController` etiquetado con `@ApiTags('sales')` y ruta base `@Controller('sales')`. Exponemos los métodos HTTP `POST /sales` (creación de venta con código de estado HTTP 201) y `GET /sales/:id` (obtención de venta y sus ítems con validación de parámetro mediante `ParseIntPipe`).
 
 ![](images/clipboard-2194882442.png)
 
-### Ensamblaje Final
+------------------------------------------------------------------------
 
-Actualizamos el módulo, y registramos los dos modelos nuevos (`SaleModel`, `ProductSaleModel`) en Sequelize.
+### Paso 134: Módulo de ventas, registro en `ALL_MODELS` y en `app.module.ts`
+
+En `src/features/business/sales/sales.module.ts`, consolidamos la feature importando `ClientsModule` y `ProductsModule` para resolver las dependencias cruzadas de los repositorios. A su vez, actualizamos `src/infrastructure/database/sequelize/sequelize.factory.ts` agregando `SaleModel` y `ProductSaleModel` al arreglo `ALL_MODELS`, y registramos `SalesModule` en los `imports` del módulo raíz `src/app.module.ts`.
 
 ![](images/clipboard-230410595.png)
 
+------------------------------------------------------------------------
+
+### Paso 135: Verificación interactiva del módulo de ventas en Swagger UI
+
+Iniciamos el servidor backend y accedemos a la interfaz gráfica interactiva de Swagger UI en `http://localhost:3002/api/docs`. Verificamos que el grupo **sales** se encuentra disponible junto a **clients**, **product-types**, **products** y **Health**, con sus esquemas DTO y endpoints completamente listos para realizar transacciones de prueba en tiempo real.
+
 ![](images/clipboard-2145989734.png)
+
+------------------------------------------------------------------------
+
+## 
