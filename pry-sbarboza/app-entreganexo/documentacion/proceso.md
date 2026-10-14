@@ -1115,3 +1115,54 @@ Abrimos el navegador en `http://localhost:3002/api/docs` y comprobamos que Swagg
 ------------------------------------------------------------------------
 
 ## 
+
+ISSUE 06 EMPIEZA AQUI
+
+### Dominio (Modelos de Venta, Detalle y Calculadora)
+
+**product-sale.entity.ts**
+
+![**sale.entity.ts**](images/clipboard-876311955.png)
+
+![](images/clipboard-83828015.png)
+
+sale-calculator.ts
+
+![](images/clipboard-3697403577.png)
+
+**sale.repository.ts**
+
+![](images/clipboard-2513220454.png)
+
+### Aplicación (DTOs anidados y Mappers)
+
+**create-sale.dto.ts**
+
+![![](images/clipboard-194921426.png)](images/clipboard-1030416540.png)
+
+Casos de Uso (Orquestación entre Módulos)
+
+Aquí importamos explícitamente los repositorios de `clients` y `products` para validar todo antes de guardar.
+
+**create-sale.use-case.ts**
+
+![\
+![](images/clipboard-2406850565.png)](images/clipboard-2861804225.png)
+
+Infraestructura Transaccional y Controlador
+
+Aquí está la magia de Sequelize. El método `create` hará todo dentro de un `Transaction` y bloqueará los productos con `LOCK.UPDATE`.
+
+![](images/clipboard-2678589959.png)
+
+![](images/clipboard-3807812288.png)
+
+![](images/clipboard-2194882442.png)
+
+### Ensamblaje Final
+
+Actualizamos el módulo, y registramos los dos modelos nuevos (`SaleModel`, `ProductSaleModel`) en Sequelize.
+
+![](images/clipboard-230410595.png)
+
+![](images/clipboard-2145989734.png)

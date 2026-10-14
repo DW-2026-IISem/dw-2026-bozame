@@ -10,7 +10,6 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 import { Table, Column, Model, DataType, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { ProductTypeModel } from '../../../../product-types/infrastructure/persistence/models/product-type.model.js';
 let ProductModel = class ProductModel extends Model {
-    productType;
 };
 __decorate([
     Column({ type: DataType.INTEGER.UNSIGNED, autoIncrement: true, primaryKey: true }),

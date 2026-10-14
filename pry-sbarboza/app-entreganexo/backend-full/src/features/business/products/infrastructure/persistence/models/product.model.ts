@@ -26,7 +26,7 @@ export class ProductModel extends Model {
   declare productTypeId: number;
 
   @BelongsTo(() => ProductTypeModel)
-  productType?: ProductTypeModel;
+  declare productType?: ProductTypeModel;
 
   @Column({ type: DataType.STRING(20), allowNull: false, defaultValue: 'active' })
   declare status: string;
