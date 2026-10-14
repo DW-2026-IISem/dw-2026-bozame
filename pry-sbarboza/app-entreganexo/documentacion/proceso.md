@@ -16,7 +16,7 @@ Para este proyecto utilizamos las siguientes herramientas y tecnologías: \* **D
 
 ### Organización del trabajo
 
-El desarrollo documentado está organizado por fases y tareas (*issues*): 1. **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver. 2. **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues: \* **Issue 1:** Creación del proyecto base y herramientas de desarrollo. \* **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor. \* **Issue 3:** Feature de Clientes (`clients`). \* **Issue 4:** Feature de Tipos de Productos (`product-types`). \* **Issue 5:** Feature de Productos y Gestión de Stock (`products`). \* **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`). \* **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest. 3. **Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC):** \* **Issue 9:** Base de seguridad compartida (Bcrypt, JWT) y modelos de base de datos para usuarios, roles, recursos y sesiones (ISS-09).
+El desarrollo documentado está organizado por fases y tareas (*issues*): 1. **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver. 2. **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues: \* **Issue 1:** Creación del proyecto base y herramientas de desarrollo. \* **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor. \* **Issue 3:** Feature de Clientes (`clients`). \* **Issue 4:** Feature de Tipos de Productos (`product-types`). \* **Issue 5:** Feature de Productos y Gestión de Stock (`products`). \* **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`). \* **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest. 3. **Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC):** \* **Issue 9:** Base de seguridad compartida (Bcrypt, JWT) y modelos de base de datos para usuarios, roles, recursos y sesiones (ISS-09). \* **Issue 10:** Módulo de gestión de usuarios (`users`) con DTOs seguros, hashing automático, seeder canónico y solución a dependencias circulares (ISS-10).
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -904,54 +904,191 @@ En `src/infrastructure/database/sequelize/sequelize.factory.ts`, importamos los 
 
 ![](images/clipboard-10915902.png)
 
-iSSUE 10:
+------------------------------------------------------------------------
 
-Se construyó el módulo de Usuarios (Feature Users) implementando la arquitectura en 4 capas. En la capa de Aplicación, se definieron los DTOs para la creación y actualización de usuarios, así como un DTO específico para el cambio de contraseña (`ChangePasswordDto`) que exige la contraseña actual como medida de seguridad en profundidad. El `UserMapper` garantiza que la contraseña encriptada nunca sea expuesta en las respuestas HTTP.
+## Issue 10: Módulo de Usuarios (Feature Users - ISS-10)
 
-![![](images/clipboard-4115357291.png)](images/clipboard-4078089674.png)
+Construimos el módulo de Usuarios (`users`) implementando la arquitectura modular en 4 capas (Dominio, Aplicación, Infraestructura y Presentación). En la capa de Aplicación, definimos los DTOs para la creación y actualización de usuarios, así como un DTO específico para el cambio de contraseña (`ChangePasswordDto`) que exige la contraseña actual como medida de seguridad en profundidad. El `UserMapper` garantiza que la contraseña encriptada nunca sea expuesta en las respuestas HTTP hacia el cliente.
+
+En la capa de Dominio e Infraestructura, implementamos el Repositorio de Usuarios con métodos específicos para búsqueda por identificador y detección de conflictos. Los casos de uso aseguran que los nombres de usuario y correos electrónicos sean únicos (lanzando excepciones de negocio en caso de duplicados) y controlan las consultas de usuarios activos. Finalmente, integramos el controlador HTTP, el módulo de NestJS y un seeder para insertar automáticamente usuarios canónicos (`admin` y `seller`).
+
+------------------------------------------------------------------------
+
+### Paso 108: DTO para creación de usuarios (`create-user.dto.ts`)
+
+En `src/features/auth/users/application/dto/create-user.dto.ts`, definimos el DTO `CreateUserDto` con las validaciones de entrada mediante `class-validator` y la documentación para Swagger con `@ApiProperty`. Validamos que el nombre de usuario (`username`) tenga entre 3 y 80 caracteres, que el correo (`email`) tenga formato válido, que la contraseña (`password`) tenga un mínimo de 8 caracteres y que el avatar sea opcional.
+
+![](images/clipboard-4078089674.png)
+
+------------------------------------------------------------------------
+
+### Paso 109: DTO para actualización de datos de usuario (`update-user.dto.ts`)
+
+En `src/features/auth/users/application/dto/update-user.dto.ts`, creamos el DTO `UpdateUserDto` para gestionar la modificación de los datos de perfil de un usuario existente. Aplicamos las mismas reglas de validación en longitud y formato para `username`, `email` y `avatar`, manteniendo la consistencia de los datos en el sistema.
+
+![](images/clipboard-4115357291.png)
+
+------------------------------------------------------------------------
+
+### Paso 110: DTO para cambio de contraseña con validación de seguridad (`change-password.dto.ts`)
+
+En `src/features/auth/users/application/dto/change-password.dto.ts`, definimos el DTO `ChangePasswordDto`. Como medida de seguridad en profundidad, exigimos el envío obligatorio de la contraseña actual (`current_password`) y la nueva contraseña (`new_password`), asegurando una longitud mínima de 8 caracteres antes de autorizar cualquier cambio de credenciales.
 
 ![](images/clipboard-3148452212.png)
 
+------------------------------------------------------------------------
+
+### Paso 111: Mapper para exclusión de contraseñas y datos sensibles (`user.mapper.ts`)
+
+En `src/features/auth/users/application/mappers/user.mapper.ts`, implementamos el mapeador `UserMapper` con el método estático `toResponse()`. Transforma la entidad de base de datos en un objeto seguro que retorna únicamente `id`, `username`, `email`, `avatar` y `status`, garantizando que el hash de la contraseña nunca se filtre ni se exponga en las respuestas HTTP.
+
 ![](images/clipboard-3971220156.png)
 
-En la capa de Dominio e Infraestructura, se implementó el Repositorio de Usuarios con un método específico `findByUsernameOrEmail` para futuras autenticaciones. Los Casos de Uso aseguran que los nombres de usuario y correos electrónicos sean únicos (lanzando un error 409 en caso de duplicados) y controlan que el borrado de usuarios sea estrictamente lógico (`status = 'inactive'`) para mantener la integridad referencial.
+------------------------------------------------------------------------
+
+### Paso 112: Excepciones de dominio para el módulo de usuarios (`user.exceptions.ts`)
+
+En `src/features/auth/users/domain/exceptions/user.exceptions.ts`, definimos las excepciones de dominio heredando de las clases base de la aplicación. Creamos `UserNotFoundException` (para usuarios no encontrados por ID), `UserConflictException` (para indicar que un nombre de usuario o correo ya se encuentra en uso) e `InvalidPasswordException` (cuando la contraseña actual proporcionada es incorrecta).
+
+![](images/clipboard-678952335.png)
+
+------------------------------------------------------------------------
+
+### Paso 113: Repositorio de persistencia de usuarios en Sequelize (`user.repository.ts`)
+
+En `src/features/auth/users/infrastructure/persistence/repositories/user.repository.ts`, creamos la clase `UserRepository` inyectando la instancia de Sequelize. Implementamos los métodos `findAllActive()` y `findById()` excluyendo el campo sensible `password`, `findByIdWithPassword()` para procesos de verificación, `findConflicts()` para detectar colisiones por nombre de usuario o email ignorando mayúsculas/minúsculas, así como las operaciones de creación, actualización y eliminación.
 
 ![](images/clipboard-509195680.png)
 
-![![](images/clipboard-4052546719.png)](images/clipboard-678952335.png)
+------------------------------------------------------------------------
+
+### Paso 114: Caso de uso para creación de usuarios con validación de conflictos (`create-user.use-case.ts`)
+
+En `src/features/auth/users/application/use-cases/create-user.use-case.ts`, implementamos `CreateUserUseCase`. Antes de registrar un nuevo usuario, consulta el repositorio mediante `findConflicts()` para comprobar si el nombre de usuario o correo ya existen en el sistema, lanzando `UserConflictException` en caso de duplicidad. Si los datos están disponibles, procede con la persistencia en estado `active` y retorna el resultado mapeado a través de `UserMapper`.
+
+![](images/clipboard-4052546719.png)
+
+------------------------------------------------------------------------
+
+### Paso 115: Caso de uso para consulta de usuarios activos (`get-users.use-case.ts`)
+
+En `src/features/auth/users/application/use-cases/get-users.use-case.ts`, desarrollamos `GetUsersUseCase` con los métodos `findAll()` y `findOne()`. `findAll()` obtiene la lista de todos los usuarios con estado activo y los transforma mediante `UserMapper`, mientras que `findOne()` busca un usuario por su ID y valida que exista y continúe activo, lanzando `UserNotFoundException` si no cumple las condiciones.
 
 ![](images/clipboard-729421507.png)
 
-Controlador, Módulo y el Seeder Principal
+------------------------------------------------------------------------
 
-Se integró el controlador HTTP para exponer las rutas del CRUD de usuarios. Adicionalmente, se programó un `UserSeeder` que inyecta por defecto a los usuarios canónicos requeridos para la demostración de los permisos (`admin` y `seller`). Estos usuarios nacen con contraseñas encriptadas de forma segura
+### Paso 116: Controlador HTTP para endpoints de usuarios (`users.controller.ts`)
 
-![![](images/clipboard-550768242.png)](images/clipboard-1646743559.png)
+En `src/features/auth/users/presentation/http/controllers/users.controller.ts`, creamos el controlador `UsersController` etiquetado con `@ApiTags('users')` y la ruta base `/usuarios`. Inyectamos los casos de uso para exponer los endpoints `POST /usuarios` (código HTTP 201 para registro), `GET /usuarios` (código HTTP 200 para listar todos los usuarios activos) y `GET /usuarios/:id` (código HTTP 200 para consultar el detalle de un usuario específico).
+
+![](images/clipboard-1646743559.png)
+
+------------------------------------------------------------------------
+
+### Paso 117: Seeder para usuarios canónicos base (`user.seeder.ts`)
+
+En `src/features/auth/users/infrastructure/persistence/seeders/user.seeder.ts`, programamos la clase `UserSeeder`. Define los usuarios iniciales del sistema (`admin` con email `admin@storelab.local` y `seller` con email `seller@storelab.local`) e implementa el método `seed()` de forma idempotente con `User.findOrCreate()`, asegurando que los usuarios canónicos requeridos para pruebas y control de roles existan siempre en la base de datos sin duplicarse.
+
+![](images/clipboard-550768242.png)
+
+------------------------------------------------------------------------
+
+### Paso 118: Módulo de usuarios en NestJS (`users.module.ts`)
+
+En `src/features/auth/users/users.module.ts`, encapsulamos todos los componentes del módulo en `UsersModule`. Declaramos el controlador `UsersController`, registramos los proveedores `CreateUserUseCase`, `GetUsersUseCase`, `UserRepository` y `UserSeeder`, y exportamos `UserSeeder` para que pueda ser consumido por el ejecutor global de seeders al iniciar la aplicación.
 
 ![](images/clipboard-206219808.png)
 
-![](images/clipboard-3669531543.png)
+------------------------------------------------------------------------
+
+### Paso 119: Integración de UserSeeder en el ejecutor global (`seeders.runner.ts`)
+
+En `src/features/business/seeders.runner.ts`, actualizamos la clase `SeedersRunner` inyectando `UserSeeder` junto a los seeders de clientes y productos ya existentes. En el ciclo de vida `onApplicationBootstrap()`, ejecutamos `userSeeder.seed()` en primer lugar para garantizar que los usuarios base estén disponibles antes de sembrar cualquier otra entidad del sistema.
 
 ![](images/clipboard-1571551645.png)
 
-nos estaba saliendo este error
+------------------------------------------------------------------------
 
-![hicimos esto](images/clipboard-3262791161.png)
+### Paso 120: Registro del módulo de usuarios en el módulo raíz (`app.module.ts`)
 
-###  Fix: Dependencia Circular en Modelos de Seguridad (Auth)
+En `src/app.module.ts`, importamos `UsersModule` y lo añadimos al arreglo `imports` de `AppModule`. Con esta integración, la aplicación NestJS carga todas las rutas HTTP del controlador de usuarios y permite que los servicios de persistencia y casos de uso queden completamente operativos dentro del contenedor de inyección de dependencias.
 
-**Problema:** Al levantar el servidor, Node.js arrojó el error de ejecución `ReferenceError: Cannot access 'Role' before initialization`. Esto ocurrió debido a una **dependencia circular** entre los modelos de la base de datos (por ejemplo, `Role` necesita a `ResourceRole` y viceversa), lo que bloqueaba la inicialización en el sistema de módulos ESM.
+![](images/clipboard-3669531543.png)
 
-**Solución:** Se aplicó el patrón `import type` nativo de TypeScript en las 6 entidades de seguridad (`User`, `Role`, `Resource`, `RoleUser`, `ResourceRole`, `RefreshToken`). Esto le indica al compilador que cargue la interfaz solo como referencia de tipado, rompiendo el ciclo infinito de carga.
+------------------------------------------------------------------------
 
-**Ejemplo del cambio arquitectónico aplicado:** \`\`\`typescript // 1. Se importa el modelo real para el decorador de Sequelize import { Role } from '../roles/role.model.js'; // 2. Se importa solo el tipo (Type-only import) para la declaración de la propiedad import type { Role as IRole } from '../roles/role.model.js';
+### Paso 121: Diagnóstico de error en tiempo de ejecución por dependencia circular ESM
 
-@Table({ tableName: 'resource_roles' }) export class ResourceRole extends Model { // ... @BelongsTo(() =\> Role) declare role?: IRole; // Se usa la interfaz IRole en lugar de la clase real }
+Al ejecutar el servidor en modo desarrollo (`npm run start:dev`), Node.js arrojó el error de ejecución `ReferenceError: Cannot access 'Role' before initialization` en el archivo `resource-role.model.ts`. Este problema se originó debido a una **dependencia circular** entre los modelos de Sequelize bajo el estándar de módulos ECMAScript (ESM), donde `Role` referencia a `ResourceRole` y `ResourceRole` a su vez referencia a `Role`, impidiendo la correcta inicialización de las clases.
 
-prueba GET
+![](images/clipboard-3262791161.png)
 
-![![](images/clipboard-2847600474.png)](images/clipboard-3310987387.png)
+------------------------------------------------------------------------
 
-![vemos que funciona correctamente](images/clipboard-3146076057.png)
+### Paso 122: Solución arquitectónica con `import type` para desacoplar modelos cíclicos
 
-**ISS-11** (Roles y Recursos).
+Para resolver la dependencia circular sin alterar las relaciones de base de datos, implementamos una separación estricta entre la carga en tiempo de ejecución y el tipado estático en los 6 modelos de seguridad (`User`, `Role`, `Resource`, `RoleUser`, `ResourceRole` y `RefreshToken`). Utilizamos `import type` para la declaración de propiedades de navegación TypeScript (lo que evita que el compilador emita código JavaScript cíclico) y mantuvimos la importación de clase únicamente dentro de los decoradores de Sequelize:
+
+``` typescript
+// 1. Se importa el modelo real para el decorador de Sequelize
+import { Role } from '../roles/role.model.js';
+
+// 2. Se importa solo el tipo (Type-only import) para la declaración de la propiedad
+import type { Role as IRole } from '../roles/role.model.js';
+
+@Table({ tableName: 'resource_roles' })
+export class ResourceRole extends Model {
+  // ...
+  @BelongsTo(() => Role)
+  declare role?: IRole; // Se usa la interfaz IRole en lugar de la clase real
+}
+```
+
+Esta solución eliminó por completo el bloqueo de carga de módulos en ESM y permitió que Sequelize inicializara correctamente todas las relaciones en la base de datos.
+
+------------------------------------------------------------------------
+
+### Paso 123: Comprobación de consulta GET `/api/usuarios` y verificación de datos sembrados
+
+Probamos la petición HTTP `GET http://localhost:3002/api/usuarios` utilizando el cliente de pruebas de la API. Comprobamos que el servidor responde con código de estado `200 OK` y devuelve la lista de usuarios activos (`admin` y `seller`) generados automáticamente por el seeder, validando que el `UserMapper` oculta correctamente las contraseñas y que los datos tienen el formato previsto.
+
+![](images/clipboard-3310987387.png)
+
+------------------------------------------------------------------------
+
+### Paso 124: Validación de datos de entrada en POST `/api/usuarios` (400 Bad Request)
+
+Para verificar el correcto funcionamiento de las validaciones de `class-validator` y `ValidationPipe`, enviamos una petición `POST http://localhost:3002/api/usuarios` con un cuerpo vacío. El servidor rechazó la solicitud devolviendo código `400 Bad Request` con los mensajes de error detallados para cada campo obligatorio (`username`, `email` y `password`), confirmando que no se permite registrar usuarios con datos incompletos o inválidos.
+
+![](images/clipboard-2847600474.png)
+
+------------------------------------------------------------------------
+
+### Paso 125: Control de duplicados en POST `/api/usuarios` (409 Conflict)
+
+Probamos el control de reglas de negocio enviando una petición `POST http://localhost:3002/api/usuarios` con el nombre de usuario `'admin'`, que ya existe en la base de datos. El caso de uso detectó la colisión a través de `findConflicts()` y lanzó `UserConflictException`, devolviendo código `409 Conflict` con el mensaje `"El username ya está en uso"`.
+
+![](images/clipboard-3146076057.png)
+
+------------------------------------------------------------------------
+
+**Próxima tarea:** **ISS-11** (Roles y Recursos).
+
+**ISS-11 (Roles y Recursos):** Se implementaron los módulos de Roles y Recursos siguiendo la Clean Architecture. Los Roles actúan como agrupadores lógicos de permisos (ej. `ADMIN`, `SELLER`). Los Recursos representan los puntos de acceso protegibles del sistema (un método HTTP y una ruta, ej. `GET /api/productos`). Se programó un catálogo estático centralizado con los 58 recursos de la aplicación y se crearon seeders idempotentes para asegurar que la base de datos siempre cuente con la estructura de autorización requerida.
+
+###  Feature Roles (Agrupadores)
+
+Vamos a crear el módulo de Roles. Para optimizar y no crear tantos archivos, agruparemos los Casos de Uso en un `RolesService` (un patrón muy profesional en NestJS llamado *Application Service*).
+
+![](images/clipboard-3503030664.png)
+
+![](images/clipboard-135607616.png)
+
+![](images/clipboard-515785549.png)
+
+![](images/clipboard-2242667041.png)
+
+![](images/clipboard-4076232385.png)
+
+![](images/clipboard-4068343269.png)
