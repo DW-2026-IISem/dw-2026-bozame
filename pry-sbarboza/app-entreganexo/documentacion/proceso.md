@@ -903,3 +903,23 @@ ISSUE 4 EMPIEZA AQUI--
 Excepciones de la feature
 
 ![](images/clipboard-3482351172.png)
+
+# **Application: entrada, traducción y casos de uso**
+
+**create-product-type.dto.ts**
+
+![product-type.mapper.ts](images/clipboard-181117078.png)
+
+![](images/clipboard-3337555345.png)
+
+**CreateProductTypeUseCase**
+
+![](images/clipboard-3287301155.png)
+
+**GetProductTypeByIdUseCase + ListProductTypesUseCase**
+
+![](images/clipboard-3894115374.png)
+
+# **Infrastructure: tabla, repositorio y seeder**
+
+**product-type.model.ts**
