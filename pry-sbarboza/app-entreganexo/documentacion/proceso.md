@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y la arquitectura completa de EntregaNexo.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal y Configuración en `backend-full`:** Implementamos el tipado de entorno, validaciones, jerarquía de excepciones, filtro global de errores e interceptores de respuesta, logs y timeout.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -634,32 +634,88 @@ Organizamos el árbol de carpetas dentro de `src/` adoptando la Arquitectura Lim
 
 ------------------------------------------------------------------------
 
-## **env.interface.ts — el contrato tipado**
+## 13. Fase 12: Capa Transversal y Configuración Global en `backend-full`
 
-**src/config/environment/env.interface.ts**
+Para dotar al nuevo backend de robustez técnica, implementamos la capa de configuración de entorno, el manejo transversal de excepciones y los interceptores de red.
+
+### Paso 65: Contrato tipado de variables de entorno (`env.interface.ts`)
+
+Definimos en `src/config/environment/env.interface.ts` los tipos estrictos e interfaces para el puerto, entorno, dialectos soportados y bloques de conexión de cada base de datos.
 
 ![](images/clipboard-3483315941.png)
 
-## **env.validation.ts — validar antes de arrancar**
+------------------------------------------------------------------------
 
-**src/config/environment/env.validation.ts (fragmento representativo)**
+### Paso 66: Validación de variables de entorno (`env.validation.ts`)
+
+Configuramos `env.validation.ts` utilizando decoradores de `class-validator` para validar anticipadamente que los datos de conexión requeridos por el motor activo existan antes de levantar el servidor.
 
 ![](images/clipboard-3667879465.png)
 
-## **db-env.ts — seleccionar un solo bloque activo**
+------------------------------------------------------------------------
 
-**src/config/environment/db-env.ts**
+### Paso 67: Selector dinámico de base de datos activa (`db-env.ts`)
+
+Implementamos la función selectora en `db-env.ts` para extraer automáticamente los parámetros de conexión correspondientes al dialecto configurado en `DB_DIALECT`.
 
 ![](images/clipboard-165445130.png)
 
-## **env.config.ts — de variables crudas a objeto de aplicación**
+------------------------------------------------------------------------
 
-**src/config/environment/env.config.ts**
+### Paso 68: Construcción del objeto de configuración global (`env.config.ts`)
+
+Creamos `env.config.ts` para transformar las variables de entorno validadas en un objeto fuertemente tipado consumible por la aplicación.
 
 ![](images/clipboard-3105560146.png)
 
-## **environment.module.ts — publicar configuración con DI**
+------------------------------------------------------------------------
 
-**src/config/environment/environment.module.ts**
+### Paso 69: Módulo global de configuración con inyección de dependencias (`environment.module.ts`)
+
+Configuramos `environment.module.ts` como un módulo `@Global()` de NestJS para que la configuración esté disponible mediante inyección de dependencias en toda la arquitectura sin duplicar imports.
 
 ![](images/clipboard-3816463324.png)
+
+------------------------------------------------------------------------
+
+### Paso 70: Jerarquía de excepciones personalizadas (`src/common/exceptions/`)
+
+Estructuramos las clases de excepción personalizadas (`ApplicationException`, `DomainException`, `BusinessRuleException` y `EntityNotFoundException`) para clasificar adecuadamente cualquier error de negocio o del sistema.
+
+![](images/clipboard-3771194625.png)
+
+------------------------------------------------------------------------
+
+### Paso 71: Filtro global de errores con respuesta uniforme (`global-exception.filter.ts`)
+
+Implementamos `global-exception.filter.ts` para capturar cualquier excepción y responder al cliente con un formato estándar y consistente (código de estado, mensaje y marca de tiempo).
+
+![](images/clipboard-3581793290.png)
+
+------------------------------------------------------------------------
+
+### Paso 72: Interceptor de respuestas estándar (`response.interceptor.ts`)
+
+Creamos el interceptor de respuestas exitosas en `src/common/interceptors/` para envolver todos los retornos de los endpoints en una estructura uniforme con estado y datos.
+
+![](images/clipboard-2758283863.png)
+
+------------------------------------------------------------------------
+
+### Paso 73: Interceptor de observabilidad y auditoría de peticiones (`logging.interceptor.ts`)
+
+Implementamos el interceptor de logs para registrar en consola el método HTTP, la URL consultada y la duración exacta de cada petición que procesa el servidor.
+
+![](images/clipboard-4039789995.png)
+
+------------------------------------------------------------------------
+
+### Paso 74: Interceptor de tiempo límite de peticiones (`timeout.interceptor.ts`)
+
+Configuramos el interceptor de timeout para cancelar de forma segura peticiones que excedan el límite temporal establecido, evitando sobrecarga en el servidor.
+
+![](images/clipboard-3736526020.png)
+
+------------------------------------------------------------------------
+
+## 
