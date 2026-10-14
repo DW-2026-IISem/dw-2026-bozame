@@ -1131,50 +1131,245 @@ En `src/features/auth/roles/roles.module.ts`, definimos `RolesModule` agrupando 
 
 ------------------------------------------------------------------------
 
-### Feature Resources (Puntos de Acceso protegibles)
+### Feature Resources (Puntos de Acceso Protegibles)
 
-Aquí el profesor exige que carguemos un catálogo exacto con 58 rutas (por ejemplo, `POST /api/ventas`). Esto es lo que va a sembrar nuestro seeder.\
+A continuación, implementamos el módulo de Recursos (`resources`). En este módulo definimos el catálogo centralizado con las 58 rutas de la aplicación (como `POST /api/ventas`, `GET /api/productos`, etc.) que nuestro seeder se encargará de insertar en la base de datos para habilitar el control de acceso granular por roles.
+
+------------------------------------------------------------------------
+
+### Paso 132: Estructura de carpetas y DTO para creación de recursos (`create-resource.dto.ts`)
+
+Creamos la estructura de carpetas en `src/features/auth/resources/` para organizar los DTOs, servicios, constantes de dominio, repositorios, seeders y controladores. En `src/features/auth/resources/application/dto/create-resource.dto.ts`, definimos la clase `CreateResourceDto` validando con `class-validator` que el método HTTP pertenezca a la lista permitida (`@IsIn(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])`) y que la ruta (`path`) sea obligatoria, documentando ambas propiedades con Swagger.
 
 ![](images/clipboard-1466698124.png)
 
+------------------------------------------------------------------------
+
+### Paso 133: Repositorio de recursos con Sequelize (`resource.repository.ts`)
+
+En `src/features/auth/resources/infrastructure/persistence/repositories/resource.repository.ts`, creamos la clase `ResourceRepository` inyectando la conexión de Sequelize. Implementamos los métodos `findAllActive()` para obtener los recursos habilitados, `findById()` para búsquedas por ID, `findByOperation()` para localizar un recurso a partir de su método y ruta normalizados, y el método `create()` para registrar nuevas operaciones en la base de datos.
+
 ![](images/clipboard-2233369313.png)
+
+------------------------------------------------------------------------
+
+### Paso 134: Catálogo centralizado con las 58 rutas del sistema (`resource-catalog.ts`)
+
+En `src/features/auth/resources/domain/constants/resource-catalog.ts`, definimos el arreglo inmutable `RESOURCE_CATALOG` con los 58 puntos de acceso de la API de EntregaNexo (clientes, productos, tipos de productos, ventas, usuarios, roles, recursos, etc.). Cada elemento especifica su método HTTP, ruta normalizada, descripción funcional y si está habilitado para el rol de vendedor (`seller: true`), sirviendo como fuente de verdad estricta para la matriz de permisos.
 
 ![](images/clipboard-1577626570.png)
 
+------------------------------------------------------------------------
+
+### Paso 135: Servicio de aplicación para normalización y gestión de recursos (`resources.service.ts`)
+
+En `src/features/auth/resources/application/services/resources.service.ts`, implementamos `ResourcesService` (*Application Service*) inyectando `ResourceRepository`. En el método `create()`, validamos que no existan operaciones duplicadas mediante `findByOperation()` y aplicamos una lógica de saneamiento de rutas para eliminar barras dobles o finales antes de persistir el recurso, garantizando URLs canónicas y consistentes en todo el sistema.
+
 ![](images/clipboard-1547442417.png)
+
+------------------------------------------------------------------------
+
+### Paso 136: Controlador HTTP para endpoints de recursos (`resources.controller.ts`)
+
+En `src/features/auth/resources/presentation/http/controllers/resources.controller.ts`, programamos `ResourcesController` bajo la ruta base `/recursos` y la etiqueta `@ApiTags('resources')`. Inyectamos `ResourcesService` para exponer los endpoints `POST /recursos` (código HTTP 201) para la creación manual de operaciones, `GET /recursos` para listar todos los recursos activos del sistema, y `GET /recursos/:id` (con `ParseIntPipe`) para consultar un recurso en particular.
 
 ![](images/clipboard-989057671.png)
 
+------------------------------------------------------------------------
+
+### Paso 137: Seeder de recursos y encapsulación en el módulo (`resource.seeder.ts` y `resources.module.ts`)
+
+En `src/features/auth/resources/infrastructure/persistence/seeders/resource.seeder.ts`, implementamos `ResourceSeeder` recorriendo el catálogo `RESOURCE_CATALOG` con `Resource.findOrCreate()` de forma idempotente para sembrar automáticamente los 58 recursos en la base de datos. Seguidamente, en `src/features/auth/resources/resources.module.ts`, agrupamos el controlador, servicios, repositorios y exportamos `ResourceSeeder` para su uso transversal.
+
 ![](images/clipboard-1554123596.png)
 
-### Integración en App y SeedersRunner
+------------------------------------------------------------------------
 
-Finalmente, registramos estos dos nuevos módulos en nuestra aplicación para que NestJS los encienda y siembre los datos.
+### Paso 138: Integración en el módulo raíz y en el ejecutor global de seeders (`app.module.ts` y `seeders.runner.ts`)
+
+En `src/app.module.ts`, importamos `RolesModule` y `ResourcesModule` incorporándolos al arreglo `imports` de la aplicación. Además, en `src/features/business/seeders.runner.ts`, inyectamos `RoleSeeder` y `ResourceSeeder` dentro del método `onApplicationBootstrap()`, garantizando que al levantar el servidor se verifiquen y siembren en orden los usuarios, roles, recursos, clientes y productos.
 
 ![](images/clipboard-4235938588.png)
 
-nos sale este error al ejecutar run dev
+------------------------------------------------------------------------
+
+### Paso 139: Diagnóstico de error de resolución de módulos en TypeScript (`TS2307`)
+
+Al ejecutar `npm run start:dev`, el compilador de TypeScript arrojó el error `TS2307: Cannot find module '../../role.model.js'` y `TS2307: Cannot find module '../../resource.model.js'` al compilar los repositorios y seeders. Esto ocurrió porque la ruta relativa `../../` se quedaba en el directorio `infrastructure/` en lugar de subir hasta la raíz del feature donde residen los modelos Sequelize correspondientes.
 
 ![](images/clipboard-654268818.png)
 
-arreglamos de la siguiente manera:
+------------------------------------------------------------------------
 
-### 🐛 Fix: Rutas relativas en Repositorios y Seeders (Roles y Recursos)
+### Paso 140: Corrección de rutas relativas en repositorios y seeders
 
-**Problema:** El compilador de TypeScript arrojó el error `TS2307: Cannot find module` al intentar importar `role.model.js` y `resource.model.js` desde sus respectivos repositorios y seeders. Esto ocurrió porque la ruta relativa `../../` apuntaba a la carpeta `infrastructure` en lugar de la raíz del módulo del feature.
+Para solucionar el fallo de importación, corregimos las rutas relativas en los cuatro archivos afectados (`role.repository.ts`, `role.seeder.ts`, `resource.repository.ts` y `resource.seeder.ts`), cambiando la referencia de `../../` a `../../../`:
 
-**Solución:** Se corrigieron las importaciones en los 4 archivos afectados ajustando la ruta a `../../../` para subir el nivel adicional necesario en la estructura de Clean Architecture.
+``` typescript
+// Antes (ruta incorrecta que provocaba TS2307):
+import { Role } from '../../role.model.js';
+import { Resource } from '../../resource.model.js';
 
-ahora haremos pruebas con thunder client
+// Después (ruta corregida para la estructura Clean Architecture):
+import { Role } from '../../../role.model.js';
+import { Resource } from '../../../resource.model.js';
+```
+
+Con este ajuste de profundidad, TypeScript resolvió los módulos correctamente y la compilación incremental finalizó con 0 errores.
+
+------------------------------------------------------------------------
+
+### Paso 141: Verificación de arranque del servidor y reconciliación de seeders en consola
+
+Reiniciamos el servidor con `npm run start:dev` y observamos en la consola que NestJS levantó todos los módulos sin errores. Los logs de `SeedersRunner` confirmaron la ejecución secuencial de los seeders, reportando que los roles canónicos (`ADMIN` y `SELLER`) y el catálogo completo de 58 recursos fueron reconciliados e insertados con éxito en la base de datos.
 
 ![](images/clipboard-3766827969.png)
 
+------------------------------------------------------------------------
+
+### Paso 142: Comprobación de consulta GET `/api/recursos` en Thunder Client (58 recursos)
+
+Realizamos una petición HTTP `GET http://localhost:3002/api/recursos` utilizando Thunder Client. El servidor respondió con código de estado `200 OK` devolviendo la lista completa con los 58 recursos sembrados en la base de datos, validando que el endpoint expone adecuadamente cada método HTTP, ruta y descripción del sistema.
+
 ![](images/clipboard-1043349931.png)
 
-vemos que nos arroja los 58 recursos sembrados
+------------------------------------------------------------------------
 
-ahora provbemos post
+### Paso 143: Creación de nuevo rol mediante POST `/api/roles` en Thunder Client (201 Created)
+
+Para comprobar el endpoint de creación de roles y su persistencia en tiempo real, enviamos una petición `POST http://localhost:3002/api/roles` con el cuerpo `{"name": "AUDITOR", "description": "Auditor del sistema"}`. El servidor procesó la solicitud a través de `RolesService`, persistió el nuevo rol en mayúsculas y respondió con código `201 Created` y los datos del rol `AUDITOR` recién registrado.
 
 ![](images/clipboard-2067093533.png)
 
-intentamos crear un rol nuevo y vemos que nos devuelve el estado 201 creado y un nuevo rol de auditor.
+------------------------------------------------------------------------
+
+## Issue 12: Asignaciones de Roles y Concesión de Permisos RBAC (ISS-12)
+
+Desarrollamos los módulos pivote `RoleUsers` y `ResourceRoles` para completar el esquema de autorización basada en roles (RBAC). El módulo `RoleUsers` se encarga de enlazar a los usuarios con sus roles correspondientes, mientras que `ResourceRoles` asocia directamente los recursos a los roles, eliminando la necesidad de manejar una tabla estática adicional de permisos. Implementamos validaciones idempotentes para prevenir duplicados y construimos un método determinista (`reconcileRole`) que sincroniza automáticamente la matriz de permisos en la base de datos (concediendo los 58 recursos del catálogo al rol `ADMIN` y los 7 recursos comerciales al rol `SELLER`) asegurando la atomicidad mediante transacciones de Sequelize.
+
+### Módulo RoleUsers (Asignación de Roles a Usuarios)
+
+Este bloque implementa la lógica necesaria para vincular a los usuarios con sus respectivos roles dentro de la plataforma.
+
+------------------------------------------------------------------------
+
+### Paso 144: Estructura de carpetas y DTO para asignación de roles a usuarios (`create-role-user.dto.ts`)
+
+Creamos la estructura de carpetas en `src/features/auth/role-users/` para alojar los DTOs, servicios, repositorios, seeders y controladores. En `src/features/auth/role-users/application/dto/create-role-user.dto.ts`, definimos el DTO `CreateRoleUserDto` validando con `class-validator` que los identificadores `user_id` y `role_id` sean números enteros obligatorios, y documentando ambas propiedades con decoradores Swagger `@ApiProperty`.
+
+![](images/clipboard-3825996567.png)
+
+------------------------------------------------------------------------
+
+### Paso 145: Repositorio de asignaciones de roles a usuarios en Sequelize (`role-user.repository.ts`)
+
+En `src/features/auth/role-users/infrastructure/persistence/repositories/role-user.repository.ts`, implementamos `RoleUserRepository` inyectando la instancia de Sequelize. Definimos los métodos de persistencia: `findByUserAndRole()` para verificar asignaciones existentes, `findRolesByUserId()` para listar todos los roles activos vinculados a un usuario específico mediante la relación `@BelongsTo`, así como los métodos de creación y desactivación lógica.
+
+![](images/clipboard-1450287880.png)
+
+------------------------------------------------------------------------
+
+### Paso 146: Servicio de aplicación para vinculación de roles (`role-users.service.ts`)
+
+En `src/features/auth/role-users/application/services/role-users.service.ts`, implementamos `RoleUsersService` (*Application Service*) inyectando `RoleUserRepository`. En el método `assignRole()`, validamos la inexistencia previa de la asignación para evitar duplicados lanzando `ConflictException('Role already assigned to user')` en caso de colisión; si no existe, persiste el registro en estado `active`. A su vez, `getRolesForUser()` consulta los roles de un usuario y `removeRole()` gestiona la desactivación de asignaciones.
+
+![](images/clipboard-3551117563.png)
+
+------------------------------------------------------------------------
+
+### Paso 147: Controlador HTTP para endpoints de asignación de roles (`role-users.controller.ts`)
+
+En `src/features/auth/role-users/presentation/http/controllers/role-users.controller.ts`, creamos el controlador `RoleUsersController` bajo la etiqueta `@ApiTags('role-users')` y la ruta base `/usuarios-roles`. Inyectamos `RoleUsersService` para exponer los endpoints: `POST /usuarios-roles` (código HTTP 201) para asignar un rol a un usuario, `GET /usuarios-roles/usuario/:userId` (con `ParseIntPipe`) para consultar todos los roles de un usuario, y `PATCH /usuarios-roles/desactivar` para revocar una asignación.
+
+![](images/clipboard-409638698.png)
+
+------------------------------------------------------------------------
+
+### Paso 148: Seeder para asignación de roles canónicos a usuarios base (`role-user.seeder.ts`)
+
+En `src/features/auth/role-users/infrastructure/persistence/seeders/role-user.seeder.ts`, programamos `RoleUserSeeder` para vincular de forma automática e idempotente los usuarios canónicos con sus roles iniciales. El seeder busca al usuario `admin` y le asigna el rol `ADMIN`, y al usuario `seller` le otorga el rol `SELLER`, asegurando que el sistema disponga de credenciales funcionales listas para las pruebas de control de acceso.
+
+![](images/clipboard-1469760822.png)
+
+------------------------------------------------------------------------
+
+### Paso 149: Módulo de asignaciones de roles a usuarios en NestJS (`role-users.module.ts`)
+
+En `src/features/auth/role-users/role-users.module.ts`, definimos `RoleUsersModule` agrupando el controlador `RoleUsersController` y los proveedores `RoleUsersService`, `RoleUserRepository` y `RoleUserSeeder`. Exportamos `RoleUserSeeder` para que pueda ser consumido por el orquestador global de seeders en el arranque de la aplicación.
+
+![](images/clipboard-3992116679.png)
+
+------------------------------------------------------------------------
+
+### Módulo ResourceRoles (Concesión de Permisos)
+
+Este módulo establece el puente directo entre Roles y Recursos, gestionando los permisos del sistema mediante operaciones transaccionales y el método determinista `reconcileRole`.
+
+------------------------------------------------------------------------
+
+### Paso 150: DTO para concesión de recursos a roles (`create-resource-role.dto.ts`)
+
+Creamos la estructura de carpetas en `src/features/auth/resource-roles/` y definimos el DTO `CreateResourceRoleDto` en `src/features/auth/resource-roles/application/dto/create-resource-role.dto.ts`. Validamos con `class-validator` que las claves foráneas `role_id` y `resource_id` sean números enteros obligatorios, documentando ambas propiedades con Swagger para su uso en la API.
+
+![](images/clipboard-1142645962.png)
+
+------------------------------------------------------------------------
+
+### Paso 151: Repositorio transaccional de permisos de recursos por rol (`resource-role.repository.ts`)
+
+En `src/features/auth/resource-roles/infrastructure/persistence/repositories/resource-role.repository.ts`, creamos la clase `ResourceRoleRepository` inyectando la conexión de Sequelize. Implementamos métodos preparados para operar bajo transacciones de base de datos (`Transaction`), incluyendo búsquedas por rol y recurso, creación de concesiones y borrado masivo de permisos previos durante los procesos de sincronización.
+
+![](images/clipboard-263599375.png)
+
+------------------------------------------------------------------------
+
+### Paso 152: Servicio de aplicación con reconciliación determinista de permisos (`resource-roles.service.ts`)
+
+En `src/features/auth/resource-roles/application/services/resource-roles.service.ts`, implementamos `ResourceRolesService` inyectando `ResourceRoleRepository` y la instancia de Sequelize. Diseñamos el método determinista `reconcileRole(roleId, resourceIds)` ejecutado dentro de una transacción atómica `sequelize.transaction()`: elimina las concesiones existentes del rol y reinserta en bloque los identificadores de recursos indicados, garantizando consistencia absoluta sin dejar permisos residuales huérfanos.
+
+![](images/clipboard-2270945387.png)
+
+------------------------------------------------------------------------
+
+### Paso 153: Controlador HTTP para consulta y auditoría de concesiones (`resource-roles.controller.ts`)
+
+En `src/features/auth/resource-roles/presentation/http/controllers/resource-roles.controller.ts`, creamos `ResourceRolesController` etiquetado con `@ApiTags('resource-roles')` y la ruta `/concesiones-rol`. Inyectamos `ResourceRolesService` para exponer los endpoints de consulta y comprobación de los permisos asignados a cada rol del sistema.
+
+![](images/clipboard-819982356.png)
+
+------------------------------------------------------------------------
+
+### Paso 154: Seeder para sincronización automática de la matriz RBAC (`resource-role.seeder.ts`)
+
+En `src/features/auth/resource-roles/infrastructure/persistence/seeders/resource-role.seeder.ts`, implementamos `ResourceRoleSeeder` consumiendo `ResourceRolesService`. El seeder localiza los roles `ADMIN` y `SELLER` y los recursos correspondientes: otorga los 58 recursos del catálogo completo al rol `ADMIN`, y asigna al rol `SELLER` únicamente los 7 recursos marcados con `seller: true` en el catálogo, reconciliando la matriz RBAC en la base de datos de manera atómica e idempotente.
+
+![](images/clipboard-1413683313.png)
+
+------------------------------------------------------------------------
+
+### Paso 155: Módulo de concesión de permisos en NestJS (`resource-roles.module.ts`)
+
+En `src/features/auth/resource-roles/resource-roles.module.ts`, encapsulamos todos los componentes en `ResourceRolesModule`. Declaramos el controlador `ResourceRolesController`, registramos los proveedores `ResourceRolesService`, `ResourceRoleRepository` y `ResourceRoleSeeder`, y exportamos `ResourceRoleSeeder` para que el ejecutor global sincronice los permisos en el ciclo de arranque de NestJS.
+
+![](images/clipboard-3566739128.png)
+
+------------------------------------------------------------------------
+
+### Integración en la App
+
+Finalmente, registramos estos dos módulos puente en nuestra app y configuramos los seeders para que se ejecuten.
+
+![](images/clipboard-4015196855.png)
+
+![](images/clipboard-2456008550.png)
+
+![](images/clipboard-4116874528.png)
+
+### 🐛 Fix: Exportación de constantes y rutas relativas
+
+**Problema:** El compilador detectó dos errores: `TS2305` (falta de exportación de `SELLER_RESOURCES` en el catálogo) y `TS2307` (módulo `sequelize.module.js` no encontrado).
+
+**Solución:** 1. Se añadió la constante derivada `SELLER_RESOURCES` al final del `resource-catalog.ts`, la cual filtra los recursos operativos (`seller: true`) de la matriz base. 2. Se corrigió la ruta de importación de la inyección de dependencias `SEQUELIZE` en `resource-roles.service.ts`, ajustando la profundidad relativa de 6 a 5 niveles (`../../../../../`).
+
+![\
+](images/clipboard-2460898366.png)

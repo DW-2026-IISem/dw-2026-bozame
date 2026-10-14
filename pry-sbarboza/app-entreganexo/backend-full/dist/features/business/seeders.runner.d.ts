@@ -5,6 +5,8 @@ import { ProductSeeder } from './products/infrastructure/persistence/seeders/pro
 import { UserSeeder } from '../auth/users/infrastructure/persistence/seeders/user.seeder.js';
 import { RoleSeeder } from '../auth/roles/infrastructure/persistence/seeders/role.seeder.js';
 import { ResourceSeeder } from '../auth/resources/infrastructure/persistence/seeders/resource.seeder.js';
+import { RoleUserSeeder } from '../auth/role-users/infrastructure/persistence/seeders/role-user.seeder.js';
+import { ResourceRoleSeeder } from '../auth/resource-roles/infrastructure/persistence/seeders/resource-role.seeder.js';
 export declare class SeedersRunner implements OnApplicationBootstrap {
     private readonly clientSeeder;
     private readonly productTypeSeeder;
@@ -12,7 +14,9 @@ export declare class SeedersRunner implements OnApplicationBootstrap {
     private readonly userSeeder;
     private readonly roleSeeder;
     private readonly resourceSeeder;
+    private readonly roleUserSeeder;
+    private readonly resourceRoleSeeder;
     private readonly logger;
-    constructor(clientSeeder: ClientSeeder, productTypeSeeder: ProductTypeSeeder, productSeeder: ProductSeeder, userSeeder: UserSeeder, roleSeeder: RoleSeeder, resourceSeeder: ResourceSeeder);
+    constructor(clientSeeder: ClientSeeder, productTypeSeeder: ProductTypeSeeder, productSeeder: ProductSeeder, userSeeder: UserSeeder, roleSeeder: RoleSeeder, resourceSeeder: ResourceSeeder, roleUserSeeder: RoleUserSeeder, resourceRoleSeeder: ResourceRoleSeeder);
     onApplicationBootstrap(): Promise<void>;
 }

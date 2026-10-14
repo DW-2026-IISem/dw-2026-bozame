@@ -15,6 +15,8 @@ import { ProductSeeder } from './products/infrastructure/persistence/seeders/pro
 import { UserSeeder } from '../auth/users/infrastructure/persistence/seeders/user.seeder.js';
 import { RoleSeeder } from '../auth/roles/infrastructure/persistence/seeders/role.seeder.js';
 import { ResourceSeeder } from '../auth/resources/infrastructure/persistence/seeders/resource.seeder.js';
+import { RoleUserSeeder } from '../auth/role-users/infrastructure/persistence/seeders/role-user.seeder.js';
+import { ResourceRoleSeeder } from '../auth/resource-roles/infrastructure/persistence/seeders/resource-role.seeder.js';
 let SeedersRunner = SeedersRunner_1 = class SeedersRunner {
     clientSeeder;
     productTypeSeeder;
@@ -22,20 +24,26 @@ let SeedersRunner = SeedersRunner_1 = class SeedersRunner {
     userSeeder;
     roleSeeder;
     resourceSeeder;
+    roleUserSeeder;
+    resourceRoleSeeder;
     logger = new Logger(SeedersRunner_1.name);
-    constructor(clientSeeder, productTypeSeeder, productSeeder, userSeeder, roleSeeder, resourceSeeder) {
+    constructor(clientSeeder, productTypeSeeder, productSeeder, userSeeder, roleSeeder, resourceSeeder, roleUserSeeder, resourceRoleSeeder) {
         this.clientSeeder = clientSeeder;
         this.productTypeSeeder = productTypeSeeder;
         this.productSeeder = productSeeder;
         this.userSeeder = userSeeder;
         this.roleSeeder = roleSeeder;
         this.resourceSeeder = resourceSeeder;
+        this.roleUserSeeder = roleUserSeeder;
+        this.resourceRoleSeeder = resourceRoleSeeder;
     }
     async onApplicationBootstrap() {
         this.logger.log('Verificando datos base (Seeders)...');
         await this.userSeeder.seed();
         await this.roleSeeder.seed();
         await this.resourceSeeder.seed();
+        await this.roleUserSeeder.seed();
+        await this.resourceRoleSeeder.seed();
         await this.clientSeeder.seed();
         await this.productTypeSeeder.seed();
         await this.productSeeder.seed();
@@ -49,7 +57,9 @@ SeedersRunner = SeedersRunner_1 = __decorate([
         ProductSeeder,
         UserSeeder,
         RoleSeeder,
-        ResourceSeeder])
+        ResourceSeeder,
+        RoleUserSeeder,
+        ResourceRoleSeeder])
 ], SeedersRunner);
 export { SeedersRunner };
 //# sourceMappingURL=seeders.runner.js.map

@@ -7,6 +7,8 @@ import { SeedersRunner } from './features/business/seeders.runner.js';
 import { UsersModule } from './features/auth/users/users.module.js';
 import { RolesModule } from './features/auth/roles/roles.module.js';
 import { ResourcesModule } from './features/auth/resources/resources.module.js';
+import { RoleUsersModule } from './features/auth/role-users/role-users.module.js';
+import { ResourceRolesModule } from './features/auth/resource-roles/resource-roles.module.js';
 
 @Module({
   imports: [
@@ -15,7 +17,9 @@ import { ResourcesModule } from './features/auth/resources/resources.module.js';
     BusinessModule,
     UsersModule,
     RolesModule,
-    ResourcesModule
+    ResourcesModule,
+    RoleUsersModule,
+    ResourceRolesModule
   ],
   controllers: [HealthController],
   providers: [SeedersRunner],

@@ -5,3 +5,4 @@ export interface CatalogResource {
     seller?: boolean;
 }
 export declare const RESOURCE_CATALOG: readonly CatalogResource[];
+export declare const SELLER_RESOURCES: readonly CatalogResource[];

@@ -70,3 +70,7 @@ export const RESOURCE_CATALOG: readonly CatalogResource[] = [
   { method: "PATCH", path: "/api/concesiones-rol/:id/deactivate", description: "Retirar recurso a rol" },
   { method: "PATCH", path: "/api/concesiones-rol/:id/reactivate", description: "Reactivar recurso a rol" }
 ];
+
+export const SELLER_RESOURCES: readonly CatalogResource[] = RESOURCE_CATALOG.filter(
+  (resource) => resource.seller === true
+);
