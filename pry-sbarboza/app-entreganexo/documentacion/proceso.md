@@ -634,4 +634,32 @@ Organizamos el árbol de carpetas dentro de `src/` adoptando la Arquitectura Lim
 
 ------------------------------------------------------------------------
 
-## 
+## **env.interface.ts — el contrato tipado**
+
+**src/config/environment/env.interface.ts**
+
+![](images/clipboard-3483315941.png)
+
+## **env.validation.ts — validar antes de arrancar**
+
+**src/config/environment/env.validation.ts (fragmento representativo)**
+
+![](images/clipboard-3667879465.png)
+
+## **db-env.ts — seleccionar un solo bloque activo**
+
+**src/config/environment/db-env.ts**
+
+![](images/clipboard-165445130.png)
+
+## **env.config.ts — de variables crudas a objeto de aplicación**
+
+**src/config/environment/env.config.ts**
+
+![](images/clipboard-3105560146.png)
+
+## **environment.module.ts — publicar configuración con DI**
+
+**src/config/environment/environment.module.ts**
+
+![](images/clipboard-3816463324.png)
