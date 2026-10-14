@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03):** Implementamos las cuatro capas completas de Arquitectura Limpia para el módulo de clientes (Dominio, Aplicación, Infraestructura y Presentación), verificando su funcionamiento en consola y en Swagger UI. 14. **Feature Tipos de Productos en `backend-full` (ISS-04 - En Proceso):** Implementamos las capas de Dominio, Aplicación, Infraestructura y el controlador en Presentación para el módulo de categorías y tipos de productos (`product-types`).
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03):** Implementamos las cuatro capas completas de Arquitectura Limpia para el módulo de clientes (Dominio, Aplicación, Infraestructura y Presentación), verificando su funcionamiento en consola y en Swagger UI. 14. **Feature Tipos de Productos en `backend-full` (ISS-04):** Construimos el módulo de categorías y tipos de productos (`product-types`) en sus cuatro capas, validando su registro en Sequelize y Swagger UI. 15. **Feature Productos y Gestión de Stock en `backend-full` (ISS-05):** Implementamos el módulo de productos (`products`) con relación de clave foránea a `product-types`, regla de dominio para reducción de stock (`reduceStock`), validación cruzada en casos de uso, seeder idempotente, exportación de dependencias cruzadas y verificación integral en Swagger UI.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -990,68 +990,128 @@ En la capa de Presentación (`presentation/http/controllers/`), definimos `Produ
 
 ------------------------------------------------------------------------
 
-## 
+### Paso 108: Verificación en terminal de `product-types`
 
-ejecutamos run dev y vemos que ya aparece nuestra tabla product_types
+Ejecutamos `npm run start:dev` y confirmamos en la consola que el servidor compila con cero errores, carga e inicializa `ProductTypesModule` y mapea con éxito las tres rutas del controlador (`POST /api/product-types`, `GET /api/product-types`, `GET /api/product-types/:id`).
 
-![![](images/clipboard-1144059305.png)](images/clipboard-4110600696.png)
+![](images/clipboard-4110600696.png)
 
-**ISS-05 · Feature products**
+------------------------------------------------------------------------
 
-Guía didáctica detallada: FK a product-types y regla de stock
+### Paso 109: Comprobación de `product-types` en Swagger UI
 
-# **Domain: Product y reduceStock()**
+Ingresamos en el navegador a `http://localhost:3002/api/docs` y verificamos que el grupo **product-types** aparece debidamente documentado en la interfaz interactiva, listo para recibir pruebas de creación, consulta y listado.
 
-**product.entity.ts**
+![](images/clipboard-1144059305.png)
+
+------------------------------------------------------------------------
+
+## 16. Fase 15: Feature de Productos y Gestión de Stock en `backend-full` (ISS-05)
+
+Para completar el catálogo comercial de EntregaNexo, construimos el módulo de **Productos (`products`)**, incorporando la relación de clave foránea (*Foreign Key*) hacia la categoría o tipo de producto y la regla de negocio para la reducción controlada de stock:
+
+### Paso 110: Entidad de dominio de productos y regla de reducción de stock (`product.entity.ts`)
+
+En la capa de Dominio (`src/features/business/products/domain/entities/`), definimos la entidad pura `Product` y el método de negocio `reduceStock(n)`. Este método valida que no se soliciten cantidades negativas ni se descuente más inventario del disponible en `quantity`, lanzando en caso de error la excepción de negocio `InsufficientStockException`.
 
 ![](images/clipboard-1953043203.png)
 
-**product.repository.ts**
+------------------------------------------------------------------------
+
+### Paso 111: Puerto del repositorio de productos (`product.repository.ts`)
+
+En `domain/interfaces/`, declaramos el contrato `IProductRepository` y la constante de inyección `PRODUCT_REPOSITORY` con las operaciones de persistencia necesarias (`create`, `findAll`, `findById` y `count`), manteniendo la capa de dominio completamente agnóstica de la base de datos.
 
 ![](images/clipboard-1344973735.png)
 
-# **Application: DTO y validación cruzada**
+------------------------------------------------------------------------
 
-**create-product.dto.ts (resumen)**
+### Paso 112: DTO de entrada para la creación de productos (`create-product.dto.ts`)
+
+En la capa de Aplicación (`application/dto/`), definimos `CreateProductDto` utilizando decoradores de Swagger y validadores de `class-validator` (`@IsString`, `@IsNotEmpty`, `@IsNumber`, `@Min(0)`, `@IsOptional`) para campos como `name`, `brand`, `price`, `minStock`, `quantity` y la referencia obligatoria `productTypeId`.
 
 ![](images/clipboard-1724698254.png)
 
-**CreateProductUseCase**
+------------------------------------------------------------------------
+
+### Paso 113: Caso de uso para crear productos con validación cruzada (`CreateProductUseCase`)
+
+En `application/use-cases/`, creamos `CreateProductUseCase` inyectando tanto `PRODUCT_REPOSITORY` como `PRODUCT_TYPE_REPOSITORY`. Antes de registrar el nuevo producto, consulta la categoría por su ID y valida que exista y se encuentre en estado `'active'`; si no cumple, lanza `ProductTypeNotFoundException` o `ProductTypeInactiveException`.
 
 ![](images/clipboard-2708465177.png)
 
+------------------------------------------------------------------------
+
+### Paso 114: Casos de uso de consulta y listado paginado de productos
+
+Implementamos en `application/use-cases/` las operaciones de lectura: `GetProductByIdUseCase` para buscar un producto por su clave primaria (lanzando `ProductNotFoundException` si no existe) y `ListProductsUseCase` para paginar los productos calculando los metadatos de respuesta (`totalPages`, `total`) y aplicando `ProductMapper.toResponse`.
+
 ![](images/clipboard-445525447.png)
 
-# **Infrastructure: FK real**
+------------------------------------------------------------------------
 
-**Fragmento de product.model.ts**
+### Paso 115: Modelo ORM de productos y relación de clave foránea (`product.model.ts`)
+
+En la capa de Infraestructura (`infrastructure/persistence/models/`), estructuramos `ProductModel` mapeando la tabla `products` con tipos de datos precisos (`DECIMAL(10, 2)` para precios y enteros para stock). Establecemos la relación con `ProductTypeModel` mediante los decoradores `@ForeignKey(() => ProductTypeModel)` y `@BelongsTo(() => ProductTypeModel)` sobre `productTypeId`.
 
 ![](images/clipboard-976394963.png)
 
+------------------------------------------------------------------------
+
+### Paso 116: Implementación concreta del repositorio de productos (`product.repository.ts`)
+
+En `infrastructure/persistence/repositories/`, implementamos `ProductRepository` cumpliendo con la interfaz `IProductRepository`. Inyectamos la conexión Sequelize (`@Inject(SEQUELIZE)`), realizamos las operaciones sobre `ProductModel` (`create`, `findAll`, `findById`, `count`) y mapeamos los resultados a entidades puras de dominio con el método `toDomain`.
+
 ![](images/clipboard-4076455548.png)
 
-# **Seeder y módulo**
+------------------------------------------------------------------------
 
-**product.seeder.ts**
+### Paso 117: Seeder para datos iniciales de productos (`product.seeder.ts`)
+
+En `infrastructure/persistence/seeders/`, desarrollamos `ProductSeeder` inyectando ambos repositorios (`PRODUCT_REPOSITORY` y `PRODUCT_TYPE_REPOSITORY`). Busca una categoría activa existente en la base de datos y registra de manera idempotente un `'Producto Demo'` con su stock inicial para facilitar las pruebas.
 
 ![](images/clipboard-3619074067.png)
 
+------------------------------------------------------------------------
+
+### Paso 118: Controlador HTTP de productos (`products.controller.ts`)
+
+En la capa de Presentación (`presentation/http/controllers/`), definimos `ProductsController` decorado con `@ApiTags('products')` y `@Controller('products')`. Exponemos los endpoints REST: `POST /products` (creación con respuesta HTTP 201), `GET /products` (listado paginado por query params) y `GET /products/:id` (búsqueda por ID con validación numérica mediante `ParseIntPipe`).
+
 ![](images/clipboard-1151970402.png)
 
-### El Ensamblaje Final
+------------------------------------------------------------------------
 
-Observa que el `ProductsModule` ahora importa expresamente el `ProductTypesModule` para poder utilizar su repositorio.
+### Paso 119: Módulo de productos y resolución de dependencias cruzadas (`products.module.ts`)
+
+En `src/features/business/products/products.module.ts`, agrupamos los componentes de la feature. Para que los casos de uso y el seeder puedan acceder al repositorio de categorías, importamos explícitamente `ProductTypesModule`, además de registrar el controlador, los casos de uso, el seeder y el binding de persistencia `{ provide: PRODUCT_REPOSITORY, useClass: ProductRepository }`.
 
 ![](images/clipboard-258491903.png)
 
+------------------------------------------------------------------------
+
+### Paso 120: Registro del modelo en la fábrica Sequelize (`sequelize.factory.ts`)
+
+Actualizamos `src/infrastructure/database/sequelize/sequelize.factory.ts` incorporando `ProductModel` al arreglo global `ALL_MODELS: [ClientModel, ProductTypeModel, ProductModel]`, permitiendo que la instancia de Sequelize cargue los tres modelos y aplique las relaciones de clave foránea al sincronizar.
+
 ![](images/clipboard-2612446697.png)
+
+------------------------------------------------------------------------
+
+### Paso 121: Integración del módulo de productos en el módulo raíz (`app.module.ts`)
+
+Registramos `ProductsModule` dentro del arreglo `imports` de `src/app.module.ts` junto con `EnvironmentModule`, `SequelizeModule`, `ClientsModule` y `ProductTypesModule`, completando el ensamblaje de los tres módulos de negocio en el contenedor central de dependencias de NestJS.
 
 ![](images/clipboard-2422783382.png)
 
-vemos nuestras ttablas actualizadas
+------------------------------------------------------------------------
+
+### Paso 122: Verificación global de tablas y endpoints en Swagger UI
+
+Abrimos el navegador en `http://localhost:3002/api/docs` y comprobamos que Swagger UI muestra ahora los cuatro bloques de la API completamente funcionales y sincronizados: **Health**, **clients**, **product-types** y **products**, con todos sus métodos y esquemas disponibles para pruebas interactivas.
 
 ![](images/clipboard-3590732119.png)
 
-**ISS-06 · Sales y stock ——**
+------------------------------------------------------------------------
 
-caso transaccional, servicio de dominio y bloqueo
+## 
