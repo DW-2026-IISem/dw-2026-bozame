@@ -819,3 +819,35 @@ Con el módulo agrupador listo, actualizamos `src/app.module.ts` reemplazando la
 Configuramos las pruebas de extremo a extremo en `test/app.e2e-spec.ts` utilizando Vitest y Supertest. Creamos una prueba para verificar que el endpoint `GET /api/health` responda correctamente con código HTTP 200 y el estado esperado, simulando llamadas reales a la aplicación.
 
 ![](images/clipboard-1398414219.png)
+
+Fase II: Auth con RBAC
+
+**ISS-09 (Base de seguridad compartida y modelos Auth)**.
+
+Se instalaron las librerías `jsonwebtoken` (para generar los tokens de sesión) y `bcryptjs` (para encriptar las contraseñas). Además, se configuraron las variables de entorno (`JWT_SECRET`, `JWT_ACCESS_TTL`, etc.) que definirán el tiempo de vida de las sesiones.
+
+![](images/clipboard-1538810356.png)
+
+*Se implementó la capa compartida de seguridad en `src/common/auth`. Aquí se centralizó la lógica de encriptación de contraseñas usando bcrypt con 12 rondas de salto (coste alto para evitar ataques de fuerza bruta) y la lógica de firma y verificación de los tokens JWT usando el algoritmo HS256.*
+
+![](images/clipboard-1231406653.png)
+
+![](images/clipboard-138264200.png)
+
+*Se crearon los 6 modelos de base de datos que soportan el sistema RBAC (Role-Based Access Control): `User`, `Role`, `Resource`, `RoleUser`, `ResourceRole` y `RefreshToken`. Se configuraron los hooks de Sequelize para encriptar automáticamente la contraseña antes de guardar cualquier usuario, asegurando que nunca se persistan contraseñas en texto claro."*
+
+![](images/clipboard-2020083649.png)
+
+![](images/clipboard-993504983.png)
+
+![](images/clipboard-2386162482.png)
+
+![](images/clipboard-772458172.png)
+
+![](images/clipboard-516829631.png)
+
+![](images/clipboard-3032400273.png)
+
+*Se registraron las nuevas 6 entidades de seguridad en la configuración principal de Sequelize (`sequelize.factory.ts`). Esto permite que el ORM detecte los modelos y cree las tablas correspondientes (`users`, `roles`, etc.) en la base de datos de manera automática."*
+
+![](images/clipboard-10915902.png)
