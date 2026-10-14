@@ -889,3 +889,17 @@ ejecutamos run dev
 y podemos ver en <http://localhost:3002/api/docs>
 
 ![](images/clipboard-4273590055.png)
+
+ISSUE 4 EMPIEZA AQUI--
+
+# **Domain: ProductType y su contrato**
+
+**product-type.entity.ts**
+
+![**product-type.repository.ts**](images/clipboard-4117774527.png)
+
+![](images/clipboard-515091790.png)
+
+Excepciones de la feature
+
+![](images/clipboard-3482351172.png)
