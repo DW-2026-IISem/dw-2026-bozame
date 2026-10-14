@@ -923,3 +923,19 @@ Excepciones de la feature
 # **Infrastructure: tabla, repositorio y seeder**
 
 **product-type.model.ts**
+
+![](images/clipboard-1381634182.png)
+
+**product-type.repository.ts**
+
+![](images/clipboard-2121395114.png)
+
+**product-type.seeder.ts**
+
+![](images/clipboard-2184940826.png)
+
+# **Presentation y módulo**
+
+**product-types.controller.ts**
+
+![](images/clipboard-3996428410.png)
