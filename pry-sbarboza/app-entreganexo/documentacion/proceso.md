@@ -779,3 +779,33 @@ ISS-03 implementa la primera feature real del backend: clients. Aquí sí aparec
 **domain/exceptions/\***
 
 ![](images/clipboard-916323934.png)
+
+## **create-client.dto.ts — forma de entrada**
+
+**application/dto/create-client.dto.ts**
+
+ ![](images/clipboard-3034465676.png)
+
+## **client.mapper.ts — traducir entre idiomas**
+
+**application/mappers/client.mapper.ts**
+
+![](images/clipboard-364478051.png)
+
+## **CreateClientUseCase — crear**
+
+**application/use-cases/create-client.use-case.ts**
+
+![](images/clipboard-1849351583.png)
+
+## **GetClientByIdUseCase — obtener o 404**
+
+**get-client-by-id.use-case.ts — núcleo**
+
+![](images/clipboard-2872868834.png)
+
+## **ListClientsUseCase — paginar y preparar salida**
+
+**list-clients.use-case.ts — núcleo**
+
+![](images/clipboard-1825084865.png)
