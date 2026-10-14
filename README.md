@@ -9,3 +9,4 @@ Para explorar distintas formas de programación, el código del proyecto está d
 * **Backend-full (NestJS):** La versión más avanzada, estructurada y profesional del proyecto.
 
 Acceder [AQUÍ](pry-sbarboza/app-entreganexo/documentacion/proceso.md) a la documentación de mi proyecto EntregaNexo.
+## VIDEO EXPLICATIVO [https://youtu.be/1XnFO22qGxU](https://youtu.be/1XnFO22qGxU)
