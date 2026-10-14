@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts` con Swagger y validación global.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03 - En Proceso):** Implementamos las capas de Dominio y Aplicación para el módulo de clientes (entidad, puerto del repositorio, excepciones, DTOs, mappers y casos de uso).
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -582,8 +582,6 @@ Finalmente, accedemos a la instancia de Oracle y corroboramos que todas las tabl
 
 Para consolidar el desarrollo en una versión definitiva, limpia y estandarizada con las mejores prácticas de NestJS, iniciamos la reestructuración completa del backend creando el proyecto `backend-full`.
 
-ISSUE 1 para bacjend con nesJS
-
 ### Paso 59: Creación del proyecto base con NestJS CLI (`backend-full`)
 
 Creamos la carpeta `backend-full` y generamos la estructura limpia del proyecto utilizando el CLI oficial de NestJS:
@@ -603,8 +601,6 @@ Instalamos los paquetes necesarios para la arquitectura y conectividad: Sequeliz
 ![](images/clipboard-644668646.png)
 
 ------------------------------------------------------------------------
-
-ISSUE 2 para nestJS
 
 ### Paso 61: Migración a módulos ESM y scripts en `package.json`
 
@@ -754,58 +750,114 @@ Estructuramos el archivo de arranque `src/main.ts` donde se inicializa la aplica
 
 ------------------------------------------------------------------------
 
-## ejecutamos run dev y vemos que funciona
+### Paso 79: Verificación y arranque del backend en desarrollo
+
+Ejecutamos el comando `npm run start:dev` y confirmamos en la terminal que `backend-full` inicia correctamente, compila sin errores, inicializa los módulos y queda listo para recibir peticiones.
 
 ![](images/clipboard-3897032497.png)
 
-ISSUE 3.
+------------------------------------------------------------------------
 
-ISS-03 implementa la primera feature real del backend: clients. Aquí sí aparecen las cuatro capas completas. La intención pedagógica es que comprendas el patrón; product-types, products y sales repetirán la misma lógica estructural con reglas distintas.
+## 14. Fase 13: Feature de Clientes en `backend-full` (ISS-03 - En Proceso)
 
-## **client.entity.ts — entidad de negocio**
+Para iniciar la construcción de las features de negocio en `backend-full`, desarrollamos el módulo de **Clientes (`clients`)** aplicando Clean Architecture en sus cuatro capas. Comenzamos estructurando las capas de **Dominio** y **Aplicación**:
 
-**src/features/business/clients/domain/entities/client.entity.ts**
+### Paso 80: Entidad de negocio de clientes (`client.entity.ts`)
+
+Definimos la entidad pura `Client` en `src/features/business/clients/domain/entities/` con las propiedades del cliente y sus validaciones esenciales de dominio.
 
 ![](images/clipboard-2539423928.png)
 
-## **client.repository.ts — el puerto**
+------------------------------------------------------------------------
 
-**src/features/business/clients/domain/interfaces/client.repository.ts**
+### Paso 81: Puerto del repositorio de clientes (`client.repository.ts`)
+
+Declaramos la interfaz `IClientRepository` en `domain/interfaces/` que actúa como puerto para las operaciones de persistencia, manteniendo la lógica de negocio desacoplada de Sequelize.
 
 ![](images/clipboard-2722704499.png)
 
-## **Excepciones específicas de clients**
+------------------------------------------------------------------------
 
-**domain/exceptions/\***
+### Paso 82: Excepciones de dominio de clientes (`domain/exceptions/`)
+
+Creamos las excepciones específicas del módulo de clientes para emitir errores de negocio precisos (como duplicidad de documentos o correos).
 
 ![](images/clipboard-916323934.png)
 
-## **create-client.dto.ts — forma de entrada**
+------------------------------------------------------------------------
 
-**application/dto/create-client.dto.ts**
+### Paso 83: DTO de entrada para clientes (`create-client.dto.ts`)
 
- ![](images/clipboard-3034465676.png)
+Definimos el DTO en `application/dto/` con las reglas de validación (`class-validator`) que deben cumplir los datos que llegan desde las peticiones HTTP.
 
-## **client.mapper.ts — traducir entre idiomas**
+![](images/clipboard-3034465676.png)
 
-**application/mappers/client.mapper.ts**
+------------------------------------------------------------------------
+
+### Paso 84: Mapper de clientes (`client.mapper.ts`)
+
+Implementamos el mapper en `application/mappers/` para transformar de forma limpia entre los datos del DTO, la entidad de dominio y los objetos de respuesta.
 
 ![](images/clipboard-364478051.png)
 
-## **CreateClientUseCase — crear**
+------------------------------------------------------------------------
 
-**application/use-cases/create-client.use-case.ts**
+### Paso 85: Caso de uso para crear clientes (`CreateClientUseCase`)
+
+Implementamos `CreateClientUseCase` en `application/use-cases/` para orquestar la creación de un nuevo cliente, validando reglas de negocio antes de persistirlo en el repositorio.
 
 ![](images/clipboard-1849351583.png)
 
-## **GetClientByIdUseCase — obtener o 404**
+------------------------------------------------------------------------
 
-**get-client-by-id.use-case.ts — núcleo**
+### Paso 86: Caso de uso para consultar cliente por ID (`GetClientByIdUseCase`)
+
+Creamos `GetClientByIdUseCase` para buscar un cliente por su identificador único y lanzar la excepción `EntityNotFoundException` si no existe.
 
 ![](images/clipboard-2872868834.png)
 
-## **ListClientsUseCase — paginar y preparar salida**
+------------------------------------------------------------------------
 
-**list-clients.use-case.ts — núcleo**
+### Paso 87: Caso de uso para listar y paginar clientes (`ListClientsUseCase`)
+
+Implementamos `ListClientsUseCase` para consultar el listado de clientes registrados con soporte para paginación y formateo de la respuesta.
 
 ![](images/clipboard-1825084865.png)
+
+------------------------------------------------------------------------
+
+## **client.model.ts — representación ORM**
+
+**infrastructure/persistence/models/client.model.ts**
+
+![](images/clipboard-1889476970.png)
+
+## **ClientRepository — adaptador concreto**
+
+**infrastructure/persistence/repositories/client.repository.ts — fragmento**
+
+![](images/clipboard-1335460621.png)
+
+## **ClientSeeder — datos de laboratorio**
+
+**infrastructure/persistence/seeders/client.seeder.ts — núcleo**
+
+![](images/clipboard-2136413724.png)
+
+## **ClientsController — rutas HTTP**
+
+**presentation/http/controllers/clients.controller.ts**
+
+![](images/clipboard-3331515001.png)
+
+## **clients.module.ts — wiring de Nest**
+
+**src/features/business/clients/clients.module.ts**
+
+![](images/clipboard-2070953934.png)
+
+## **AppModule — registrar la feature**
+
+**src/app.module.ts — versión ISS-03**
+
+![](images/clipboard-1822183103.png)
