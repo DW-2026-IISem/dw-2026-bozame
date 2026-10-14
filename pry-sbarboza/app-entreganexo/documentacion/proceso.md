@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores.
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y la arquitectura completa de EntregaNexo.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -540,9 +540,11 @@ Comprobamos en los registros de la terminal que el cliente `oracledb` se conecta
 
 ## 11. Fase 10: Comprobación Visual de Tablas en DBeaver
 
-Para tener una confirmación visual directa del estado de las bases de datos en los contenedores Docker, abrimos el gestor **DBeaver** y nos conectamos a cada uno de los cuatro motores. De esta manera, verificamos que las 5 tablas creadas por el backend (`merchants`, `products`, `clients`, `orders` y `order_details`) existen físicamente con sus columnas y relaciones en cada sistema gestor.
+Para tener una confirmación visual directa del estado de las bases de datos en los contenedores Docker, abrimos el gestor **DBeaver** y nos conectamos a cada uno de los cuatro motores. Comprobamos que todas las conexiones están activas:
 
 ![](images/clipboard-988046604.png)
+
+A continuación, verificamos que las 5 tablas creadas por el backend (`merchants`, `products`, `clients`, `orders` y `order_details`) existen físicamente con sus columnas y relaciones en cada motor:
 
 ### Paso 55: Verificación de tablas en MySQL (DBeaver)
 
@@ -554,7 +556,7 @@ Comprobamos en DBeaver la conexión al contenedor de MySQL y verificamos la pres
 
 ### Paso 56: Verificación de tablas en PostgreSQL (DBeaver)
 
-Revisamos en el esquema de PostgreSQL que las tablas y sus tipos de datos se crearon correctamente:![](images/clipboard-3737651871.png)
+Revisamos en el esquema de PostgreSQL que las tablas y sus tipos de datos se crearon correctamente:
 
 ![](images/clipboard-3737651871.png)
 
@@ -576,6 +578,60 @@ Finalmente, accedemos a la instancia de Oracle y corroboramos que todas las tabl
 
 ------------------------------------------------------------------------
 
-## 12. Conclusión del Avance Actual
+## 12. Fase 11: Reestructuración y Consolidación del Backend (`backend-full`)
 
-Hasta este punto, hemos completado con éxito la base técnica y operativa que permite a **EntregaNexo** funcionar como un marketplace transaccional: \* **Comercios (`merchants`):** Registro y control de tiendas aliadas. \* **Catálogo (`catalog`):** Gestión de productos vinculados a sus respectivos comercios. \* **Clientes (`clients`):** Registro de compradores en la plataforma. \* **Pedidos (`orders`):** Procesamiento de compras mediante transacciones atómicas para asegurar la cabecera y el detalle sin inconsistencias financieras. \* **Interoperabilidad Multibase:** Verificación en terminal y mediante el gestor gráfico DBeaver en los cuatro motores: **MySQL**, **PostgreSQL**, **Microsoft SQL Server** y **Oracle Database**.
+Para consolidar el desarrollo en una versión definitiva, limpia y estandarizada con las mejores prácticas de NestJS, iniciamos la reestructuración completa del backend creando el proyecto `backend-full`.
+
+### Paso 59: Creación del proyecto base con NestJS CLI (`backend-full`)
+
+Creamos la carpeta `backend-full` y generamos la estructura limpia del proyecto utilizando el CLI oficial de NestJS:
+
+![](images/clipboard-1454525543.png)
+
+![](images/clipboard-4290269056.png)
+
+------------------------------------------------------------------------
+
+### Paso 60: Instalación de dependencias del núcleo y desarrollo
+
+Instalamos los paquetes necesarios para la arquitectura y conectividad: Sequelize, decoradores tipados, drivers para las cuatro bases de datos (MySQL, PostgreSQL, SQL Server y Oracle), utilidades de validación (`class-validator`), Swagger y herramientas de testing con Vitest:
+
+![](images/clipboard-2427658075.png)
+
+![](images/clipboard-644668646.png)
+
+------------------------------------------------------------------------
+
+### Paso 61: Migración a módulos ESM y scripts en `package.json`
+
+Modificamos el archivo `package.json` agregando `"type": "module"` para utilizar el estándar moderno de módulos ECMAScript y definimos los scripts de compilación, ejecución, formateo y pruebas sin afectar las dependencias instaladas por NestJS:
+
+![](images/clipboard-667243716.png)
+
+------------------------------------------------------------------------
+
+### Paso 62: Configuración de TypeScript y herramientas de compilación
+
+Ajustamos las opciones en `tsconfig.json` y `tsconfig.build.json` para soportar ESM, decoradores y rutas absolutas:
+
+![](images/clipboard-2671170191.png)
+
+------------------------------------------------------------------------
+
+### Paso 63: Script para liberar puertos (`scripts/free-port.js`)
+
+Configuramos el script `free-port.js` que se ejecuta antes de `npm run start:dev` para buscar cualquier proceso que esté ocupando el puerto 3002 y cerrarlo automáticamente, asegurando que NestJS inicie sin conflictos de puerto:
+
+![](images/clipboard-3037541733.png)
+
+------------------------------------------------------------------------
+
+### Paso 64: Estructuración de la arquitectura de EntregaNexo en `backend-full`
+
+Organizamos el árbol de carpetas dentro de `src/` adoptando la Arquitectura Limpia modular (`common`, `config`, `features/business`, `health`, `infrastructure`) para albergar todas las entidades y reglas de negocio del sistema:
+
+![](images/clipboard-2330050971.png)
+
+------------------------------------------------------------------------
+
+## 
