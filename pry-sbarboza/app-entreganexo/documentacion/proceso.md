@@ -1,4 +1,4 @@
-# Guía Paso a Paso: Configuración del Entorno y Backend - EntregaNexo
+# Guía Paso a Paso: Configuración del Entorno y Backend con NestJS - EntregaNexo
 
 **Asignatura:** Desarrollo Web\
 **Proyecto:** EntregaNexo\
