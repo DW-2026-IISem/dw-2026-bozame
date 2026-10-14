@@ -16,7 +16,7 @@ Para este proyecto utilizamos las siguientes herramientas y tecnologías: \* **D
 
 ### Organización del trabajo
 
-El desarrollo documentado está organizado por fases y tareas (*issues*): 1. **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver. 2. **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues: \* **Issue 1:** Creación del proyecto base y herramientas de desarrollo. \* **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor. \* **Issue 3:** Feature de Clientes (`clients`). \* **Issue 4:** Feature de Tipos de Productos (`product-types`). \* **Issue 5:** Feature de Productos y Gestión de Stock (`products`). \* **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`). \* **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest. 3. **Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC):** \* **Issue 9:** Base de seguridad compartida (Bcrypt, JWT) y modelos de base de datos para usuarios, roles, recursos y sesiones (ISS-09). \* **Issue 10:** Módulo de gestión de usuarios (`users`) con DTOs seguros, hashing automático, seeder canónico y solución a dependencias circulares (ISS-10).
+El desarrollo documentado está organizado por fases y tareas (*issues*): 1. **Preparación del Entorno:** Configuración de los contenedores de bases de datos con Docker y comprobación visual de tablas y conexiones en DBeaver. 2. **Fase 1: Desarrollo del Backend con NestJS:** Construcción del backend organizado por issues: \* **Issue 1:** Creación del proyecto base y herramientas de desarrollo. \* **Issue 2:** Capa transversal, conexión a bases de datos y arranque del servidor. \* **Issue 3:** Feature de Clientes (`clients`). \* **Issue 4:** Feature de Tipos de Productos (`product-types`). \* **Issue 5:** Feature de Productos y Gestión de Stock (`products`). \* **Issue 6:** Feature de Ventas y Transacciones Atómicas (`sales`). \* **Issue 7:** Módulo agrupador de negocios (`BusinessModule`), seeders automáticos y pruebas e2e con Vitest. 3. **Fase 2: Autenticación y Control de Acceso Basado en Roles (RBAC):** \* **Issue 9:** Base de seguridad compartida (Bcrypt, JWT) y modelos de base de datos para usuarios, roles, recursos y sesiones (ISS-09). \* **Issue 10:** Módulo de gestión de usuarios (`users`) con DTOs seguros, hashing automático, seeder canónico y solución a dependencias circulares (ISS-10). \* **Issue 11:** Módulos de Roles y Recursos (`roles` y `resources`) para el control de autorización RBAC (ISS-11).
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -1073,22 +1073,108 @@ Probamos el control de reglas de negocio enviando una petición `POST http://loc
 
 ------------------------------------------------------------------------
 
-**Próxima tarea:** **ISS-11** (Roles y Recursos).
+## Issue 11: Módulos de Roles y Recursos (Feature Roles & Resources - ISS-11)
 
-**ISS-11 (Roles y Recursos):** Se implementaron los módulos de Roles y Recursos siguiendo la Clean Architecture. Los Roles actúan como agrupadores lógicos de permisos (ej. `ADMIN`, `SELLER`). Los Recursos representan los puntos de acceso protegibles del sistema (un método HTTP y una ruta, ej. `GET /api/productos`). Se programó un catálogo estático centralizado con los 58 recursos de la aplicación y se crearon seeders idempotentes para asegurar que la base de datos siempre cuente con la estructura de autorización requerida.
+Implementamos los módulos de Roles y Recursos siguiendo los principios de la Clean Architecture. Los roles actúan como agrupadores lógicos de permisos (como `ADMIN` y `SELLER`), mientras que los recursos representan los puntos de acceso protegibles del sistema mediante un método HTTP y una ruta (por ejemplo, `GET /api/productos`). Con esta estructura preparamos el catálogo centralizado de recursos y los seeders idempotentes para garantizar que la base de datos siempre disponga del esquema de autorización requerido.
 
-###  Feature Roles (Agrupadores)
+### Feature Roles (Agrupadores de Permisos)
 
-Vamos a crear el módulo de Roles. Para optimizar y no crear tantos archivos, agruparemos los Casos de Uso en un `RolesService` (un patrón muy profesional en NestJS llamado *Application Service*).
+Iniciamos con el desarrollo del módulo de Roles. Para optimizar la arquitectura y mantener el código cohesionado sin generar una sobrecarga de archivos individuales, agrupamos los casos de uso dentro de un servicio unificado `RolesService` (*Application Service*).
+
+------------------------------------------------------------------------
+
+### Paso 126: Estructura de carpetas y DTO para creación de roles (`create-role.dto.ts`)
+
+Creamos la estructura de carpetas en `src/features/auth/roles/` para las capas de aplicación, infraestructura y presentación. En `src/features/auth/roles/application/dto/create-role.dto.ts`, definimos el DTO `CreateRoleDto` utilizando `class-validator` para validar que el nombre del rol (`name`) sea una cadena obligatoria de hasta 80 caracteres, y decoradores de Swagger (`@ApiProperty` y `@ApiPropertyOptional`) para documentar las propiedades en la interfaz interactiva.
 
 ![](images/clipboard-3503030664.png)
 
+------------------------------------------------------------------------
+
+### Paso 127: Repositorio de persistencia de roles en Sequelize (`role.repository.ts`)
+
+En `src/features/auth/roles/infrastructure/persistence/repositories/role.repository.ts`, implementamos `RoleRepository` inyectando la instancia de Sequelize. Definimos los métodos de persistencia: `findAllActive()` para listar los roles con estado activo, `findById()` para búsquedas por identificador primario, `findByName()` para localizar roles por nombre normalizado en mayúsculas (`name.trim().toUpperCase()`), así como los métodos de creación y actualización.
+
 ![](images/clipboard-135607616.png)
+
+------------------------------------------------------------------------
+
+### Paso 128: Servicio de aplicación para gestión de roles (`roles.service.ts`)
+
+En `src/features/auth/roles/application/services/roles.service.ts`, implementamos `RolesService` (*Application Service*) inyectando `RoleRepository`. El método `create()` verifica la existencia previa del rol para prevenir duplicados arrojando `ConflictException('Role name already in use')`, o lo persiste con el nombre en mayúsculas y estado `active`. A su vez, `findAll()` y `findOne()` resuelven las consultas, lanzando `NotFoundException('Role not found')` si el rol no existe o está inactivo.
 
 ![](images/clipboard-515785549.png)
 
+------------------------------------------------------------------------
+
+### Paso 129: Controlador HTTP para endpoints de roles (`roles.controller.ts`)
+
+En `src/features/auth/roles/presentation/http/controllers/roles.controller.ts`, creamos el controlador `RolesController` anotado con `@ApiTags('roles')` y la ruta base `/roles`. Inyectamos `RolesService` para exponer los endpoints: `POST /roles` (código HTTP 201) para el registro de nuevos roles, `GET /roles` para listar los roles activos del sistema, y `GET /roles/:id` (con `ParseIntPipe`) para consultar el detalle de un rol específico.
+
 ![](images/clipboard-2242667041.png)
+
+------------------------------------------------------------------------
+
+### Paso 130: Seeder para roles canónicos del sistema (`role.seeder.ts`)
+
+En `src/features/auth/roles/infrastructure/persistence/seeders/role.seeder.ts`, programamos `RoleSeeder` para inicializar los roles base del sistema (`ADMIN` con la descripción `'Administración del sistema'` y `SELLER` con la descripción `'Operación de ventas'`). Implementamos el método `seed()` de forma idempotente con `Role.findOrCreate()`, asegurando que los roles canónicos requeridos para el control de acceso se carguen en la base de datos sin duplicarse al arrancar el servidor.
 
 ![](images/clipboard-4076232385.png)
 
+------------------------------------------------------------------------
+
+### Paso 131: Módulo de roles en NestJS (`roles.module.ts`)
+
+En `src/features/auth/roles/roles.module.ts`, definimos `RolesModule` agrupando el controlador `RolesController` y los proveedores `RolesService`, `RoleRepository` y `RoleSeeder`. Exportamos `RoleSeeder` para que pueda ser inyectado y ejecutado por el orquestador global de seeders en el ciclo de vida de la aplicación.
+
 ![](images/clipboard-4068343269.png)
+
+------------------------------------------------------------------------
+
+### Feature Resources (Puntos de Acceso protegibles)
+
+Aquí el profesor exige que carguemos un catálogo exacto con 58 rutas (por ejemplo, `POST /api/ventas`). Esto es lo que va a sembrar nuestro seeder.\
+
+![](images/clipboard-1466698124.png)
+
+![](images/clipboard-2233369313.png)
+
+![](images/clipboard-1577626570.png)
+
+![](images/clipboard-1547442417.png)
+
+![](images/clipboard-989057671.png)
+
+![](images/clipboard-1554123596.png)
+
+### Integración en App y SeedersRunner
+
+Finalmente, registramos estos dos nuevos módulos en nuestra aplicación para que NestJS los encienda y siembre los datos.
+
+![](images/clipboard-4235938588.png)
+
+nos sale este error al ejecutar run dev
+
+![](images/clipboard-654268818.png)
+
+arreglamos de la siguiente manera:
+
+### 🐛 Fix: Rutas relativas en Repositorios y Seeders (Roles y Recursos)
+
+**Problema:** El compilador de TypeScript arrojó el error `TS2307: Cannot find module` al intentar importar `role.model.js` y `resource.model.js` desde sus respectivos repositorios y seeders. Esto ocurrió porque la ruta relativa `../../` apuntaba a la carpeta `infrastructure` en lugar de la raíz del módulo del feature.
+
+**Solución:** Se corrigieron las importaciones en los 4 archivos afectados ajustando la ruta a `../../../` para subir el nivel adicional necesario en la estructura de Clean Architecture.
+
+ahora haremos pruebas con thunder client
+
+![](images/clipboard-3766827969.png)
+
+![](images/clipboard-1043349931.png)
+
+vemos que nos arroja los 58 recursos sembrados
+
+ahora provbemos post
+
+![](images/clipboard-2067093533.png)
+
+intentamos crear un rol nuevo y vemos que nos devuelve el estado 201 creado y un nuevo rol de auditor.

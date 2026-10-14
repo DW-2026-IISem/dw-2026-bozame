@@ -13,21 +13,29 @@ import { ClientSeeder } from './clients/infrastructure/persistence/seeders/clien
 import { ProductTypeSeeder } from './product-types/infrastructure/persistence/seeders/product-type.seeder.js';
 import { ProductSeeder } from './products/infrastructure/persistence/seeders/product.seeder.js';
 import { UserSeeder } from '../auth/users/infrastructure/persistence/seeders/user.seeder.js';
+import { RoleSeeder } from '../auth/roles/infrastructure/persistence/seeders/role.seeder.js';
+import { ResourceSeeder } from '../auth/resources/infrastructure/persistence/seeders/resource.seeder.js';
 let SeedersRunner = SeedersRunner_1 = class SeedersRunner {
     clientSeeder;
     productTypeSeeder;
     productSeeder;
     userSeeder;
+    roleSeeder;
+    resourceSeeder;
     logger = new Logger(SeedersRunner_1.name);
-    constructor(clientSeeder, productTypeSeeder, productSeeder, userSeeder) {
+    constructor(clientSeeder, productTypeSeeder, productSeeder, userSeeder, roleSeeder, resourceSeeder) {
         this.clientSeeder = clientSeeder;
         this.productTypeSeeder = productTypeSeeder;
         this.productSeeder = productSeeder;
         this.userSeeder = userSeeder;
+        this.roleSeeder = roleSeeder;
+        this.resourceSeeder = resourceSeeder;
     }
     async onApplicationBootstrap() {
         this.logger.log('Verificando datos base (Seeders)...');
         await this.userSeeder.seed();
+        await this.roleSeeder.seed();
+        await this.resourceSeeder.seed();
         await this.clientSeeder.seed();
         await this.productTypeSeeder.seed();
         await this.productSeeder.seed();
@@ -39,7 +47,9 @@ SeedersRunner = SeedersRunner_1 = __decorate([
     __metadata("design:paramtypes", [ClientSeeder,
         ProductTypeSeeder,
         ProductSeeder,
-        UserSeeder])
+        UserSeeder,
+        RoleSeeder,
+        ResourceSeeder])
 ], SeedersRunner);
 export { SeedersRunner };
 //# sourceMappingURL=seeders.runner.js.map

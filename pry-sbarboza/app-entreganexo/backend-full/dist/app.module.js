@@ -11,6 +11,8 @@ import { HealthController } from './health/health.controller.js';
 import { BusinessModule } from './features/business/business.module.js';
 import { SeedersRunner } from './features/business/seeders.runner.js';
 import { UsersModule } from './features/auth/users/users.module.js';
+import { RolesModule } from './features/auth/roles/roles.module.js';
+import { ResourcesModule } from './features/auth/resources/resources.module.js';
 let AppModule = class AppModule {
 };
 AppModule = __decorate([
@@ -19,7 +21,9 @@ AppModule = __decorate([
             EnvironmentModule,
             SequelizeModule,
             BusinessModule,
-            UsersModule
+            UsersModule,
+            RolesModule,
+            ResourcesModule
         ],
         controllers: [HealthController],
         providers: [SeedersRunner],

@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
-import { Role } from '../../role.model.js';
+import { Role } from '../../../role.model.js';
 import { SEQUELIZE } from '../../../../../../infrastructure/database/sequelize/sequelize.module.js';
 
 @Injectable()
