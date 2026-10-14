@@ -582,6 +582,8 @@ Finalmente, accedemos a la instancia de Oracle y corroboramos que todas las tabl
 
 Para consolidar el desarrollo en una versión definitiva, limpia y estandarizada con las mejores prácticas de NestJS, iniciamos la reestructuración completa del backend creando el proyecto `backend-full`.
 
+ISSUE 1 para bacjend con nesJS
+
 ### Paso 59: Creación del proyecto base con NestJS CLI (`backend-full`)
 
 Creamos la carpeta `backend-full` y generamos la estructura limpia del proyecto utilizando el CLI oficial de NestJS:
@@ -601,6 +603,8 @@ Instalamos los paquetes necesarios para la arquitectura y conectividad: Sequeliz
 ![](images/clipboard-644668646.png)
 
 ------------------------------------------------------------------------
+
+ISSUE 2 para nestJS
 
 ### Paso 61: Migración a módulos ESM y scripts en `package.json`
 
@@ -753,3 +757,25 @@ Estructuramos el archivo de arranque `src/main.ts` donde se inicializa la aplica
 ## ejecutamos run dev y vemos que funciona
 
 ![](images/clipboard-3897032497.png)
+
+ISSUE 3.
+
+ISS-03 implementa la primera feature real del backend: clients. Aquí sí aparecen las cuatro capas completas. La intención pedagógica es que comprendas el patrón; product-types, products y sales repetirán la misma lógica estructural con reglas distintas.
+
+## **client.entity.ts — entidad de negocio**
+
+**src/features/business/clients/domain/entities/client.entity.ts**
+
+![](images/clipboard-2539423928.png)
+
+## **client.repository.ts — el puerto**
+
+**src/features/business/clients/domain/interfaces/client.repository.ts**
+
+![](images/clipboard-2722704499.png)
+
+## **Excepciones específicas de clients**
+
+**domain/exceptions/\***
+
+![](images/clipboard-916323934.png)
