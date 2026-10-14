@@ -1,6 +1,6 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Client } from '../../../domain/entities/client.entity.js';
-import { CLIENT_REPOSITORY, IClientRepository } from '../../../domain/interfaces/client.repository.js';
+import { CLIENT_REPOSITORY, type IClientRepository } from '../../../domain/interfaces/client.repository.js';
 
 @Injectable()
 export class ClientSeeder {

@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { CLIENT_REPOSITORY, IClientRepository } from '../../domain/interfaces/client.repository.js';
+import { CLIENT_REPOSITORY, type IClientRepository } from '../../domain/interfaces/client.repository.js';
 import { ClientMapper } from '../mappers/client.mapper.js';
 
 @Injectable()

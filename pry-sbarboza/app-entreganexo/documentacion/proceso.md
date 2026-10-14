@@ -12,7 +12,7 @@ EntregaNexo es una plataforma pensada para conectar comercios locales, comprador
 
 ### ¿Qué hicimos en esta etapa?
 
-Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03 - En Proceso):** Implementamos las capas de Dominio y Aplicación para el módulo de clientes (entidad, puerto del repositorio, excepciones, DTOs, mappers y casos de uso).
+Para desarrollar el proyecto de manera ordenada, organizamos el trabajo por fases y tareas (*issues*): 1. **Bases de Datos con Docker:** Levantamos cuatro bases de datos distintas (**MySQL**, **PostgreSQL**, **SQL Server** y **Oracle**) usando Docker Compose, guardando la información en carpetas locales. 2. **Estructura Base del Backend (ISS-01):** Creamos el proyecto con NestJS, instalamos librerías necesarias, preparamos herramientas de desarrollo y estructuramos las carpetas. 3. **Configuración Global y Errores (ISS-02):** Validamos variables de entorno, configuramos Sequelize, interceptores, excepciones personalizadas y el filtro global de errores. 4. **Feature Comercios (ISS-03):** Implementamos el módulo de comercios aliados (`merchants`) aplicando Arquitectura Limpia (*Clean Architecture*) en cuatro capas. 5. **Feature Catálogo y Productos (ISS-04):** Construimos el módulo de productos (`catalog`), relacionando los productos con los comercios. 6. **Feature Clientes (ISS-05):** Desarrollamos el módulo de clientes (`clients`), requisito indispensable para la creación de pedidos. 7. **Feature Pedidos y Transacciones Atómicas (ISS-06):** Implementamos el módulo de pedidos (`orders`) con cabecera y detalle, garantizando transacciones seguras para evitar inconsistencias financieras. 8. **Pruebas y Validación con Swagger:** Configuramos pruebas con Vitest y verificamos el funcionamiento de todos los endpoints visualmente en Swagger UI. 9. **Validación Multibase de Datos:** Comprobamos la portabilidad del backend alternando entre **MySQL**, **PostgreSQL**, **SQL Server** y **Oracle** únicamente modificando el archivo `.env`. 10. **Comprobación Visual en DBeaver:** Confirmamos mediante el gestor gráfico DBeaver que las tablas creadas existen y están sincronizadas en los cuatro motores. 11. **Reestructuración y Consolidación (`backend-full`):** Recreamos el proyecto con NestJS CLI en una estructura limpia y optimizada, configurando dependencias, ESM, tooling de TypeScript, script de puertos y arquitectura modular. 12. **Capa Transversal, Base de Datos y Bootstrap en `backend-full`:** Implementamos variables tipadas, validación, excepciones, filtro global, interceptores, fábrica de conexión Sequelize, endpoint de salud (`/health`) y el arranque central en `main.ts`. 13. **Feature de Clientes en `backend-full` (ISS-03):** Implementamos las cuatro capas completas de Arquitectura Limpia para el módulo de clientes (Dominio, Aplicación, Infraestructura y Presentación), incluyendo entidad, puerto, casos de uso, DTOs, modelo Sequelize, repositorio concreto, seeder idempotente, controlador HTTP y su registro en la fábrica de base de datos y en el módulo raíz.
 
 A continuación, mostramos en detalle cada uno de los pasos que seguimos:
 
@@ -758,9 +758,9 @@ Ejecutamos el comando `npm run start:dev` y confirmamos en la terminal que `back
 
 ------------------------------------------------------------------------
 
-## 14. Fase 13: Feature de Clientes en `backend-full` (ISS-03 - En Proceso)
+## 14. Fase 13: Feature de Clientes en `backend-full` (ISS-03)
 
-Para iniciar la construcción de las features de negocio en `backend-full`, desarrollamos el módulo de **Clientes (`clients`)** aplicando Clean Architecture en sus cuatro capas. Comenzamos estructurando las capas de **Dominio** y **Aplicación**:
+Para iniciar la construcción de las features de negocio en `backend-full`, desarrollamos el módulo de **Clientes (`clients`)** aplicando Arquitectura Limpia (*Clean Architecture*) en sus cuatro capas (**Dominio**, **Aplicación**, **Infraestructura** y **Presentación**):
 
 ### Paso 80: Entidad de negocio de clientes (`client.entity.ts`)
 
@@ -826,38 +826,66 @@ Implementamos `ListClientsUseCase` para consultar el listado de clientes registr
 
 ------------------------------------------------------------------------
 
-## **client.model.ts — representación ORM**
+### Paso 88: Modelo ORM de clientes con Sequelize (`client.model.ts`)
 
-**infrastructure/persistence/models/client.model.ts**
+En la capa de Infraestructura (`infrastructure/persistence/models/`), definimos el modelo `ClientModel` extendiendo de `Model` de `sequelize-typescript`. Lo vinculamos a la tabla `clients` con timestamps automáticos y mapeamos las columnas de persistencia (`id`, `name`, `email`, `phone`, `address` y `status`).
 
 ![](images/clipboard-1889476970.png)
 
-## **ClientRepository — adaptador concreto**
+------------------------------------------------------------------------
 
-**infrastructure/persistence/repositories/client.repository.ts — fragmento**
+### Paso 89: Implementación concreta del repositorio de clientes (`client.repository.ts`)
+
+En `infrastructure/persistence/repositories/`, implementamos la clase `ClientRepository` que cumple con la interfaz `IClientRepository` (el puerto de dominio). Inyectamos la conexión global de Sequelize (`@Inject(SEQUELIZE)`) para realizar las consultas a la base de datos (`create`, `findAll`, `findById`, `findByEmail`, `count`) y convertimos los resultados a entidades de dominio mediante el método privado `toDomain`.
 
 ![](images/clipboard-1335460621.png)
 
-## **ClientSeeder — datos de laboratorio**
+------------------------------------------------------------------------
 
-**infrastructure/persistence/seeders/client.seeder.ts — núcleo**
+### Paso 90: Seeder para datos iniciales de prueba (`client.seeder.ts`)
+
+Creamos el seeder en `infrastructure/persistence/seeders/` para precargar de manera idempotente un cliente de demostración (`demo.cliente@tecnogua.edu.co`). Si el cliente ya existe en la base de datos, el seeder lo omite; si no, lo registra automáticamente para facilitar las pruebas del laboratorio.
 
 ![](images/clipboard-2136413724.png)
 
-## **ClientsController — rutas HTTP**
+------------------------------------------------------------------------
 
-**presentation/http/controllers/clients.controller.ts**
+### Paso 91: Controlador HTTP de clientes (`clients.controller.ts`)
+
+En la capa de Presentación (`presentation/http/controllers/`), implementamos `ClientsController` etiquetado para Swagger con `@ApiTags('clients')`. Exponemos las rutas REST para la gestión de clientes: `POST /clients` (creación con validación del DTO), `GET /clients` (listado con paginación por query params) y `GET /clients/:id` (búsqueda por identificador con validación numérica mediante `ParseIntPipe`).
 
 ![](images/clipboard-3331515001.png)
 
-## **clients.module.ts — wiring de Nest**
+------------------------------------------------------------------------
 
-**src/features/business/clients/clients.module.ts**
+### Paso 92: Módulo de clientes y cableado de dependencias (`clients.module.ts`)
+
+Creamos `clients.module.ts` en `src/features/business/clients/` para conectar todas las piezas de la feature. Declaramos el controlador, registramos los casos de uso y el seeder como providers, y vinculamos la abstracción del puerto con su implementación concreta `{ provide: CLIENT_REPOSITORY, useClass: ClientRepository }`, exportando el repositorio y el seeder.
 
 ![](images/clipboard-2070953934.png)
 
-## **AppModule — registrar la feature**
+------------------------------------------------------------------------
 
-**src/app.module.ts — versión ISS-03**
+### Paso 93: Registro del modelo en la fábrica Sequelize (`sequelize.factory.ts`)
+
+Actualizamos `src/infrastructure/database/sequelize/sequelize.factory.ts` importando `ClientModel` e incorporándolo al arreglo `ALL_MODELS`. De esta manera, al inicializarse la conexión a la base de datos, Sequelize carga y sincroniza la tabla de clientes en el motor que esté activo.
+
+![](images/clipboard-1095639418.png)
+
+------------------------------------------------------------------------
+
+### Paso 94: Integración de la feature en el módulo raíz (`app.module.ts`)
+
+Finalmente, registramos `ClientsModule` en el arreglo `imports` de `src/app.module.ts` junto con `EnvironmentModule` y `SequelizeModule`. Con esto, la feature de clientes queda plenamente integrada al ciclo de vida global de NestJS y lista para recibir peticiones HTTP.
 
 ![](images/clipboard-1822183103.png)
+
+------------------------------------------------------------------------
+
+ejecutamos run dev
+
+![](images/clipboard-1392727739.png)
+
+y podemos ver en <http://localhost:3002/api/docs>
+
+![](images/clipboard-4273590055.png)

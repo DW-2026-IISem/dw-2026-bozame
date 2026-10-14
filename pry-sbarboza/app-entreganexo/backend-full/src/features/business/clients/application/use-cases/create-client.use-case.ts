@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Client } from '../../domain/entities/client.entity.js';
-import { CLIENT_REPOSITORY, IClientRepository } from '../../domain/interfaces/client.repository.js';
+import { CLIENT_REPOSITORY, type IClientRepository } from '../../domain/interfaces/client.repository.js';
 import { CreateClientDto } from '../dto/create-client.dto.js';
 import { ClientMapper } from '../mappers/client.mapper.js';
 import { ClientEmailAlreadyExistsException } from '../../domain/exceptions/client.exceptions.js';

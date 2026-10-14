@@ -14,7 +14,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { Client } from '../../../domain/entities/client.entity.js';
 import { ClientModel } from '../models/client.model.js';
-import { SEQUELIZE } from '../../../../../infrastructure/database/sequelize/sequelize.module.js';
+import { SEQUELIZE } from '../../../../../../infrastructure/database/sequelize/sequelize.module.js';
 let ClientRepository = class ClientRepository {
     sequelize;
     constructor(sequelize) {

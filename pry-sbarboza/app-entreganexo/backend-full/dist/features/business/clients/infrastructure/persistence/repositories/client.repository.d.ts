@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize-typescript';
 import { Client } from '../../../domain/entities/client.entity.js';
-import { IClientRepository } from '../../../domain/interfaces/client.repository.js';
+import type { IClientRepository } from '../../../domain/interfaces/client.repository.js';
 export declare class ClientRepository implements IClientRepository {
     private readonly sequelize;
     constructor(sequelize: Sequelize);

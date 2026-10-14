@@ -1,5 +1,5 @@
 import { Client } from '../../domain/entities/client.entity.js';
-import { IClientRepository } from '../../domain/interfaces/client.repository.js';
+import { type IClientRepository } from '../../domain/interfaces/client.repository.js';
 export declare class GetClientByIdUseCase {
     private readonly clientRepository;
     constructor(clientRepository: IClientRepository);

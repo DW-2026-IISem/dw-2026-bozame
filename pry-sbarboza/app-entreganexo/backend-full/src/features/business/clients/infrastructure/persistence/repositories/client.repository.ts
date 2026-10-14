@@ -1,9 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { Client, ClientStatus } from '../../../domain/entities/client.entity.js';
-import { IClientRepository } from '../../../domain/interfaces/client.repository.js';
+import type { IClientRepository } from '../../../domain/interfaces/client.repository.js';
 import { ClientModel } from '../models/client.model.js';
-import { SEQUELIZE } from '../../../../../infrastructure/database/sequelize/sequelize.module.js';
+import { SEQUELIZE } from '../../../../../../infrastructure/database/sequelize/sequelize.module.js';
 
 @Injectable()
 export class ClientRepository implements IClientRepository {
