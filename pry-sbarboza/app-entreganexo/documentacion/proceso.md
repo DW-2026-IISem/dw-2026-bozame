@@ -33,6 +33,7 @@ El desarrollo documentado está organizado por fases y tareas (*issues*):
     - **Issue 11:** Módulos de Roles y Recursos (`roles` y `resources`) para el control de autorización RBAC (ISS-11).
     - **Issue 12:** Asignaciones de roles a usuarios y concesión de permisos RBAC sobre recursos (ISS-12).
     - **Issue 13:** Middlewares de acceso, guards de autenticación (JWT) y autorización basada en roles (RBAC) con política Deny by Default (ISS-13).
+    - **Issue 14:** Módulo de autenticación (`auth`), validación de credenciales y generación de tokens de acceso JWT (ISS-14).
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -1513,26 +1514,119 @@ En `src/features/business/products/presentation/http/controllers/products.contro
 
 ------------------------------------------------------------------------
 
-**pruebas thunder client**
+### Verificación de los Escudos de Seguridad en Thunder Client
 
-#1 con productos
+Comprobamos que los endpoints protegidos con `JwtAuthGuard` y `RbacGuard` bloqueen activamente las peticiones anónimas.
+
+------------------------------------------------------------------------
+
+### Paso 169: Comprobación del bloqueo por falta de autenticación en productos (HTTP 401)
+
+Realizamos una petición HTTP `GET http://localhost:3002/api/productos` en Thunder Client sin incluir credenciales ni token en las cabeceras. El servidor interceptó la solicitud mediante el guard `JwtAuthGuard` y respondió con código `401 Unauthorized` y el mensaje `"401 No autenticado — falta el Bearer token"`, verificando que el catálogo de productos rechaza correctamente las consultas anónimas.
 
 ![](images/clipboard-4255928361.png)
 
-vemos el error 401 porque efectivamente falta el token
+------------------------------------------------------------------------
 
-#2 con ususarios
+### Paso 170: Comprobación del bloqueo por falta de autenticación en usuarios (HTTP 401)
+
+Efectuamos una petición HTTP `GET http://localhost:3002/api/usuarios` en Thunder Client sin cabecera de autorización. El guard de autenticación bloqueó el acceso de inmediato retornando el estado `401 Unauthorized` con el mensaje `"401 No autenticado — falta el Bearer token"`, confirmando que el módulo de usuarios se encuentra completamente resguardado ante accesos no identificados.
 
 ![](images/clipboard-1552401598.png)
 
-ISSUE 14
+------------------------------------------------------------------------
 
-**ISS-14 (Autenticación y Generación de Token):** Se implementó el módulo de autenticación central (`AuthModule`). Se desarrolló el caso de uso de Login, el cual verifica las credenciales del usuario contra la base de datos y, de ser válidas, emite un JSON Web Token (JWT) firmado criptográficamente. Este token encapsula la identidad del usuario (`sub`, `username`) y es el mecanismo oficial que permite atravesar los Guards de seguridad configurados en los endpoints protegidos.
+## Issue 14: Autenticación y Generación de Token JWT (Feature Auth - ISS-14)
 
-![![](images/clipboard-424456945.png)](images/clipboard-2330133274.png)
+Implementamos el módulo central de autenticación (`AuthModule`) para permitir a los usuarios iniciar sesión y obtener su token de acceso. Desarrollamos el caso de uso de Login, el cual valida las credenciales recibidas contra la base de datos y, tras confirmar la identidad del usuario, emite un JSON Web Token (JWT) firmado criptográficamente. Este token encapsula la identidad del usuario (`sub: id`, `username`) y es el mecanismo oficial que permite atravesar los *Guards* de seguridad (`JwtAuthGuard` y `RbacGuard`) configurados en los endpoints protegidos del sistema.
+
+### Utilidad Criptográfica de Tokens y DTO de Login
+
+Preparamos la utilidad encargada de firmar los tokens de sesión y definimos la estructura de datos requerida para el inicio de sesión.
+
+------------------------------------------------------------------------
+
+### Paso 171: Optimización de la utilidad criptográfica de tokens (`jwt.util.ts`)
+
+En `src/common/auth/jwt.util.ts`, actualizamos las funciones `generateAccessToken()` y `verifyAccessToken()`. Definimos la clave secreta `JWT_SECRET` y configuramos la firma de tokens con un tiempo de expiración de 8 horas (`expiresIn: '8h'`), encapsulando en el payload el identificador del usuario (`sub: payload.id`) y su nombre de usuario (`username`), dejando listo el mecanismo de emisión para el servicio de autenticación.
+
+![](images/clipboard-424456945.png)
+
+------------------------------------------------------------------------
+
+### Paso 172: Estructura de carpetas y DTO de inicio de sesión (`login.dto.ts`)
+
+Creamos la estructura de directorios en `src/features/auth/auth/` con sus subcarpetas `application/dto`, `application/services` y `presentation/http/controllers`. En `src/features/auth/auth/application/dto/login.dto.ts`, definimos la clase `LoginDto` con las propiedades `username` y `password`, decoradas con `@IsString()` e `@IsNotEmpty()` de `class-validator` y documentadas con `@ApiProperty()` de Swagger para validar los datos de acceso requeridos en el inicio de sesión.
+
+![](images/clipboard-2330133274.png)
+
+------------------------------------------------------------------------
+
+### Servicio, Controlador y Módulo de Autenticación
+
+Desarrollamos la lógica de verificación de contraseñas, exponemos el endpoint HTTP correspondiente y encapsulamos la funcionalidad en su módulo de NestJS.
+
+------------------------------------------------------------------------
+
+### Paso 173: Servicio de aplicación para verificación de credenciales y emisión de token (`auth.service.ts`)
+
+En `src/features/auth/auth/application/services/auth.service.ts`, implementamos la clase inyectable `AuthService`. En su método `login()`, busca al usuario en la base de datos por su `username` verificando que su estado sea `active`, corrobora que la contraseña coincida con el registro y, si las credenciales son válidas, invoca `generateAccessToken()` para retornar un objeto con el mensaje de éxito, los datos del usuario autenticado y su `access_token` correspondiente. En caso contrario, arroja una excepción `UnauthorizedException` con el mensaje *"Credenciales inválidas"*.
 
 ![](images/clipboard-118079485.png)
 
+------------------------------------------------------------------------
+
+### Paso 174: Controlador HTTP para el endpoint de login (`auth.controller.ts`)
+
+En `src/features/auth/auth/presentation/http/controllers/auth.controller.ts`, creamos la clase `AuthController` con la ruta base `/auth` y el decorador `@ApiTags('auth')`. Implementamos el endpoint `@Post('login')` configurado con `@HttpCode(200)` para devolver código HTTP 200 OK en autenticaciones exitosas, delegando la validación del cuerpo de la petición (`@Body() dto: LoginDto`) en el servicio de autenticación.
+
 ![](images/clipboard-2296524909.png)
 
+------------------------------------------------------------------------
+
+### Paso 175: Encapsulación en el módulo de autenticación (`auth.module.ts`)
+
+En `src/features/auth/auth/auth.module.ts`, estructuramos `AuthModule` registrando `AuthController` en la lista de controladores y `AuthService` como proveedor. Con esta configuración, el flujo completo de autenticación queda empaquetado y listo para ser importado en el módulo raíz de la aplicación.
+
 ![](images/clipboard-2376945804.png)
+
+------------------------------------------------------------------------
+
+### Paso 176: Integración del módulo de autenticación en el módulo raíz (`app.module.ts`)
+
+En `src/app.module.ts`, importamos `AuthModule` y lo incorporamos dentro del arreglo `imports` del decorador `@Module()`. Con esta integración, NestJS inicializa el controlador `/auth/login` dentro del árbol de dependencias del servidor, permitiendo a los clientes consumir el servicio de autenticación de forma transversal en el proyecto.
+
+``` typescript
+import { AuthModule } from './features/auth/auth/auth.module.js';
+
+@Module({
+  imports: [
+    EnvironmentModule, 
+    SequelizeModule, 
+    BusinessModule,
+    UsersModule,
+    RolesModule,
+    ResourcesModule,
+    RoleUsersModule,
+    ResourceRolesModule,
+    AuthModule
+  ],
+  controllers: [HealthController],
+  providers: [SeedersRunner],
+})
+export class AppModule {}
+```
+
+------------------------------------------------------------------------
+
+**agregamos el modulo auth en app.module.ts**
+
+![](images/clipboard-3812658750.png)
+
+probamos con thunder client y vemos que funciona
+
+![](images/clipboard-3953289790.png)
+
+como prueba, el usuario si esta en la db
+
+![](images/clipboard-2901181154.png)

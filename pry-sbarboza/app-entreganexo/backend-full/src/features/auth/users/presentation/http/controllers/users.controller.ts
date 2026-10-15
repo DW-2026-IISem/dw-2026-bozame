@@ -8,7 +8,7 @@ import { RbacGuard } from '../../../../../../common/guards/rbac.guard.js';
 
 @ApiTags('users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RbacGuard) // ¡AQUÍ VOLVIMOS A PONER EL ESCUDO!
+@UseGuards(JwtAuthGuard, RbacGuard)
 @Controller('usuarios')
 export class UsersController {
   constructor(

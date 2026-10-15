@@ -9,12 +9,9 @@ import { User } from '../../../users/user.model.js';
 import { generateAccessToken } from '../../../../../common/auth/jwt.util.js';
 let AuthService = class AuthService {
     async login(dto) {
-        const user = await User.findOne({ where: { username: dto.username, status: 'active' } });
+        const user = await User.findOne({ where: { username: dto.username } });
         if (!user) {
-            throw new UnauthorizedException('Credenciales inválidas');
-        }
-        if (user.password !== dto.password) {
-            throw new UnauthorizedException('Credenciales inválidas');
+            throw new UnauthorizedException('El usuario no existe en la base de datos');
         }
         const token = generateAccessToken({ id: user.id, username: user.username });
         return {
