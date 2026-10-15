@@ -1513,4 +1513,26 @@ En `src/features/business/products/presentation/http/controllers/products.contro
 
 ------------------------------------------------------------------------
 
-**Próxima tarea:** Continuación de **ISS-13** (Pruebas de acceso autorizado y denegación en Thunder Client).
+**pruebas thunder client**
+
+#1 con productos
+
+![](images/clipboard-4255928361.png)
+
+vemos el error 401 porque efectivamente falta el token
+
+#2 con ususarios
+
+![](images/clipboard-1552401598.png)
+
+ISSUE 14
+
+**ISS-14 (Autenticación y Generación de Token):** Se implementó el módulo de autenticación central (`AuthModule`). Se desarrolló el caso de uso de Login, el cual verifica las credenciales del usuario contra la base de datos y, de ser válidas, emite un JSON Web Token (JWT) firmado criptográficamente. Este token encapsula la identidad del usuario (`sub`, `username`) y es el mecanismo oficial que permite atravesar los Guards de seguridad configurados en los endpoints protegidos.
+
+![![](images/clipboard-424456945.png)](images/clipboard-2330133274.png)
+
+![](images/clipboard-118079485.png)
+
+![](images/clipboard-2296524909.png)
+
+![](images/clipboard-2376945804.png)
