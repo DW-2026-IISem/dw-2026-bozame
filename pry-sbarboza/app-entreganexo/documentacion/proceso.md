@@ -34,6 +34,7 @@ El desarrollo documentado está organizado por fases y tareas (*issues*):
     - **Issue 12:** Asignaciones de roles a usuarios y concesión de permisos RBAC sobre recursos (ISS-12).
     - **Issue 13:** Middlewares de acceso, guards de autenticación (JWT) y autorización basada en roles (RBAC) con política Deny by Default (ISS-13).
     - **Issue 14:** Módulo de autenticación (`auth`), validación de credenciales y generación de tokens de acceso JWT (ISS-14).
+    - **Issue 15:** Autorización y control de acceso basado en roles (RBAC), verificación con token Bearer y comprobación de permisos (ISS-15).
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -1596,37 +1597,78 @@ En `src/features/auth/auth/auth.module.ts`, estructuramos `AuthModule` registran
 
 En `src/app.module.ts`, importamos `AuthModule` y lo incorporamos dentro del arreglo `imports` del decorador `@Module()`. Con esta integración, NestJS inicializa el controlador `/auth/login` dentro del árbol de dependencias del servidor, permitiendo a los clientes consumir el servicio de autenticación de forma transversal en el proyecto.
 
-``` typescript
-import { AuthModule } from './features/auth/auth/auth.module.js';
-
-@Module({
-  imports: [
-    EnvironmentModule, 
-    SequelizeModule, 
-    BusinessModule,
-    UsersModule,
-    RolesModule,
-    ResourcesModule,
-    RoleUsersModule,
-    ResourceRolesModule,
-    AuthModule
-  ],
-  controllers: [HealthController],
-  providers: [SeedersRunner],
-})
-export class AppModule {}
-```
+![](images/clipboard-3812658750.png)
 
 ------------------------------------------------------------------------
 
-**agregamos el modulo auth en app.module.ts**
+### Paso 177: Comprobación del inicio de sesión (Login) en Thunder Client (HTTP 200 OK)
 
-![](images/clipboard-3812658750.png)
-
-probamos con thunder client y vemos que funciona
+Realizamos una petición HTTP `POST http://localhost:3002/api/auth/login` en Thunder Client enviando las credenciales de nuestro usuario administrador (`sharon_admin` y su contraseña). El servidor validó exitosamente la información contra la base de datos y retornó un código de estado `200 OK`, entregando el mensaje de confirmación, los datos del usuario autenticado (`id: 5`) y el `access_token` JWT firmado criptográficamente.
 
 ![](images/clipboard-3953289790.png)
 
-como prueba, el usuario si esta en la db
+------------------------------------------------------------------------
+
+### Paso 178: Verificación de la persistencia del usuario autenticado en DBeaver
+
+Para verificar la consistencia de los datos en la base de datos relacional, abrimos DBeaver y ejecutamos la consulta `SELECT * FROM users`. Comprobamos visualmente que el registro correspondiente al usuario `sharon_admin` existe de forma persistente con su identificador único (`id: 5`), su correo institucional y su contraseña debidamente encriptada mediante el hash de Bcrypt.
 
 ![](images/clipboard-2901181154.png)
+
+------------------------------------------------------------------------
+
+## Issue 15: Autorización y Control de Acceso Basado en Roles (Validación RBAC - ISS-15)
+
+Validamos la integración definitiva de la arquitectura de seguridad y el funcionamiento del guard de autorización `RbacGuard`. Tras haber emitido el token de autenticación en el Issue 14, el sistema descifra el JWT en cada petición HTTP entrante, extrae la identidad del usuario y resuelve sus permisos efectivos en la base de datos mediante la consulta relacional de cuatro tablas. Aplicamos y comprobamos el principio de mínimo privilegio (*Least Privilege*) y la política de *Deny by Default*: únicamente aquellos usuarios con roles explícitamente autorizados en el catálogo de recursos pueden acceder a los endpoints protegidos, garantizando la inviolabilidad del backend ante peticiones no autenticadas o carentes de permisos.
+
+### Pruebas de Acceso Autorizado y Validación del Token Bearer
+
+Comprobamos que las peticiones con credenciales válidas atraviesen los escudos de seguridad y que las solicitudes no autenticadas sean bloqueadas de inmediato.
+
+------------------------------------------------------------------------
+
+### Paso 179: Autenticación de usuario con rol administrativo en Thunder Client (HTTP 200 OK)
+
+Enviamos una petición `POST http://localhost:3002/api/auth/login` en Thunder Client con las credenciales del usuario `video`. El servicio de autenticación comprobó la validez de los datos y retornó un estado `200 OK` junto a su `access_token` Bearer con tiempo de vigencia de 8 horas, listo para ser empleado como credencial de autorización en las solicitudes subsiguientes.
+
+![](images/clipboard-113383487.png)
+
+------------------------------------------------------------------------
+
+### Paso 180: Consulta autorizada al catálogo de productos con Bearer Token en Thunder Client (HTTP 200 OK)
+
+Realizamos una solicitud `GET http://localhost:3002/api/productos` configurando en la pestaña de autenticación de Thunder Client el token Bearer emitido para el usuario. Gracias a que el usuario cuenta con los permisos necesarios, `JwtAuthGuard` validó la firma criptográfica y `RbacGuard` autorizó la operación, respondiendo el servidor con código `200 OK` y el listado completo de productos paginados (`Producto Demo` con su stock y precio).
+
+![](images/clipboard-1362579377.png)
+
+------------------------------------------------------------------------
+
+### Paso 181: Comprobación de bloqueo al intentar acceder sin Bearer Token (HTTP 401 Unauthorized)
+
+Probamos nuevamente la consulta `GET http://localhost:3002/api/productos`, pero esta vez dejando el campo de token Bearer vacío en Thunder Client. El guard de autenticación interceptó la petición antes de llegar al controlador y la rechazó con código `401 Unauthorized` y el mensaje `"401 No autenticado — falta el Bearer token"`, verificando la efectividad del escudo perimetral.
+
+![](images/clipboard-3642419603.png)
+
+------------------------------------------------------------------------
+
+### Comprobación de la Matriz de Permisos y Roles en Base de Datos
+
+Auditamos la estructura de roles y permisos asignados al usuario para certificar el origen de las autorizaciones concedidas por el sistema.
+
+------------------------------------------------------------------------
+
+### Paso 182: Verificación de las asignaciones de roles al usuario en Thunder Client
+
+Consultamos el endpoint `GET http://localhost:3002/api/asignaciones-rol` para auditar la tabla relacional de asignaciones. El servicio retornó estado `200 OK` y evidenció que nuestro usuario (`userId: 6`) tiene concedido de forma activa el rol de administrador (`roleId: 1`), lo cual explica por qué sus peticiones con token atraviesan de manera exitosa el filtro del `RbacGuard`.
+
+![](images/clipboard-3979836106.png)
+
+------------------------------------------------------------------------
+
+### Paso 183: Verificación del catálogo de roles registrados en DBeaver
+
+Finalmente, accedemos a DBeaver y ejecutamos la consulta `SELECT * FROM roles`. Corroboramos en la tabla física de la base de datos que el identificador `1` corresponde al rol `ADMIN` (*Administración del sistema*) y revisamos los demás roles configurados (`SELLER`, `AUDITOR`, `SUPERVISOR` y `GERENTE`), dando por concluida y validada de punta a punta la implementación del control de acceso basado en roles (RBAC) en EntregaNexo.
+
+![](images/clipboard-1813437103.png)
+
+------------------------------------------------------------------------
