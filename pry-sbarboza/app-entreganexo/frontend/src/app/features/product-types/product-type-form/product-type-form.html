@@ -1,0 +1,33 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div>
+    <label for="type-name" class="field-label">Nombre *</label>
+    <input id="type-name" pInputText formControlName="name" placeholder="Aseo y Limpieza" />
+    @if (form.controls.name.touched && form.controls.name.invalid) {
+      <small class="field-error">El nombre es obligatorio (máx. 120).</small>
+    }
+  </div>
+  <div>
+    <label for="type-description" class="field-label">Descripción</label>
+    <textarea
+      id="type-description"
+      pTextarea
+      formControlName="description"
+      rows="3"
+      placeholder="Productos de limpieza para el hogar"
+    ></textarea>
+  </div>
+  <div>
+    <label for="type-status" class="field-label">Estado</label>
+    <p-select
+      inputId="type-status"
+      formControlName="status"
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+    />
+  </div>
+  <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+    <button pButton type="button" label="Cancelar" severity="secondary" outlined (click)="cancelled.emit()"></button>
+    <button pButton type="submit" label="Guardar" icon="pi pi-check" [loading]="saving()"></button>
+  </div>
+</form>

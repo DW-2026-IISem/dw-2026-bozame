@@ -15,4 +15,12 @@ export const routes: Routes = [
     ],
   },
   { path: '**', redirectTo: '' },
+  {
+    path: 'tipos-producto',
+    title: 'Tipos de producto · EntregaNexo',
+    loadComponent: () =>
+      import('./features/product-types/product-type-list/product-type-list').then(
+        (m) => m.ProductTypeList,
+      ),
+  },
 ];

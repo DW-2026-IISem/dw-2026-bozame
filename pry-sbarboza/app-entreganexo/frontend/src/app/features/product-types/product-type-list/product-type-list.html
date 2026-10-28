@@ -1,0 +1,94 @@
+<app-page-header title="Tipos de producto" subtitle="Catálogo base de clasificación de productos.">
+  <p-tag [value]="rows().length + ' registros'" severity="info" [rounded]="true" />
+  <ng-container *appHasPermission="'POST /api/product-types'">
+    <button pButton label="Nuevo tipo" icon="pi pi-plus" (click)="openCreate()"></button>
+  </ng-container>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>
+}
+
+<div class="card">
+  <div class="card-body">
+    <p-table
+      [value]="visibleRows()"
+      [loading]="loading()"
+      [paginator]="visibleRows().length > 10"
+      [rows]="10"
+      dataKey="id"
+      [tableStyle]="{ 'min-width': '52rem' }"
+    >
+      <ng-template pTemplate="caption">
+        <input
+          pInputText
+          placeholder="Buscar nombre o descripción…"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+        />
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name">Nombre <p-sort-icon field="name" /></th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th class="w-40 text-right">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>
+            <p class="font-medium text-slate-800">{{ row.name }}</p>
+            <p class="text-xs text-slate-400">#{{ row.id }}</p>
+          </td>
+          <td>{{ row.description || '—' }}</td>
+          <td><app-status-tag [status]="row.status" /></td>
+          <td>
+            <div class="flex justify-end gap-1">
+              <ng-container *appHasPermission="'PATCH /api/product-types/:id'">
+                <button pButton text rounded severity="secondary" icon="pi pi-pencil"
+                        pTooltip="Editar" (click)="openEdit(row)"></button>
+              </ng-container>
+              <ng-container *appHasPermission="'PATCH /api/product-types/:id/deactivate'">
+                <button pButton text rounded severity="warn" icon="pi pi-ban"
+                        pTooltip="Baja lógica" (click)="deactivate(row)"></button>
+              </ng-container>
+              <ng-container *appHasPermission="'DELETE /api/product-types/:id'">
+                <button pButton text rounded severity="danger" icon="pi pi-trash"
+                        pTooltip="Eliminar" (click)="remove(row)"></button>
+              </ng-container>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4">
+            <app-empty-state
+              icon="pi pi-tags"
+              title="Sin tipos de producto"
+              message="Crea el primero usando el botón superior."
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '42rem', maxWidth: '95vw' }"
+>
+  <app-product-type-form
+    [productType]="editing()"
+    [saving]="saving()"
+    (saved)="save($event)"
+    (cancelled)="dialogVisible.set(false)"
+  />
+</p-dialog>

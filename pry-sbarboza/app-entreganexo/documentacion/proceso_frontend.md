@@ -318,4 +318,36 @@ Iniciamos el servidor de desarrollo y abrimos la aplicación en `http://localhos
 
 ------------------------------------------------------------------------
 
-**Próxima tarea:** Implementación del módulo de Productos en el Frontend (Issue 4), integrando catálogo de artículos, subida de imágenes y control de inventario.
+ISSUE 4
+
+### Generar los componentes con la CLI
+
+Ejecuta estos comandos en tu terminal dentro de la carpeta `frontend`:
+
+![](images/clipboard-2858194693.png)
+
+### Crear el Servicio `ProductTypeApi`
+
+Crea el archivo del servicio adaptado a la estructura de tu backend de NestJS:
+
+![](images/clipboard-333969002.png)
+
+### Crear el Formulario Reactivo
+
+Inyecta la lógica y la plantilla HTML para crear y editar tipos de producto:
+
+![](images/clipboard-2529503742.png)
+
+### Crear el Listado de Tipos de Producto
+
+Inyecta la lógica y la tabla para gestionar el catálogo:
+
+![](images/clipboard-807476722.png)
+
+### Registrar la ruta y actualizar el menú
+
+1.  Abre tu archivo `src/app/app.routes.ts` y añade la ruta de tipos de producto dentro de las hijas del Shell:
+
+![](images/clipboard-3776605492.png)
+
+![](images/clipboard-2703320518.png)

@@ -12,6 +12,7 @@ import { RouterOutlet, RouterLink } from '@angular/router';
           <span class="text-xl font-bold tracking-tight text-slate-900">EntregaNexo</span>
           <nav class="flex gap-4 text-sm font-medium text-slate-600">
             <a routerLink="/clientes" class="hover:text-slate-900">Clientes</a>
+            <a routerLink="/tipos-producto" class="hover:text-slate-900">Tipos de Producto</a>
             <a routerLink="/productos" class="hover:text-slate-900">Productos</a>
             <a routerLink="/ventas" class="hover:text-slate-900">Ventas</a>
           </nav>
