@@ -41,6 +41,8 @@ export class SessionStore {
           name: permission.role_name,
           description: null,
           status: 'active',
+          created_at: '', // <-- SOLUCIÓN AÑADIDA
+          updated_at: '', // <-- SOLUCIÓN AÑADIDA
         });
       }
     }
@@ -54,6 +56,8 @@ export class SessionStore {
       path: permission.path,
       description: permission.description,
       status: 'active' as const,
+      created_at: '', // <-- SOLUCIÓN AÑADIDA
+      updated_at: '', // <-- SOLUCIÓN AÑADIDA
     })),
   );
 
