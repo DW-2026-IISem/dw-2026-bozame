@@ -56,7 +56,7 @@
 
         <!-- Tabla de líneas de borrador -->
         <p-table [value]="lines()" [tableStyle]="{ 'min-width': '100%' }">
-          <ng-template pTemplate="header">
+          <ng-template #header pTemplate="header">
             <tr>
               <th>Producto</th>
               <th class="text-right">Precio</th>
@@ -65,7 +65,7 @@
               <th class="w-12"></th>
             </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-line let-index="rowIndex">
+          <ng-template #body let-line let-index="rowIndex" pTemplate="body">
             <tr>
               <td>{{ productById().get(line.product_id)?.name || ('Producto #' + line.product_id) }}</td>
               <td class="text-right">{{ productById().get(line.product_id)?.price | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
@@ -76,7 +76,7 @@
               </td>
             </tr>
           </ng-template>
-          <ng-template pTemplate="emptymessage">
+          <ng-template #emptymessage pTemplate="emptymessage">
             <tr>
               <td colspan="5" class="text-center py-4 text-slate-400">No hay productos agregados a la venta.</td>
             </tr>

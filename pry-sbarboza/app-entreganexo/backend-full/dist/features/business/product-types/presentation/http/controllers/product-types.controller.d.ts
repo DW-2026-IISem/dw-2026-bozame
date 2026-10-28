@@ -33,4 +33,10 @@ export declare class ProductTypesController {
         description: string | null;
         status: import("../../../domain/entities/product-type.entity.js").ProductTypeStatus;
     }>;
+    deactivate(id: number): Promise<{
+        success: boolean;
+    }>;
+    remove(id: number): Promise<{
+        success: boolean;
+    }>;
 }

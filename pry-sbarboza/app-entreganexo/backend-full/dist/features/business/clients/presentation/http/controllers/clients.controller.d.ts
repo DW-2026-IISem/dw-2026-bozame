@@ -39,4 +39,10 @@ export declare class ClientsController {
         address: string | null;
         status: import("../../../domain/entities/client.entity.js").ClientStatus;
     }>;
+    deactivate(id: number): Promise<{
+        success: boolean;
+    }>;
+    remove(id: number): Promise<{
+        success: boolean;
+    }>;
 }

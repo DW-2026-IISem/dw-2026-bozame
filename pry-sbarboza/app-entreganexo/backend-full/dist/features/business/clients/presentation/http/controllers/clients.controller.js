@@ -10,13 +10,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, Query, HttpCode, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpCode, ParseIntPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateClientDto } from '../../../application/dto/create-client.dto.js';
 import { CreateClientUseCase } from '../../../application/use-cases/create-client.use-case.js';
 import { ListClientsUseCase } from '../../../application/use-cases/list-clients.use-case.js';
 import { GetClientByIdUseCase } from '../../../application/use-cases/get-client-by-id.use-case.js';
 import { ClientMapper } from '../../../application/mappers/client.mapper.js';
+import { ClientModel } from '../../../infrastructure/persistence/models/client.model.js';
 let ClientsController = class ClientsController {
     createClient;
     listClients;
@@ -36,6 +37,20 @@ let ClientsController = class ClientsController {
     async findOne(id) {
         const client = await this.getClient.execute(id);
         return ClientMapper.toResponse(client);
+    }
+    async deactivate(id) {
+        const found = await ClientModel.findByPk(id);
+        if (found) {
+            await found.update({ status: 'inactive' });
+        }
+        return { success: true };
+    }
+    async remove(id) {
+        const found = await ClientModel.findByPk(id);
+        if (found) {
+            await found.destroy();
+        }
+        return { success: true };
     }
 };
 __decorate([
@@ -61,6 +76,20 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ClientsController.prototype, "findOne", null);
+__decorate([
+    Patch(':id/deactivate'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ClientsController.prototype, "deactivate", null);
+__decorate([
+    Delete(':id'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ClientsController.prototype, "remove", null);
 ClientsController = __decorate([
     ApiTags('clients'),
     Controller('clientes'),

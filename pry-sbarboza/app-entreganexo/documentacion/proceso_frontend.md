@@ -492,3 +492,11 @@ En `src/app/app.routes.ts`, registramos las rutas para el módulo de ventas asoc
 ![](images/clipboard-159563448.png)
 
 ------------------------------------------------------------------------
+
+![![](images/clipboard-3427791590.png)](images/clipboard-3805444488.png)
+
+![](images/clipboard-3731683587.png)
+
+![](images/clipboard-2100020348.png)
+
+![](images/clipboard-2100020348.png)

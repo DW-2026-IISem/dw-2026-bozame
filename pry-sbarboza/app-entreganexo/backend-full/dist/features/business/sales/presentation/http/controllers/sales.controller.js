@@ -10,26 +10,47 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, HttpCode, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, HttpCode, ParseIntPipe, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateSaleDto } from '../../../application/dto/create-sale.dto.js';
 import { CreateSaleUseCase } from '../../../application/use-cases/create-sale.use-case.js';
 import { GetSaleByIdUseCase } from '../../../application/use-cases/get-sale-by-id.use-case.js';
+import { ListSalesUseCase } from '../../../application/use-cases/list-sales.use-case.js';
 import { SaleMapper } from '../../../application/mappers/sale.mapper.js';
+import { SaleModel } from '../../../infrastructure/persistence/models/sale.model.js';
 let SalesController = class SalesController {
     createSale;
     getSale;
-    constructor(createSale, getSale) {
+    listSales;
+    constructor(createSale, getSale, listSales) {
         this.createSale = createSale;
         this.getSale = getSale;
+        this.listSales = listSales;
     }
     async create(dto) {
         const sale = await this.createSale.execute(dto);
         return SaleMapper.toResponse(sale);
     }
+    async list(page = '1', limit = '10') {
+        return this.listSales.execute(Number(page), Number(limit));
+    }
     async findOne(id) {
         const sale = await this.getSale.execute(id);
         return SaleMapper.toResponse(sale);
+    }
+    async deactivate(id) {
+        const found = await SaleModel.findByPk(id);
+        if (found) {
+            await found.update({ status: 'canceled' });
+        }
+        return { success: true };
+    }
+    async remove(id) {
+        const found = await SaleModel.findByPk(id);
+        if (found) {
+            await found.destroy();
+        }
+        return { success: true };
     }
 };
 __decorate([
@@ -41,17 +62,40 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "create", null);
 __decorate([
+    Get(),
+    __param(0, Query('page')),
+    __param(1, Query('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "list", null);
+__decorate([
     Get(':id'),
     __param(0, Param('id', ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], SalesController.prototype, "findOne", null);
+__decorate([
+    Patch(':id/deactivate'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "deactivate", null);
+__decorate([
+    Delete(':id'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], SalesController.prototype, "remove", null);
 SalesController = __decorate([
     ApiTags('sales'),
-    Controller('sales'),
+    Controller(['sales', 'ventas']),
     __metadata("design:paramtypes", [CreateSaleUseCase,
-        GetSaleByIdUseCase])
+        GetSaleByIdUseCase,
+        ListSalesUseCase])
 ], SalesController);
 export { SalesController };
 //# sourceMappingURL=sales.controller.js.map

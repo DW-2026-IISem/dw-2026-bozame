@@ -19,7 +19,7 @@
       dataKey="id"
       [tableStyle]="{ 'min-width': '58rem' }"
     >
-      <ng-template pTemplate="caption">
+      <ng-template #caption pTemplate="caption">
         <input
           pInputText
           placeholder="Buscar por ID o cliente…"
@@ -27,7 +27,7 @@
           (input)="filter.set($any($event.target).value)"
         />
       </ng-template>
-      <ng-template pTemplate="header">
+      <ng-template #header pTemplate="header">
         <tr>
           <th pSortableColumn="id">ID <p-sort-icon field="id" /></th>
           <th pSortableColumn="sale_date">Fecha <p-sort-icon field="sale_date" /></th>
@@ -38,7 +38,7 @@
           <th class="w-32 text-right">Acciones</th>
         </tr>
       </ng-template>
-      <ng-template pTemplate="body" let-sale>
+      <ng-template #body let-sale pTemplate="body">
         <tr>
           <td>
             <span class="font-semibold text-slate-800">#{{ sale.id }}</span>
@@ -62,7 +62,7 @@
           </td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage">
+      <ng-template #emptymessage pTemplate="emptymessage">
         <tr>
           <td colspan="7">
             <app-empty-state

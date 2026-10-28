@@ -8,7 +8,7 @@ import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { Client } from '../../../core/models/client.model';
 import { Sale } from '../../../core/models/sale.model';
 import { NotificationService } from '../../../core/services/notification';
@@ -25,8 +25,19 @@ import { SaleApi } from '../sale-api';
 @Component({
   selector: 'app-sale-list',
   imports: [
-    CurrencyPipe, DatePipe, RouterLink, ButtonModule, InputTextModule, MessageModule, TableModule, TagModule, TooltipModule,
-    HasPermission, EmptyState, PageHeader, StatusTag
+    CurrencyPipe,
+    DatePipe,
+    RouterLink,
+    ButtonModule,
+    InputTextModule,
+    MessageModule,
+    TableModule,
+    TagModule,
+    TooltipModule,
+    HasPermission,
+    EmptyState,
+    PageHeader,
+    StatusTag,
   ],
   templateUrl: './sale-list.html',
   styleUrl: './sale-list.css',
@@ -66,9 +77,7 @@ export class SaleList {
     this.error.set(null);
     forkJoin({
       sales: this.api.list(),
-      clients: this.session.canPermission('GET /api/clientes')
-        ? this.clientsApi.list()
-        : of([]),
+      clients: this.clientsApi.list().pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ sales, clients }) => {
         this.rows.set(Array.isArray(sales) ? sales : []);

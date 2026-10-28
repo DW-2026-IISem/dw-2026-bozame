@@ -11,26 +11,30 @@ export declare class ProductsController {
         product: import("../../../domain/entities/product.entity.js").Product;
     }>;
     list(page?: string, limit?: string): Promise<{
-        products: {
-            items: {
-                id: number | null;
-                name: string;
-                brand: string | null;
-                price: number;
-                minStock: number;
-                quantity: number;
-                productTypeId: number;
-                status: import("../../../domain/entities/product.entity.js").ProductStatus;
-            }[];
-            meta: {
-                page: number;
-                limit: number;
-                total: number;
-                totalPages: number;
-            };
+        items: {
+            id: number | null;
+            name: string;
+            brand: string | null;
+            price: number;
+            minStock: number;
+            quantity: number;
+            productTypeId: number;
+            status: import("../../../domain/entities/product.entity.js").ProductStatus;
+        }[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
         };
     }>;
     findOne(id: number): Promise<{
         product: import("../../../domain/entities/product.entity.js").Product;
+    }>;
+    deactivate(id: number): Promise<{
+        success: boolean;
+    }>;
+    remove(id: number): Promise<{
+        success: boolean;
     }>;
 }

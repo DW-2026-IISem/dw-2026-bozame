@@ -78,6 +78,24 @@ let SaleRepository = class SaleRepository {
         });
         return this.toDomain(found, items);
     }
+    async findAll(page = 1, limit = 10) {
+        const saleRepo = this.sequelize.getRepository(SaleModel);
+        const psRepo = this.sequelize.getRepository(ProductSaleModel);
+        const offset = (page - 1) * limit;
+        const { rows, count } = await saleRepo.findAndCountAll({
+            limit,
+            offset,
+            order: [['id', 'DESC']],
+        });
+        const items = await Promise.all(rows.map(async (sale) => {
+            const saleItems = await psRepo.findAll({
+                where: { saleId: sale.id },
+                order: [['id', 'ASC']],
+            });
+            return this.toDomain(sale, saleItems);
+        }));
+        return { items, total: count };
+    }
     toDomain(s, items) {
         const domainItems = items.map(i => new ProductSale({
             id: i.id,

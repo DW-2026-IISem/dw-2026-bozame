@@ -8,7 +8,7 @@ import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
-import { forkJoin, of } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 import { Product, ProductPayload } from '../../../core/models/product.model';
 import { ProductType } from '../../../core/models/product-type.model';
 import { NotificationService } from '../../../core/services/notification';
@@ -26,8 +26,19 @@ import { ProductForm } from '../product-form/product-form';
 @Component({
   selector: 'app-product-list',
   imports: [
-    CurrencyPipe, ButtonModule, DialogModule, InputTextModule, MessageModule, TableModule, TagModule, TooltipModule,
-    HasPermission, EmptyState, PageHeader, StatusTag, ProductForm
+    CurrencyPipe,
+    ButtonModule,
+    DialogModule,
+    InputTextModule,
+    MessageModule,
+    TableModule,
+    TagModule,
+    TooltipModule,
+    HasPermission,
+    EmptyState,
+    PageHeader,
+    StatusTag,
+    ProductForm,
   ],
   templateUrl: './product-list.html',
   styleUrl: './product-list.css',
@@ -56,12 +67,17 @@ export class ProductList {
   });
 
   readonly lowStockCount = computed(
-    () => this.rows().filter((product) => product.quantity <= product.min_stock).length,
+    () =>
+      this.rows().filter(
+        (product) => product.quantity <= (product.min_stock ?? 0),
+      ).length,
   );
 
   readonly dialogVisible = signal(false);
   readonly editing = signal<Product | null>(null);
-  readonly title = computed(() => (this.editing() ? 'Editar producto' : 'Nuevo producto'));
+  readonly title = computed(() =>
+    this.editing() ? 'Editar producto' : 'Nuevo producto',
+  );
 
   constructor() {
     this.load();
@@ -72,9 +88,7 @@ export class ProductList {
     this.error.set(null);
     forkJoin({
       products: this.api.list(),
-      types: this.session.canPermission('GET /api/product-types')
-        ? this.typesApi.list()
-        : of([]),
+      types: this.typesApi.list().pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ products, types }) => {
         this.rows.set(Array.isArray(products) ? products : []);
@@ -101,13 +115,17 @@ export class ProductList {
   save(payload: ProductPayload): void {
     const current = this.editing();
     this.saving.set(true);
-    const request = current ? this.api.update(current.id, payload) : this.api.create(payload);
+    const request = current
+      ? this.api.update(current.id, payload)
+      : this.api.create(payload);
 
     request.subscribe({
       next: () => {
         this.saving.set(false);
         this.dialogVisible.set(false);
-        this.notify.success(current ? 'Producto actualizado' : 'Producto creado');
+        this.notify.success(
+          current ? 'Producto actualizado' : 'Producto creado',
+        );
         this.load();
       },
       error: (error: unknown) => {

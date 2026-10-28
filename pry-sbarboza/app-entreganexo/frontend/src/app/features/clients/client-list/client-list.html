@@ -22,7 +22,7 @@
       dataKey="id"
       [tableStyle]="{ 'min-width': '52rem' }"
     >
-      <ng-template pTemplate="caption">
+      <ng-template #caption pTemplate="caption">
         <input
           pInputText
           placeholder="Buscar nombre, email, teléfono…"
@@ -30,7 +30,7 @@
           (input)="filter.set($any($event.target).value)"
         />
       </ng-template>
-      <ng-template pTemplate="header">
+      <ng-template #header pTemplate="header">
         <tr>
           <th pSortableColumn="name">Nombre <p-sort-icon field="name" /></th>
           <th>Contacto</th>
@@ -39,7 +39,7 @@
           <th class="w-40 text-right">Acciones</th>
         </tr>
       </ng-template>
-      <ng-template pTemplate="body" let-client>
+      <ng-template #body let-client pTemplate="body">
         <tr>
           <td>
             <p class="font-medium text-slate-800">{{ client.name }}</p>
@@ -69,7 +69,7 @@
           </td>
         </tr>
       </ng-template>
-      <ng-template pTemplate="emptymessage">
+      <ng-template #emptymessage pTemplate="emptymessage">
         <tr>
           <td colspan="5">
             <app-empty-state

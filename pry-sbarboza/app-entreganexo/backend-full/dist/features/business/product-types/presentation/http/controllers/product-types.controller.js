@@ -10,13 +10,14 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, Query, HttpCode, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Query, HttpCode, ParseIntPipe } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { CreateProductTypeDto } from '../../../application/dto/create-product-type.dto.js';
 import { CreateProductTypeUseCase } from '../../../application/use-cases/create-product-type.use-case.js';
 import { ListProductTypesUseCase } from '../../../application/use-cases/list-product-types.use-case.js';
 import { GetProductTypeByIdUseCase } from '../../../application/use-cases/get-product-type-by-id.use-case.js';
 import { ProductTypeMapper } from '../../../application/mappers/product-type.mapper.js';
+import { ProductTypeModel } from '../../../infrastructure/persistence/models/product-type.model.js';
 let ProductTypesController = class ProductTypesController {
     createProductType;
     listProductTypes;
@@ -36,6 +37,20 @@ let ProductTypesController = class ProductTypesController {
     async findOne(id) {
         const pt = await this.getProductType.execute(id);
         return ProductTypeMapper.toResponse(pt);
+    }
+    async deactivate(id) {
+        const found = await ProductTypeModel.findByPk(id);
+        if (found) {
+            await found.update({ status: 'inactive' });
+        }
+        return { success: true };
+    }
+    async remove(id) {
+        const found = await ProductTypeModel.findByPk(id);
+        if (found) {
+            await found.destroy();
+        }
+        return { success: true };
     }
 };
 __decorate([
@@ -61,6 +76,20 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ProductTypesController.prototype, "findOne", null);
+__decorate([
+    Patch(':id/deactivate'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductTypesController.prototype, "deactivate", null);
+__decorate([
+    Delete(':id'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductTypesController.prototype, "remove", null);
 ProductTypesController = __decorate([
     ApiTags('product-types'),
     Controller('product-types'),

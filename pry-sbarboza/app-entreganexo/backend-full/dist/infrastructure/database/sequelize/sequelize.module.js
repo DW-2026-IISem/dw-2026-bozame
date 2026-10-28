@@ -20,7 +20,7 @@ SequelizeModule = __decorate([
                 useFactory: async (cfg) => {
                     const sequelize = sequelizeFactory(cfg);
                     await sequelize.authenticate();
-                    await sequelize.sync({ alter: true });
+                    await sequelize.sync();
                     return sequelize;
                 },
             },

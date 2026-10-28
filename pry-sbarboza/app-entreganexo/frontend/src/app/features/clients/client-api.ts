@@ -4,16 +4,43 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Client, ClientPayload } from '../../core/models/client.model';
 
+function normalizeClient(item: any): Client {
+  if (!item) return item;
+  return {
+    id: item.id,
+    name: item.name,
+    email: item.email ?? null,
+    phone: item.phone ?? null,
+    address: item.address ?? null,
+    status: item.status ?? 'active',
+    created_at: item.createdAt ?? item.created_at ?? '',
+    updated_at: item.updatedAt ?? item.updated_at ?? '',
+  };
+}
+
 function unwrapList(res: any): Client[] {
-  if (Array.isArray(res)) return res;
-  if (Array.isArray(res?.clients)) return res.clients;
-  if (Array.isArray(res?.data)) return res.data;
-  if (Array.isArray(res?.data?.clients)) return res.data.clients;
-  return [];
+  const payload = res?.data !== undefined ? res.data : res;
+  let list: any[] = [];
+  if (Array.isArray(payload)) {
+    list = payload;
+  } else if (Array.isArray(payload?.items)) {
+    list = payload.items;
+  } else if (Array.isArray(payload?.clients)) {
+    list = payload.clients;
+  } else if (Array.isArray(payload?.data)) {
+    list = payload.data;
+  } else if (Array.isArray(res?.clients)) {
+    list = res.clients;
+  } else if (Array.isArray(res?.items)) {
+    list = res.items;
+  }
+  return list.map(normalizeClient);
 }
 
 function unwrapItem(res: any): Client {
-  return res?.client ?? res?.data?.client ?? res?.data ?? res;
+  const payload = res?.data !== undefined ? res.data : res;
+  const item = payload?.client ?? payload;
+  return normalizeClient(item);
 }
 
 @Injectable({ providedIn: 'root' })

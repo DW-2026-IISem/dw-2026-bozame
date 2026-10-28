@@ -6,5 +6,9 @@ export declare class SaleRepository implements ISaleRepository {
     constructor(sequelize: Sequelize);
     create(sale: Sale): Promise<Sale>;
     findById(id: number): Promise<Sale | null>;
+    findAll(page?: number, limit?: number): Promise<{
+        items: Sale[];
+        total: number;
+    }>;
     private toDomain;
 }

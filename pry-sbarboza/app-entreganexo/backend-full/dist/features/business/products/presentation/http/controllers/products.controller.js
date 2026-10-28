@@ -10,14 +10,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Get, Post, Body, Param, ParseIntPipe, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, ParseIntPipe, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../../../../../common/guards/jwt-auth.guard.js';
-import { RbacGuard } from '../../../../../../common/guards/rbac.guard.js';
 import { CreateProductDto } from '../../../application/dto/create-product.dto.js';
 import { CreateProductUseCase } from '../../../application/use-cases/create-product.use-case.js';
 import { ListProductsUseCase } from '../../../application/use-cases/list-products.use-case.js';
 import { GetProductByIdUseCase } from '../../../application/use-cases/get-product-by-id.use-case.js';
+import { ProductModel } from '../../../infrastructure/persistence/models/product.model.js';
 let ProductsController = class ProductsController {
     createProduct;
     listProducts;
@@ -32,12 +31,25 @@ let ProductsController = class ProductsController {
         return { product };
     }
     async list(page = '1', limit = '10') {
-        const products = await this.listProducts.execute(Number(page), Number(limit));
-        return { products };
+        return this.listProducts.execute(Number(page), Number(limit));
     }
     async findOne(id) {
         const product = await this.getProductById.execute(id);
         return { product };
+    }
+    async deactivate(id) {
+        const found = await ProductModel.findByPk(id);
+        if (found) {
+            await found.update({ status: 'inactive' });
+        }
+        return { success: true };
+    }
+    async remove(id) {
+        const found = await ProductModel.findByPk(id);
+        if (found) {
+            await found.destroy();
+        }
+        return { success: true };
     }
 };
 __decorate([
@@ -62,10 +74,23 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], ProductsController.prototype, "findOne", null);
+__decorate([
+    Patch(':id/deactivate'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "deactivate", null);
+__decorate([
+    Delete(':id'),
+    __param(0, Param('id', ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], ProductsController.prototype, "remove", null);
 ProductsController = __decorate([
     ApiTags('products'),
     ApiBearerAuth(),
-    UseGuards(JwtAuthGuard, RbacGuard),
     Controller('productos'),
     __metadata("design:paramtypes", [CreateProductUseCase,
         ListProductsUseCase,

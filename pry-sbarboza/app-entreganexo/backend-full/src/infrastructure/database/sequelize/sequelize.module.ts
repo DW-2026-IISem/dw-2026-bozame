@@ -14,8 +14,8 @@ export const SEQUELIZE = 'SEQUELIZE';
       useFactory: async (cfg: IEnvConfig) => {
         const sequelize = sequelizeFactory(cfg);
         await sequelize.authenticate();
-        // Al poner alter: true, Sequelize agregará las columnas faltantes (como address) automáticamente
-        await sequelize.sync({ alter: true });
+        // sync() asegura que las tablas existan sin duplicar índices únicos en MySQL
+        await sequelize.sync();
         return sequelize;
       },
     },
