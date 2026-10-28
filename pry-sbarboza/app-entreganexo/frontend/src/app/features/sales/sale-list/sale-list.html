@@ -1,0 +1,78 @@
+<app-page-header title="Ventas" subtitle="Historial de transacciones y registro de nuevas ventas.">
+  <p-tag [value]="rows().length + ' ventas registradas'" severity="info" [rounded]="true" />
+  <ng-container *appHasPermission="'POST /api/ventas'">
+    <button pButton label="Nueva venta" icon="pi pi-plus" routerLink="/ventas/nueva"></button>
+  </ng-container>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>
+}
+
+<div class="card">
+  <div class="card-body">
+    <p-table
+      [value]="visibleRows()"
+      [loading]="loading()"
+      [paginator]="visibleRows().length > 10"
+      [rows]="10"
+      dataKey="id"
+      [tableStyle]="{ 'min-width': '58rem' }"
+    >
+      <ng-template pTemplate="caption">
+        <input
+          pInputText
+          placeholder="Buscar por ID o cliente…"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+        />
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id">ID <p-sort-icon field="id" /></th>
+          <th pSortableColumn="sale_date">Fecha <p-sort-icon field="sale_date" /></th>
+          <th>Cliente</th>
+          <th class="text-center">Ítems</th>
+          <th class="text-right">Total</th>
+          <th>Estado</th>
+          <th class="w-32 text-right">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-sale>
+        <tr>
+          <td>
+            <span class="font-semibold text-slate-800">#{{ sale.id }}</span>
+          </td>
+          <td>{{ sale.sale_date | date: 'medium' }}</td>
+          <td>{{ clientName()(sale.client_id) }}</td>
+          <td class="text-center">{{ itemCount(sale) }}</td>
+          <td class="text-right font-semibold text-slate-900">{{ sale.total | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+          <td><app-status-tag [status]="sale.status" /></td>
+          <td>
+            <div class="flex justify-end gap-1">
+              <ng-container *appHasPermission="'PATCH /api/ventas/:id/deactivate'">
+                <button pButton text rounded severity="warn" icon="pi pi-ban"
+                        pTooltip="Cancelar venta" (click)="deactivate(sale)"></button>
+              </ng-container>
+              <ng-container *appHasPermission="'DELETE /api/ventas/:id'">
+                <button pButton text rounded severity="danger" icon="pi pi-trash"
+                        pTooltip="Eliminar" (click)="remove(sale)"></button>
+              </ng-container>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7">
+            <app-empty-state
+              icon="pi pi-shopping-cart"
+              title="Sin ventas registradas"
+              message="Crea la primera venta usando el botón superior."
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

@@ -29,6 +29,7 @@ El desarrollo del frontend está estructurado por etapas secuenciales:
 4.  **Issue 3: Módulo de Clientes, Formulario Reactivo y Rutas de Navegación (ISS-03):** Creación de componentes independientes (`ClientList`, `ClientForm`), función utilitaria de filtrado local `filterRows`, implementación del formulario reactivo con validaciones y sincronización reactiva mediante Signals (`effect`), tabla interactiva de clientes en PrimeNG con estado reactivo, conexión de rutas secundarias en `app.routes.ts`, ajuste de endpoints al backend NestJS y verificación visual en el navegador.
 5.  **Issue 4: Módulo de Tipos de Producto, Catálogo y Menú de Navegación (ISS-04):** Generación de componentes independientes (`ProductTypeList`, `ProductTypeForm`), creación del servicio inyectable `ProductTypeApi` adaptado a la API REST de NestJS, desarrollo del formulario reactivo para categorías de productos, tabla interactiva con estado reactivo y filtrado en memoria, registro de la ruta en `app.routes.ts`, enlace en el menú de navegación de `Shell` y comprobación visual en el navegador.
 6.  **Issue 5: Módulo de Productos, Inventario y Relación con Tipos de Producto (ISS-05):** Generación de componentes independientes (`ProductList`, `ProductForm`), creación del servicio `ProductApi` conectado al endpoint de NestJS, desarrollo del formulario reactivo con relación *many-to-one* a categorías y validaciones de precio y existencias, tabla de inventario con señales computadas para alerta de stock bajo (`lowStockCount`), carga paralela con `forkJoin`, registro de rutas en `app.routes.ts` y enlace de navegación.
+7.  **Issue 6: Módulo de Ventas, Transacciones y Líneas de Pedido (ISS-06):** Creación de componentes independientes (`SaleList`, `SaleForm`), servicio de comunicación HTTP `SaleApi` conectado a `/ventas`, formulario reactivo para registro de ventas transaccionales con líneas dinámicas y cálculo reactivo en tiempo real con Signals, tabla de historial de ventas con resolución de nombres de clientes y flujos de anulación, y registro de rutas en `app.routes.ts`.
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -429,5 +430,65 @@ En `src/app/features/products/product-list/product-list.html`, maquetamos la int
 En `src/app/app.routes.ts`, registramos la ruta para el módulo de inventario asociando el path `'productos'` con el título de página `Productos · EntregaNexo`. Configuramos la carga perezosa (*lazy loading*) del componente `ProductList` mediante `loadComponent: () => import('./features/products/product-list/product-list').then((m) => m.ProductList)`, enlazando de forma definitiva con el acceso de navegación previamente integrado en la cabecera compartida `Shell`.
 
 ![](images/clipboard-2303947151.png)
+
+------------------------------------------------------------------------
+
+## Issue 6: Módulo de Ventas, Transacciones y Líneas de Pedido (ISS-06)
+
+Implementamos el módulo de ventas transaccionales en el frontend. En esta sección diseñamos la creación de órdenes de compra mediante peticiones atómicas contra el endpoint `POST /api/ventas` del backend NestJS. Conforme a la arquitectura del sistema, el frontend no calcula precios definitivos ni altera el inventario por su cuenta: envía el identificador del cliente (`client_id`), tasas de impuestos, porcentajes de descuento y el arreglo de líneas de pedido (`product_id` y `quantity`), dejando que el backend valide el stock disponible, aplique las reglas contables y descuente las existencias automáticamente.
+
+### Paso 44: Generación de componentes independientes para el módulo de ventas
+
+En la terminal del proyecto dentro de `frontend/`, ejecutamos los comandos de Angular CLI `npx ng g component features/sales/sale-list --skip-tests --defaults` y `npx ng g component features/sales/sale-form --skip-tests --defaults`. Angular CLI genera la estructura de archivos independientes (*standalone*) para el historial de ventas (`sale-list`) y el formulario transaccional de nueva venta (`sale-form`), listos para albergar la lógica reactiva y la presentación visual.
+
+![](images/clipboard-3523333792.png)
+
+------------------------------------------------------------------------
+
+### Paso 45: Creación del servicio de comunicación HTTP para ventas (`sale-api.ts`)
+
+En `src/app/features/sales/sale-api.ts`, creamos el servicio inyectable `SaleApi`. Implementamos funciones de desenvolvimiento (`unwrapList` y `unwrapItem`) para normalizar las respuestas del backend NestJS y fijamos la URL base en `${environment.apiUrl}/ventas`. Definimos las operaciones CRUD del recurso: consulta del historial de ventas (`list`), detalle por identificador (`get`), creación transaccional (`create` enviando el payload fuertemente tipado `SaleCreatePayload`), actualización parcial (`update`), cancelación o anulación lógica (`deactivate`) y eliminación física (`remove`).
+
+![](images/clipboard-1917526105.png)
+
+------------------------------------------------------------------------
+
+### Paso 46: Implementación de la lógica reactiva y cálculo de líneas de venta (`sale-form.ts`)
+
+En `src/app/features/sales/sale-form/sale-form.ts`, construimos el componente independiente `SaleForm` con selector `app-sale-form`. Definimos el tipo local `DraftLine = { product_id: number; quantity: number }` e inyectamos los servicios `ClientApi`, `ProductApi`, `SaleApi`, `NotificationService` y `Router`. Mediante Angular Signals gestionamos el estado reactivo: catálogo de clientes (`clients`), productos disponibles (`products`), indicador de guardado (`saving`), identificador del cliente seleccionado (`clientId`), impuestos (`tax`), descuentos (`discounts`) y la lista dinámica de líneas de pedido (`lines`). Incorporamos señales computadas: `productById` para buscar en tiempo real los datos y precios del producto seleccionado, y `subtotal` para calcular de manera reactiva el monto acumulado del carrito antes de emitir la transacción.
+
+![](images/clipboard-1485934885.png)
+
+------------------------------------------------------------------------
+
+### Paso 47: Creación de la plantilla visual del formulario de nueva venta (`sale-form.html`)
+
+En `src/app/features/sales/sale-form/sale-form.html`, maquetamos una interfaz de dos columnas responsivas con PrimeNG y Tailwind CSS. En la columna principal disponemos el selector de cliente con autocompletado y el selector de productos con selector numérico de cantidad (`p-inputnumber`) y botón para agregar ítems al borrador. Mostramos la tabla interactiva de líneas agregadas con opción de remoción rápida. En el panel lateral ubicamos el resumen financiero: campos de impuestos y descuentos vinculados bidireccionalmente mediante Signals, cálculo visual de subtotales y totales, y el botón de acción principal para confirmar y procesar la venta en el backend.
+
+![](images/clipboard-1985069172.png)
+
+------------------------------------------------------------------------
+
+### Paso 48: Implementación de la lógica del historial de ventas (`sale-list.ts`)
+
+En `src/app/features/sales/sale-list/sale-list.ts`, desarrollamos el componente independiente `SaleList`. Implementamos la carga concurrente mediante `forkJoin` para consultar el listado de transacciones (`SaleApi.list()`) y el catálogo de clientes (`ClientApi.list()`). Administramos el estado con Signals (`rows`, `clients`, `loading`, `error`, `filter`). Mediante una señal computada `clientName`, creamos un mapa optimizado en memoria para resolver el nombre completo de cada cliente a partir de su `client_id`. Además, implementamos la función de cancelación lógica de ventas (`deactivate`) con diálogo modal de confirmación irreversible vía `ConfirmationService`.
+
+![](images/clipboard-2351175158.png)
+
+------------------------------------------------------------------------
+
+### Paso 49: Creación de la plantilla visual del listado de ventas (`sale-list.html`)
+
+En `src/app/features/sales/sale-list/sale-list.html`, estructuramos la vista del historial transaccional. En la cabecera `<app-page-header>` incluimos el contador de ventas registradas y el botón de acción con icono para navegar a `/ventas/nueva`. Diseñamos la tabla `<p-table>` con buscador reactivo por número de factura o nombre de cliente, columnas ordenables por ID y fecha formateada con `DatePipe`, cliente asociado, cantidad de artículos vendidos, total de la operación formateado con `CurrencyPipe`, etiqueta de estado (`app-status-tag`) y botón de acción para anular o cancelar la transacción.
+
+![](images/clipboard-3949776389.png)
+
+------------------------------------------------------------------------
+
+### Paso 50: Registro de las rutas de ventas en el enrutador (`app.routes.ts`)
+
+En `src/app/app.routes.ts`, registramos las rutas para el módulo de ventas asociando `'ventas'` con el título `Ventas · EntregaNexo` (cargando perezosamente `SaleList`) y `'ventas/nueva'` con el título `Nueva venta · EntregaNexo` (cargando perezosamente `SaleForm`). Ambas rutas se integran como componentes hijos bajo el layout `Shell`, permitiendo el acceso directo desde el enlace **Ventas** de la barra de navegación superior.
+
+![](images/clipboard-159563448.png)
 
 ------------------------------------------------------------------------

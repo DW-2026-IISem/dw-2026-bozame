@@ -29,4 +29,16 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/products/product-list/product-list').then((m) => m.ProductList),
   },
+  {
+    path: 'ventas',
+    title: 'Ventas · EntregaNexo',
+    loadComponent: () =>
+      import('./features/sales/sale-list/sale-list').then((m) => m.SaleList),
+  },
+  {
+    path: 'ventas/nueva',
+    title: 'Nueva venta · EntregaNexo',
+    loadComponent: () =>
+      import('./features/sales/sale-form/sale-form').then((m) => m.SaleForm),
+  },
 ];
