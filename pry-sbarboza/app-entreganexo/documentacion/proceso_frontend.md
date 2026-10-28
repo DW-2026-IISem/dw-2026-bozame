@@ -27,6 +27,7 @@ El desarrollo del frontend está estructurado por etapas secuenciales:
 2.  **Issue 1: Configuración Base, Estilos y Servidor de Desarrollo (ISS-01):** Configuración de Tailwind CSS, iconos, plantilla HTML base, proveedores centrales en `app.config.ts`, componente raíz, ajuste de presupuestos en `angular.json` y verificación del servidor local en `http://localhost:4200`.
 3.  **Issue 2: Capa Core, Modelos, Almacén de Sesión, Componentes UI y Shell (ISS-02):** Configuración de variables de entorno, modelos tipados del contrato de datos, utilidades de control de errores, almacén reactivo `SessionStore` con Signals, servicio de clientes `ClientApi`, directiva de permisos `*appHasPermission`, componentes compartidos (`PageHeader`, `StatusTag`, `EmptyState`), layout de navegación `Shell` y comprobación de compilación del bundle para producción.
 4.  **Issue 3: Módulo de Clientes, Formulario Reactivo y Rutas de Navegación (ISS-03):** Creación de componentes independientes (`ClientList`, `ClientForm`), función utilitaria de filtrado local `filterRows`, implementación del formulario reactivo con validaciones y sincronización reactiva mediante Signals (`effect`), tabla interactiva de clientes en PrimeNG con estado reactivo, conexión de rutas secundarias en `app.routes.ts`, ajuste de endpoints al backend NestJS y verificación visual en el navegador.
+5.  **Issue 4: Módulo de Tipos de Producto, Catálogo y Menú de Navegación (ISS-04):** Generación de componentes independientes (`ProductTypeList`, `ProductTypeForm`), creación del servicio inyectable `ProductTypeApi` adaptado a la API REST de NestJS, desarrollo del formulario reactivo para categorías de productos, tabla interactiva con estado reactivo y filtrado en memoria, registro de la ruta en `app.routes.ts`, enlace en el menú de navegación de `Shell` y comprobación visual en el navegador.
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -318,36 +319,64 @@ Iniciamos el servidor de desarrollo y abrimos la aplicación en `http://localhos
 
 ------------------------------------------------------------------------
 
-ISSUE 4
+## Issue 4: Módulo de Tipos de Producto, Catálogo y Menú de Navegación (ISS-04)
 
-### Generar los componentes con la CLI
+Desarrollamos el módulo de gestión para los tipos de producto (categorías del catálogo) en el frontend. Creamos los componentes independientes para el listado interactivo y el formulario modal, conectamos el servicio de comunicación HTTP con la API de NestJS, implementamos la validación reactiva de datos con sincronización mediante Signals, enlazamos la ruta secundaria en el enrutador y actualizamos la barra de navegación del layout maestro.
 
-Ejecuta estos comandos en tu terminal dentro de la carpeta `frontend`:
+### Paso 31: Generación de componentes independientes para tipos de producto
+
+En la terminal dentro del directorio `frontend/`, ejecutamos los comandos de Angular CLI `npx ng g component features/product-types/product-type-list --skip-tests --defaults` y `npx ng g component features/product-types/product-type-form --skip-tests --defaults`. Angular CLI genera la estructura de archivos independientes (*standalone*) para el listado (`product-type-list`) y el formulario (`product-type-form`), listos para implementar la lógica y presentación del catálogo.
 
 ![](images/clipboard-2858194693.png)
 
-### Crear el Servicio `ProductTypeApi`
+------------------------------------------------------------------------
 
-Crea el archivo del servicio adaptado a la estructura de tu backend de NestJS:
+### Paso 32: Creación del servicio de comunicación HTTP para tipos de producto (`product-type-api.ts`)
+
+En `src/app/features/product-types/product-type-api.ts`, creamos el servicio inyectable `ProductTypeApi` utilizando `HttpClient` e inyección de dependencias. Implementamos funciones auxiliares de desenvolvimiento (`unwrapList` y `unwrapItem`) para normalizar las respuestas del backend NestJS (soportando tanto formatos directos como envueltos en `data`), y definimos los métodos CRUD: consulta de listado (`list`), detalle por identificador (`get`), creación (`create`), actualización parcial (`update`), desactivación lógica (`deactivate`) y eliminación física (`remove`) apuntando a `${environment.apiUrl}/product-types`.
 
 ![](images/clipboard-333969002.png)
 
-### Crear el Formulario Reactivo
+------------------------------------------------------------------------
 
-Inyecta la lógica y la plantilla HTML para crear y editar tipos de producto:
+### Paso 33: Implementación del formulario reactivo para tipos de producto (`product-type-form.ts`)
+
+En `src/app/features/product-types/product-type-form/product-type-form.ts`, implementamos el componente independiente `ProductTypeForm` con selector `app-product-type-form`. Empleamos `NonNullableFormBuilder` para construir un formulario reactivo con controles para el nombre (`name`, obligatorio y con máximo de 120 caracteres), descripción (`description`) y estado (`status`). Mediante la API de Signals de Angular, configuramos entradas reactivas (`productType = input<ProductType | null>(null)`, `saving = input(false)`) y emisores de eventos (`saved`, `cancelled`). Además, agregamos un `effect()` reactivo que resetea y actualiza los campos cuando cambia el tipo de producto seleccionado, deshabilitando el control de estado en modo edición para salvaguardar las bajas lógicas.
 
 ![](images/clipboard-2529503742.png)
 
-### Crear el Listado de Tipos de Producto
+------------------------------------------------------------------------
 
-Inyecta la lógica y la tabla para gestionar el catálogo:
+### Paso 34: Implementación de la lógica reactiva y catálogo de tipos de producto (`product-type-list.ts`)
+
+En `src/app/features/product-types/product-type-list/product-type-list.ts`, construimos el componente independiente `ProductTypeList`. Manejamos el estado reactivo mediante Signals (`rows`, `loading`, `saving`, `error`, `filter`, `dialogVisible` y `editing`). Integramos una señal computada `visibleRows` con `filterRows` para realizar búsquedas en tiempo real por nombre y descripción sobre la tabla de PrimeNG. Implementamos los métodos para cargar datos (`load`), abrir modales de creación o edición (`openCreate`, `openEdit`), guardar cambios (`save`), gestionar la baja lógica con confirmación (`deactivate`) y ejecutar la eliminación física irreversible (`remove`) consumiendo `ProductTypeApi`, `NotificationService` y `ConfirmationService`.
 
 ![](images/clipboard-807476722.png)
 
-### Registrar la ruta y actualizar el menú
+------------------------------------------------------------------------
 
-1.  Abre tu archivo `src/app/app.routes.ts` y añade la ruta de tipos de producto dentro de las hijas del Shell:
+### Paso 35: Registro de la ruta de tipos de producto en el enrutador (`app.routes.ts`)
+
+En `src/app/app.routes.ts`, registramos la ruta para el nuevo módulo asociando la ruta `'tipos-producto'` con el título de página `Tipos de producto · EntregaNexo`. Configuramos la carga perezosa (*lazy loading*) del componente `ProductTypeList` mediante `loadComponent: () => import('./features/product-types/product-type-list/product-type-list').then((m) => m.ProductTypeList)`, garantizando que el bundle se descargue únicamente cuando el usuario navegue a dicha sección.
 
 ![](images/clipboard-3776605492.png)
 
+------------------------------------------------------------------------
+
+### Paso 36: Actualización del menú de navegación en el componente maestro (`shell.ts`)
+
+En `src/app/layout/shell/shell.ts`, actualizamos la barra de navegación del componente `Shell`. Agregamos el enlace `<a routerLink="/tipos-producto" class="hover:text-slate-900">Tipos de producto</a>` dentro del menú principal junto a Clientes, Productos y Ventas, permitiendo a los usuarios acceder al catálogo de categorías desde cualquier pantalla de la aplicación.
+
 ![](images/clipboard-2703320518.png)
+
+------------------------------------------------------------------------
+
+### Paso 37: Comprobación visual de la navegación y módulo de tipos de producto en el navegador
+
+Iniciamos el servidor de desarrollo en `http://localhost:4200` y verificamos la interfaz en el navegador. Comprobamos que el enlace **Tipos de Producto** aparece integrado en la barra de navegación superior junto a Clientes, Productos y Ventas con la tipografía y estilos consistentes del layout `Shell`, permitiendo una navegación fluida hacia el catálogo de tipos de producto.
+
+![](images/clipboard-2331279586.png)
+
+------------------------------------------------------------------------
+
+ISSUE 5
