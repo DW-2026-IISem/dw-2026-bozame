@@ -1,0 +1,40 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div>
+    <label for="client-name" class="field-label">Nombre *</label>
+    <input id="client-name" pInputText formControlName="name" placeholder="Tienda La Esquina" />
+    @if (form.controls.name.touched && form.controls.name.invalid) {
+      <small class="field-error">El nombre es obligatorio (máx. 120).</small>
+    }
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="client-phone" class="field-label">Teléfono</label>
+      <input id="client-phone" pInputText formControlName="phone" placeholder="300 000 0000" />
+    </div>
+    <div>
+      <label for="client-email" class="field-label">Email</label>
+      <input id="client-email" pInputText formControlName="email" placeholder="cliente@correo.com" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <small class="field-error">Formato de email inválido.</small>
+      }
+    </div>
+  </div>
+  <div>
+    <label for="client-address" class="field-label">Dirección</label>
+    <textarea id="client-address" pTextarea formControlName="address" rows="2" placeholder="Calle 1 # 2-3"></textarea>
+  </div>
+  <div>
+    <label for="client-status" class="field-label">Estado</label>
+    <p-select
+      inputId="client-status"
+      formControlName="status"
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+    />
+  </div>
+  <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+    <button pButton type="button" label="Cancelar" severity="secondary" outlined (click)="cancelled.emit()"></button>
+    <button pButton type="submit" label="Guardar" icon="pi pi-check" [loading]="saving()"></button>
+  </div>
+</form>

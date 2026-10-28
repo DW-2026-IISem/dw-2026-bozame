@@ -1,0 +1,102 @@
+<app-page-header
+  title="Clientes"
+  subtitle="El backend solo lista status = active; la baja es lógica (PATCH /deactivate)."
+>
+  <p-tag [value]="rows().length + ' activos'" severity="info" [rounded]="true" />
+  <ng-container *appHasPermission="'POST /api/clientes'">
+    <button pButton type="button" label="Nuevo cliente" icon="pi pi-plus" (click)="openCreate()"></button>
+  </ng-container>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>
+}
+
+<div class="card">
+  <div class="card-body">
+    <p-table
+      [value]="visibleRows()"
+      [loading]="loading()"
+      [paginator]="visibleRows().length > 10"
+      [rows]="10"
+      dataKey="id"
+      [tableStyle]="{ 'min-width': '52rem' }"
+    >
+      <ng-template pTemplate="caption">
+        <input
+          pInputText
+          placeholder="Buscar nombre, email, teléfono…"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+        />
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name">Nombre <p-sort-icon field="name" /></th>
+          <th>Contacto</th>
+          <th>Dirección</th>
+          <th>Estado</th>
+          <th class="w-40 text-right">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-client>
+        <tr>
+          <td>
+            <p class="font-medium text-slate-800">{{ client.name }}</p>
+            <p class="text-xs text-slate-400">#{{ client.id }}</p>
+          </td>
+          <td>
+            <p class="text-sm">{{ client.email || '—' }}</p>
+            <p class="text-xs text-slate-400">{{ client.phone || 'Sin teléfono' }}</p>
+          </td>
+          <td>{{ client.address || '—' }}</td>
+          <td><app-status-tag [status]="client.status" /></td>
+          <td>
+            <div class="flex justify-end gap-1">
+              <ng-container *appHasPermission="'PATCH /api/clientes/:id'">
+                <button pButton text rounded severity="secondary" icon="pi pi-pencil"
+                        pTooltip="Editar" (click)="openEdit(client)"></button>
+              </ng-container>
+              <ng-container *appHasPermission="'PATCH /api/clientes/:id/deactivate'">
+                <button pButton text rounded severity="warn" icon="pi pi-ban"
+                        pTooltip="Baja lógica" (click)="deactivate(client)"></button>
+              </ng-container>
+              <ng-container *appHasPermission="'DELETE /api/clientes/:id'">
+                <button pButton text rounded severity="danger" icon="pi pi-trash"
+                        pTooltip="Eliminar" (click)="remove(client)"></button>
+              </ng-container>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5">
+            <app-empty-state
+              icon="pi pi-users"
+              title="Sin clientes"
+              message="Crea el primero o ejecuta el seeder del backend."
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '42rem', maxWidth: '95vw' }"
+>
+  <app-client-form
+    [client]="editing()"
+    [saving]="saving()"
+    (saved)="save($event)"
+    (cancelled)="dialogVisible.set(false)"
+  />
+</p-dialog>

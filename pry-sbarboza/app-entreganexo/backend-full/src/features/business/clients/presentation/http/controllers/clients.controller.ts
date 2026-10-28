@@ -7,7 +7,7 @@ import { GetClientByIdUseCase } from '../../../application/use-cases/get-client-
 import { ClientMapper } from '../../../application/mappers/client.mapper.js';
 
 @ApiTags('clients')
-@Controller('clients')
+@Controller('clientes')
 export class ClientsController {
   constructor(
     private readonly createClient: CreateClientUseCase,

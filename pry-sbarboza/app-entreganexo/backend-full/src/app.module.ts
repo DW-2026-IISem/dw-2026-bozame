@@ -21,7 +21,7 @@ import { AuthModule } from './features/auth/auth/auth.module.js';
     ResourcesModule,
     RoleUsersModule,
     ResourceRolesModule,
-    AuthModule
+    AuthModule,
   ],
   controllers: [HealthController],
   providers: [SeedersRunner],

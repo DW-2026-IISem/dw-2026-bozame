@@ -63,7 +63,7 @@ __decorate([
 ], ClientsController.prototype, "findOne", null);
 ClientsController = __decorate([
     ApiTags('clients'),
-    Controller('clients'),
+    Controller('clientes'),
     __metadata("design:paramtypes", [CreateClientUseCase,
         ListClientsUseCase,
         GetClientByIdUseCase])

@@ -26,6 +26,7 @@ El desarrollo del frontend está estructurado por etapas secuenciales:
 1.  **Issue 0: Requisitos Previos y Entorno de Desarrollo (ISS-00):** Comprobación de versiones compatibles del entorno de Node.js, npm, Angular CLI e instalación de librerías esenciales de interfaz de usuario.
 2.  **Issue 1: Configuración Base, Estilos y Servidor de Desarrollo (ISS-01):** Configuración de Tailwind CSS, iconos, plantilla HTML base, proveedores centrales en `app.config.ts`, componente raíz, ajuste de presupuestos en `angular.json` y verificación del servidor local en `http://localhost:4200`.
 3.  **Issue 2: Capa Core, Modelos, Almacén de Sesión, Componentes UI y Shell (ISS-02):** Configuración de variables de entorno, modelos tipados del contrato de datos, utilidades de control de errores, almacén reactivo `SessionStore` con Signals, servicio de clientes `ClientApi`, directiva de permisos `*appHasPermission`, componentes compartidos (`PageHeader`, `StatusTag`, `EmptyState`), layout de navegación `Shell` y comprobación de compilación del bundle para producción.
+4.  **Issue 3: Módulo de Clientes, Formulario Reactivo y Rutas de Navegación (ISS-03):** Creación de componentes independientes (`ClientList`, `ClientForm`), función utilitaria de filtrado local `filterRows`, implementación del formulario reactivo con validaciones y sincronización reactiva mediante Signals (`effect`), tabla interactiva de clientes en PrimeNG con estado reactivo, conexión de rutas secundarias en `app.routes.ts`, ajuste de endpoints al backend NestJS y verificación visual en el navegador.
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -272,3 +273,49 @@ Levantamos el servidor y abrimos `http://localhost:4200` en el navegador. Compro
 ![](images/clipboard-329426260.png)
 
 ------------------------------------------------------------------------
+
+## Issue 3: Módulo de Clientes, Formulario Reactivo y Rutas de Navegación (ISS-03)
+
+Desarrollamos la funcionalidad completa para la gestión de clientes en el frontend. Creamos los componentes independientes para la tabla de visualización y el formulario modal de captura, implementamos utilidades de filtrado en memoria sobre datos reactivos, estructuramos el formulario con validaciones reactivas y sincronización de datos con Signals, conectamos las rutas hijas dentro del layout maestro y verificamos la integración con la API del backend en el navegador.
+
+### Paso 26: Generación de componentes independientes y utilidad de filtrado de datos (`filter-rows.ts`)
+
+En la terminal del frontend, ejecutamos Angular CLI con `npx ng g component features/clients/client-list --skip-tests --defaults` y `npx ng g component features/clients/client-form --skip-tests --defaults` para crear los componentes independientes de listado y formulario de clientes. Seguidamente, en `src/app/core/utils/filter-rows.ts`, implementamos la función genérica reutilizable `filterRows<T>`. Esta función recibe la lista inmutable de registros, la cadena de búsqueda ingresada por el usuario y una función de extracción de campos, aplicando un filtrado flexible insensible a mayúsculas y minúsculas para tablas de PrimeNG.
+
+![](images/clipboard-1704015647.png)
+
+------------------------------------------------------------------------
+
+### Paso 27: Implementación del componente de formulario reactivo para clientes (`client-form.ts`)
+
+En `src/app/features/clients/client-form/client-form.ts`, creamos el componente independiente `ClientForm` con selector `app-client-form`. Empleamos `NonNullableFormBuilder` para estructurar un formulario reactivo con controles fuertemente tipados (`name`, `address`, `phone`, `email` y `status`) y validaciones (`Validators.required`, `Validators.maxLength(120)` y `Validators.email`). A través de la API de Signals de Angular, definimos entradas reactivas (`input<Client | null>(null)`, `input(false)`) y salidas de eventos (`output<ClientPayload>()`, `output<void>()`). Además, utilizamos un `effect()` reactivo para resetear y sincronizar los valores del formulario cuando cambia el cliente seleccionado, deshabilitando el selector de estado durante la edición para preservar la integridad de las bajas lógicas.
+
+![](images/clipboard-3615481255.png)
+
+------------------------------------------------------------------------
+
+### Paso 28: Implementación de la lógica reactiva y gestión de clientes en el listado (`client-list.ts`)
+
+En `src/app/features/clients/client-list/client-list.ts`, desarrollamos el componente independiente `ClientList`. Administramos el estado completo de la vista mediante Signals de Angular (`rows`, `loading`, `saving`, `error`, `filter`, `dialogVisible` y `editing`). Integramos una señal computada `visibleRows` que evalúa dinámicamente el filtro de búsqueda en tiempo real sobre los campos de nombre, correo, teléfono y dirección utilizando la función `filterRows`. Implementamos los flujos de carga (`load`), apertura de modales (`openCreate`, `openEdit`), persistencia (`save`), desactivación lógica (`deactivate` con confirmación modal) y eliminación física (`remove` con confirmación irreversible), integrando los servicios inyectados `ClientApi`, `NotificationService` y `ConfirmationService`.
+
+![](images/clipboard-4071713610.png)
+
+------------------------------------------------------------------------
+
+### Paso 29: Vinculación de rutas secundarias del módulo de clientes (`app.routes.ts`)
+
+En `src/app/app.routes.ts`, actualizamos la tabla de rutas de la aplicación para registrar el módulo de clientes como ruta secundaria (*children*) dentro del componente principal `Shell`. Configuramos la redirección automática desde la raíz `''` hacia `'clientes'`, establecemos el título de pestaña `Clientes · StoreLab` y cargamos de forma perezosa (*lazy loading*) el componente `ClientList` mediante `loadComponent: () => import('./features/clients/client-list/client-list').then((m) => m.ClientList)`.
+
+![](images/clipboard-1239531410.png)
+
+------------------------------------------------------------------------
+
+### Paso 30: Comprobación visual del módulo de clientes montado dentro del Shell en el navegador
+
+Iniciamos el servidor de desarrollo y abrimos la aplicación en `http://localhost:4200`. Verificamos que la ruta `/clientes` se carga exitosamente dentro del layout `Shell`, mostrando la cabecera del módulo con el título **Clientes**, el subtítulo informativo sobre la política de bajas lógicas del backend, la insignia de estado con el contador reactivo (`0 activos`) y el contenedor de tabla de PrimeNG listo para listar, buscar y gestionar los clientes registrados.
+
+![](images/clipboard-4122493685.png)
+
+------------------------------------------------------------------------
+
+**Próxima tarea:** Implementación del módulo de Productos en el Frontend (Issue 4), integrando catálogo de artículos, subida de imágenes y control de inventario.

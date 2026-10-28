@@ -29,7 +29,7 @@ AppModule = __decorate([
             ResourcesModule,
             RoleUsersModule,
             ResourceRolesModule,
-            AuthModule
+            AuthModule,
         ],
         controllers: [HealthController],
         providers: [SeedersRunner],

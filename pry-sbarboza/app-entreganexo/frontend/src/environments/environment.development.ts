@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  appName: 'StoreLab Express II',
-  apiUrl: 'http://localhost:4000/api',
+  appName: 'EntregaNexo Express II',
+  apiUrl: 'http://localhost:3002/api',
   requireAuth: true,
 };
