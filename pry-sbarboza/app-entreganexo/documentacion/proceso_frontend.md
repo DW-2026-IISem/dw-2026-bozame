@@ -493,10 +493,76 @@ En `src/app/app.routes.ts`, registramos las rutas para el módulo de ventas asoc
 
 ------------------------------------------------------------------------
 
-![![](images/clipboard-3427791590.png)](images/clipboard-3805444488.png)
+### Paso 51: Verificación de la sincronización y renderizado de clientes en el navegador
+
+Accedemos a la sección `/clientes` en el navegador para comprobar la recepción de datos desde el backend NestJS. Verificamos que la tabla PrimeNG renderiza correctamente el registro con su nombre, datos de contacto, dirección, insignia de estado "Activo" en verde y el contador superior de clientes activos en tiempo real.
+
+![](images/clipboard-3805444488.png)
+
+------------------------------------------------------------------------
+
+### Paso 52: Verificación del catálogo de tipos de producto en el navegador
+
+Navegamos a la vista `/tipos-producto`. Confirmamos que la tabla interactiva presenta con precisión el registro de clasificación correspondiente ("Bebidas"), con su descripción asociada, estado "Activo" y el buscador reactivo listo para realizar filtrados instantáneos en memoria.
+
+![](images/clipboard-3427791590.png)
+
+------------------------------------------------------------------------
+
+### Paso 53: Verificación del inventario y control de stock de productos en el navegador
+
+Ingresamos a la ruta `/productos` para inspeccionar el catálogo de inventario. Validamos que la tabla muestra el producto registrado ("Producto Demo"), su categoría asociada ("Bebidas"), el precio formateado en moneda (\$15,000.00), el saldo de existencias disponible (48 unidades) y su estado activo sin bloqueos de renderizado.
 
 ![](images/clipboard-3731683587.png)
 
-![](images/clipboard-2100020348.png)
+------------------------------------------------------------------------
+
+### Paso 54: Verificación del historial de transacciones de ventas en el navegador
+
+Accedemos al módulo `/ventas` para verificar la sincronización de órdenes transaccionales. Comprobamos que el historial despliega el número de operación (#1), fecha y hora de emisión, nombre resuelto del cliente ("Cliente Demo"), total de ítems incluidos y el monto financiero acumulado (\$30,000.00).
 
 ![](images/clipboard-2100020348.png)
+
+------------------------------------------------------------------------
+
+## Issue 7: Dashboard Analítico, Métricas en Tiempo Real y Alertas de Inventario (ISS-07)
+
+Con los cuatro módulos transaccionales plenamente operativos (Clientes, Tipos de Producto, Productos y Ventas), implementamos el Dashboard principal de EntregaNexo. Este panel centraliza los indicadores clave de rendimiento (KPIs), métricas financieras, monitoreo de existencias críticas y acceso rápido a las transacciones recientes para ofrecer una panorámica en tiempo real del marketplace.
+
+### Paso 55: Generación del componente independiente para el Dashboard
+
+En la terminal del proyecto dentro del directorio `frontend/`, ejecutamos el comando de Angular CLI `npx ng g component features/dashboard/dashboard --skip-tests --defaults`. Angular CLI genera la estructura de archivos independientes (*standalone*) necesaria para el panel de control (`dashboard.ts`, `dashboard.html` y `dashboard.css`).
+
+![](images/clipboard-285661257.png)
+
+------------------------------------------------------------------------
+
+### Paso 56: Implementación de la lógica reactiva y cálculo de KPIs analíticos (`dashboard.ts`)
+
+En `src/app/features/dashboard/dashboard.ts`, desarrollamos el componente independiente `Dashboard`. Inyectamos los servicios `ClientApi`, `ProductApi`, `SaleApi`, `SessionStore` y `NotificationService`. Implementamos el método `load()` mediante el operador `forkJoin` para consultar simultáneamente clientes, productos y ventas. A través de señales computadas (`computed`), calculamos reactivamente el volumen total de ingresos (`totalRevenue`), el total de clientes activos (`activeClientsCount`), los productos cuyo stock es igual o menor al umbral mínimo de seguridad (`lowStockProducts`) y el listado de las cinco operaciones más recientes (`recentSales`).
+
+![](images/clipboard-119540816.png)
+
+------------------------------------------------------------------------
+
+### Paso 57: Integración del acceso directo en la barra de navegación del Shell (`shell.ts`)
+
+En `src/app/layout/shell/shell.ts`, actualizamos la cabecera compartida incorporando el enlace de navegación hacia el Dashboard (`routerLink="/dashboard"`) al inicio del menú superior. Aplicamos transiciones suaves de color (`hover:text-slate-900 transition-colors`) y resaltado tipográfico en la ruta activa mediante `RouterLinkActive`, conservando los componentes globales `<p-toast />` y `<p-confirmdialog />` para el soporte de notificaciones y diálogos modales en toda la aplicación.
+
+![](images/clipboard-906252316.png)
+
+------------------------------------------------------------------------
+
+### Paso 58: Configuración de la ruta por defecto del Dashboard en el enrutador (`app.routes.ts`)
+
+En `src/app/app.routes.ts`, definimos `'dashboard'` como la ruta de bienvenida predeterminada de la aplicación (`{ path: '', pathMatch: 'full', redirectTo: 'dashboard' }`). Registramos la ruta con el título de página `Dashboard · EntregaNexo` y carga perezosa (*lazy loading*) mediante `loadComponent: () => import('./features/dashboard/dashboard').then((m) => m.Dashboard)`, ubicándola como componente hijo dentro del layout `Shell`.
+
+![](images/clipboard-3016303080.png)
+
+------------------------------------------------------------------------
+
+### Paso 59: Creación de la plantilla visual del Dashboard analítico y verificación en el navegador (`dashboard.html`)
+
+En `src/app/features/dashboard/dashboard.html`, diseñamos la interfaz visual dividida en dos secciones principales: una cuadrícula de cuatro tarjetas estadísticas de alto impacto (Ventas Totales con `CurrencyPipe`, Conteo de Transacciones, Clientes Activos y Alertas de Stock) y dos paneles inferiores con tablas PrimeNG para el monitoreo de existencias críticas y transacciones recientes. Al navegar a `http://localhost:4200/dashboard`, comprobamos en el navegador la presentación fluida de los indicadores clave y la interacción en tiempo real del nuevo panel analítico.
+
+![](images/clipboard-2565474443.png)

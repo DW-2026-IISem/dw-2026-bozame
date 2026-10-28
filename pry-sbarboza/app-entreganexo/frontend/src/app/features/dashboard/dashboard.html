@@ -1,0 +1,122 @@
+<app-page-header title="Dashboard EntregaNexo" subtitle="Resumen general del marketplace y alertas de inventario.">
+  <button pButton label="Actualizar" icon="pi pi-refresh" severity="secondary" outlined (click)="load()"></button>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>
+}
+
+<!-- Tarjetas de Estadísticas Principales -->
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+  <div class="card p-4 flex items-center justify-between">
+    <div>
+      <p class="text-sm font-medium text-slate-500">Ventas Totales</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ totalRevenue() | currency: 'USD' : 'symbol' : '1.2-2' }}</p>
+    </div>
+    <div class="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+      <i class="pi pi-dollar text-xl"></i>
+    </div>
+  </div>
+
+  <div class="card p-4 flex items-center justify-between">
+    <div>
+      <p class="text-sm font-medium text-slate-500">Transacciones</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ sales().length }}</p>
+    </div>
+    <div class="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+      <i class="pi pi-shopping-cart text-xl"></i>
+    </div>
+  </div>
+
+  <div class="card p-4 flex items-center justify-between">
+    <div>
+      <p class="text-sm font-medium text-slate-500">Clientes Activos</p>
+      <p class="text-2xl font-bold text-slate-900 mt-1">{{ activeClientsCount() }}</p>
+    </div>
+    <div class="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+      <i class="pi pi-users text-xl"></i>
+    </div>
+  </div>
+
+  <div class="card p-4 flex items-center justify-between">
+    <div>
+      <p class="text-sm font-medium text-slate-500">Alertas de Stock</p>
+      <p class="text-2xl font-bold text-amber-600 mt-1">{{ lowStockProducts().length }}</p>
+    </div>
+    <div class="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+      <i class="pi pi-exclamation-triangle text-xl"></i>
+    </div>
+  </div>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <!-- Alertas de Stock Bajo -->
+  <div class="card">
+    <div class="card-body space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-semibold text-slate-800">Productos con Stock Crítico</h3>
+        <p-tag [value]="lowStockProducts().length + ' alertas'" [severity]="lowStockProducts().length > 0 ? 'warn' : 'success'" [rounded]="true" />
+      </div>
+      <p-table [value]="lowStockProducts()" [loading]="loading()" [tableStyle]="{ 'min-width': '100%' }" [rows]="5" [paginator]="lowStockProducts().length > 5">
+        <ng-template #header pTemplate="header">
+          <tr>
+            <th>Producto</th>
+            <th>Marca</th>
+            <th class="text-center">Actual</th>
+            <th class="text-center">Mínimo</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-product pTemplate="body">
+          <tr>
+            <td class="font-medium text-slate-800">{{ product.name }}</td>
+            <td>{{ product.brand }}</td>
+            <td class="text-center">
+              <p-tag [value]="product.quantity.toString()" severity="danger" [rounded]="true" />
+            </td>
+            <td class="text-center text-slate-500">{{ product.min_stock }}</td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="text-center py-6 text-slate-400">¡Excelente! No hay productos con stock crítico.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- Ventas Recientes -->
+  <div class="card">
+    <div class="card-body space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-semibold text-slate-800">Ventas Recientes</h3>
+        <button pButton label="Ver todas" icon="pi pi-arrow-right" iconPos="right" text routerLink="/ventas"></button>
+      </div>
+      <p-table [value]="recentSales()" [loading]="loading()" [tableStyle]="{ 'min-width': '100%' }">
+        <ng-template #header pTemplate="header">
+          <tr>
+            <th>ID</th>
+            <th>Cliente ID</th>
+            <th class="text-right">Total</th>
+            <th>Estado</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-sale pTemplate="body">
+          <tr>
+            <td class="font-semibold text-slate-800">#{{ sale.id }}</td>
+            <td>{{ sale.client_id }}</td>
+            <td class="text-right font-medium">{{ sale.total | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+            <td>
+              <p-tag [value]="sale.status" [severity]="sale.status === 'active' || sale.status === 'completed' ? 'success' : 'danger'" [rounded]="true" />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #emptymessage pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="text-center py-6 text-slate-400">No hay ventas registradas recientemente.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>

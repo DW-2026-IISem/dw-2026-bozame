@@ -15,10 +15,11 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
         <div class="flex items-center gap-6">
           <span class="text-xl font-bold tracking-tight text-slate-900">EntregaNexo</span>
           <nav class="flex gap-4 text-sm font-medium text-slate-600">
-            <a routerLink="/clientes" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900">Clientes</a>
-            <a routerLink="/tipos-producto" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900">Tipos de Producto</a>
-            <a routerLink="/productos" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900">Productos</a>
-            <a routerLink="/ventas" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900">Ventas</a>
+            <a routerLink="/dashboard" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Dashboard</a>
+            <a routerLink="/clientes" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Clientes</a>
+            <a routerLink="/tipos-producto" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Tipos de Producto</a>
+            <a routerLink="/productos" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Productos</a>
+            <a routerLink="/ventas" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Ventas</a>
           </nav>
         </div>
       </header>

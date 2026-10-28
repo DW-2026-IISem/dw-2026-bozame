@@ -18,7 +18,7 @@ function normalizeSale(item: any): Sale {
     discounts: item.discounts !== undefined ? Number(item.discounts) : 0,
     total: item.total !== undefined ? Number(item.total) : 0,
     client_id: item.client_id ?? item.clientId ?? null,
-    status: item.status ?? 'completed',
+    status: (item.status === 'active' || item.status === 'completed') ? 'active' : 'inactive',
     created_at: item.createdAt ?? item.created_at ?? '',
     updated_at: item.updatedAt ?? item.updated_at ?? '',
     items: Array.isArray(item.items)

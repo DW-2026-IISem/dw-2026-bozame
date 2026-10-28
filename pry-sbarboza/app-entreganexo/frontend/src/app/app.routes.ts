@@ -5,7 +5,16 @@ export const routes: Routes = [
     path: '',
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'clientes' },
+      // 1. Redirige a dashboard por defecto al entrar a la app
+      { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+
+      // 2. Dashboard ahora vive DENTRO del Shell (con el menú superior visible)
+      {
+        path: 'dashboard',
+        title: 'Dashboard · EntregaNexo',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard').then((m) => m.Dashboard),
+      },
       {
         path: 'clientes',
         title: 'Clientes · EntregaNexo',
