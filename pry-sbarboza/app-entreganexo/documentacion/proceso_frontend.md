@@ -25,3 +25,55 @@ Abre `angular.json` en VS Code, localiza la sección de `budgets` y asegúrate d
 ![](images/clipboard-500653776.png)
 
 ![](images/clipboard-200141637.png)
+
+ISSUE 2
+
+### Configurar Environments
+
+Creamos los archivos de entorno apuntando al backend en el puerto `4000` con `requireAuth: true`:
+
+![](images/clipboard-1801244522.png)
+
+### Paso 2: Crear los Modelos en `core/models`
+
+Inyectamos todas las interfaces que representan las tablas y contratos de la API:
+
+![](images/clipboard-1771316460.png)
+
+![](images/clipboard-2229804998.png)
+
+![](images/clipboard-3334431031.png)
+
+![](images/clipboard-3641306111.png)
+
+![](images/clipboard-191471205.png)
+
+![](images/clipboard-1879497547.png)
+
+### Paso 3: Utilidades y Servicios Transversales
+
+Creamos el manejador de errores de la API (`toApiMessage`), el servicio de notificaciones y el `SessionStore` con Signals
+
+![](images/clipboard-2162090017.png)
+
+### Paso 4: Servicios HTTP de las Entidades
+
+Creamos `ClientApi` como base representativa en `src/app/features/clients/`:
+
+![](images/clipboard-3436856362.png)
+
+### Paso 5: Componentes UI y Directiva Estructural
+
+Configuramos los componentes compartidos reutilizables (`PageHeader`, `StatusTag`, `EmptyState`) y la directiva `*appHasPermission`
+
+![](images/clipboard-221586546.png)
+
+![](images/clipboard-185500343.png)
+
+![](images/clipboard-874224274.png)
+
+### Paso 6: Shell y Rutas Base
+
+Creamos el componente `Shell` (con barra superior y navegación) y actualizamos `app.routes.ts` y `app.config.ts` para proveer `HttpClient`:
+
+![![](images/clipboard-1405471669.png)](images/clipboard-1267049618.png)
