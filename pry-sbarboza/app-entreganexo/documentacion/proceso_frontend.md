@@ -28,6 +28,7 @@ El desarrollo del frontend está estructurado por etapas secuenciales:
 3.  **Issue 2: Capa Core, Modelos, Almacén de Sesión, Componentes UI y Shell (ISS-02):** Configuración de variables de entorno, modelos tipados del contrato de datos, utilidades de control de errores, almacén reactivo `SessionStore` con Signals, servicio de clientes `ClientApi`, directiva de permisos `*appHasPermission`, componentes compartidos (`PageHeader`, `StatusTag`, `EmptyState`), layout de navegación `Shell` y comprobación de compilación del bundle para producción.
 4.  **Issue 3: Módulo de Clientes, Formulario Reactivo y Rutas de Navegación (ISS-03):** Creación de componentes independientes (`ClientList`, `ClientForm`), función utilitaria de filtrado local `filterRows`, implementación del formulario reactivo con validaciones y sincronización reactiva mediante Signals (`effect`), tabla interactiva de clientes en PrimeNG con estado reactivo, conexión de rutas secundarias en `app.routes.ts`, ajuste de endpoints al backend NestJS y verificación visual en el navegador.
 5.  **Issue 4: Módulo de Tipos de Producto, Catálogo y Menú de Navegación (ISS-04):** Generación de componentes independientes (`ProductTypeList`, `ProductTypeForm`), creación del servicio inyectable `ProductTypeApi` adaptado a la API REST de NestJS, desarrollo del formulario reactivo para categorías de productos, tabla interactiva con estado reactivo y filtrado en memoria, registro de la ruta en `app.routes.ts`, enlace en el menú de navegación de `Shell` y comprobación visual en el navegador.
+6.  **Issue 5: Módulo de Productos, Inventario y Relación con Tipos de Producto (ISS-05):** Generación de componentes independientes (`ProductList`, `ProductForm`), creación del servicio `ProductApi` conectado al endpoint de NestJS, desarrollo del formulario reactivo con relación *many-to-one* a categorías y validaciones de precio y existencias, tabla de inventario con señales computadas para alerta de stock bajo (`lowStockCount`), carga paralela con `forkJoin`, registro de rutas en `app.routes.ts` y enlace de navegación.
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -379,4 +380,54 @@ Iniciamos el servidor de desarrollo en `http://localhost:4200` y verificamos la 
 
 ------------------------------------------------------------------------
 
-ISSUE 5
+## Issue 5: Módulo de Productos, Inventario y Relación con Tipos de Producto (ISS-05)
+
+Desarrollamos el módulo de gestión de productos e inventario en el frontend. Introducimos la primera relación *many-to-one* del sistema, vinculando obligatoriamente cada producto a un tipo de producto (`ProductType`) activo. Para ello, implementamos componentes independientes para el catálogo y el formulario modal, conectamos el servicio HTTP hacia la API de NestJS, realizamos la carga concurrente de datos con `forkJoin`, incorporamos señales computadas para el cálculo automático de existencias bajas (`lowStockCount`) y vinculamos la ruta en el enrutador principal de la aplicación.
+
+### Paso 38: Generación de componentes independientes para productos
+
+En la terminal dentro de `frontend/`, ejecutamos los comandos de Angular CLI `npx ng g component features/products/product-list --skip-tests --defaults` y `npx ng g component features/products/product-form --skip-tests --defaults`. Angular CLI genera la estructura de archivos independientes (*standalone*) para el listado (`product-list`) y el formulario (`product-form`), creando sus hojas de estilo, archivos de lógica TypeScript y plantillas HTML.
+
+![](images/clipboard-3375858960.png)
+
+------------------------------------------------------------------------
+
+### Paso 39: Creación del servicio de comunicación HTTP para productos (`product-api.ts`)
+
+En `src/app/features/products/product-api.ts`, creamos el servicio inyectable `ProductApi`. Implementamos funciones de desenvolvimiento (`unwrapList` y `unwrapItem`) para normalizar las respuestas del backend NestJS que devuelven los datos envueltos en la propiedad `data`. Configuramos la URL base apuntando a `${environment.apiUrl}/productos` y definimos los métodos CRUD: consulta de inventario (`list`), consulta por identificador (`get`), creación (`create`), actualización parcial (`update`), desactivación lógica (`deactivate`) y eliminación física (`remove`).
+
+![](images/clipboard-1593554504.png)
+
+------------------------------------------------------------------------
+
+### Paso 40: Implementación del formulario reactivo para productos (`product-form.ts`)
+
+En `src/app/features/products/product-form/product-form.ts`, construimos el componente independiente `ProductForm` con selector `app-product-form`. Mediante `NonNullableFormBuilder`, definimos el formulario reactivo con controles fuertemente tipados: nombre (`name`, máx. 120 caracteres), marca (`brand`), precio numérico (`price` con mínimo de 0.01), umbral de stock mínimo (`min_stock`), existencia actual (`quantity`), categoría asociada (`product_type_id`) y estado (`status`). A través de Signals, declaramos las señales de entrada (`product = input<Product | null>(null)`, `productTypes = input<ProductType[]>([])`, `saving = input(false)`) y emisores de eventos (`saved`, `cancelled`), integrando un `effect()` reactivo que reinicia los controles cada vez que cambia el producto seleccionado.
+
+![](images/clipboard-3281018882.png)
+
+------------------------------------------------------------------------
+
+### Paso 41: Implementación de la lógica reactiva y control de inventario (`product-list.ts`)
+
+En `src/app/features/products/product-list/product-list.ts`, desarrollamos el componente independiente `ProductList`. Implementamos una carga asíncrona concurrente mediante el operador `forkJoin` de RxJS, solicitando simultáneamente el inventario de productos (`ProductApi.list()`) y el catálogo de tipos de producto (`ProductTypeApi.list()`). Administramos el estado reactivo con Signals (`rows`, `types`, `loading`, `saving`, `error`, `filter`, `dialogVisible` y `editing`). Añadimos señales computadas: `visibleRows` para el filtrado reactivo en tiempo real por nombre y marca, `typeName` para mapear de manera eficiente el nombre legible del tipo a partir de su identificador, y `lowStockCount` para computar instantáneamente el número de artículos cuyas existencias son iguales o inferiores al stock mínimo establecido (`quantity <= min_stock`).
+
+![](images/clipboard-145557675.png)
+
+------------------------------------------------------------------------
+
+### Paso 42: Creación de la plantilla visual de la tabla de inventario (`product-list.html`)
+
+En `src/app/features/products/product-list/product-list.html`, maquetamos la interfaz visual con componentes PrimeNG y Tailwind CSS. En la cabecera `<app-page-header>`, mostramos la cantidad total de productos y una insignia de advertencia amarilla condicional (`@if (lowStockCount() > 0)`) que resalta los productos en estado crítico de abastecimiento. Diseñamos la tabla interactiva `<p-table>` con buscador global, ordenamiento por columnas, visualización de precios formateados en moneda con `CurrencyPipe`, etiquetas semafóricas de stock, etiquetas de estado y botones de acción protegidos por permisos (`*appHasPermission`). Asimismo, incrustamos el componente de diálogo modal `<p-dialog>` que aloja el formulario `<app-product-form>`.
+
+![](images/clipboard-4056608793.png)
+
+------------------------------------------------------------------------
+
+### Paso 43: Registro de la ruta de productos en el enrutador (`app.routes.ts`)
+
+En `src/app/app.routes.ts`, registramos la ruta para el módulo de inventario asociando el path `'productos'` con el título de página `Productos · EntregaNexo`. Configuramos la carga perezosa (*lazy loading*) del componente `ProductList` mediante `loadComponent: () => import('./features/products/product-list/product-list').then((m) => m.ProductList)`, enlazando de forma definitiva con el acceso de navegación previamente integrado en la cabecera compartida `Shell`.
+
+![](images/clipboard-2303947151.png)
+
+------------------------------------------------------------------------

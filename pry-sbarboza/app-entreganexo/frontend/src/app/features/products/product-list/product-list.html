@@ -1,0 +1,113 @@
+<app-page-header title="Productos" subtitle="Inventario general y control de stock.">
+  <div class="flex items-center gap-2">
+    <p-tag [value]="rows().length + ' productos'" severity="info" [rounded]="true" />
+    @if (lowStockCount() > 0) {
+      <p-tag [value]="lowStockCount() + ' stock bajo'" severity="warn" [rounded]="true" />
+    }
+  </div>
+  <ng-container *appHasPermission="'POST /api/productos'">
+    <button pButton label="Nuevo producto" icon="pi pi-plus" (click)="openCreate()"></button>
+  </ng-container>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>
+}
+
+<div class="card">
+  <div class="card-body">
+    <p-table
+      [value]="visibleRows()"
+      [loading]="loading()"
+      [paginator]="visibleRows().length > 10"
+      [rows]="10"
+      dataKey="id"
+      [tableStyle]="{ 'min-width': '62rem' }"
+    >
+      <ng-template pTemplate="caption">
+        <input
+          pInputText
+          placeholder="Buscar por nombre o marca…"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+        />
+      </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="name">Producto <p-sort-icon field="name" /></th>
+          <th>Tipo</th>
+          <th class="text-right">Precio</th>
+          <th class="text-center">Stock</th>
+          <th>Estado</th>
+          <th class="w-40 text-right">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>
+            <p class="font-medium text-slate-800">{{ row.name }}</p>
+            <p class="text-xs text-slate-400">{{ row.brand }} · #{{ row.id }}</p>
+          </td>
+          <td>
+            <p-tag [value]="typeName()(row.product_type_id)" severity="secondary" [rounded]="true" />
+          </td>
+          <td class="text-right font-medium">{{ row.price | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+          <td class="text-center">
+            <p-tag
+              [value]="row.quantity.toString()"
+              [severity]="row.quantity === 0 ? 'danger' : row.quantity <= row.min_stock ? 'warn' : 'success'"
+              [rounded]="true"
+              pTooltip="Mínimo permitido: {{ row.min_stock }}"
+            />
+          </td>
+          <td><app-status-tag [status]="row.status" /></td>
+          <td>
+            <div class="flex justify-end gap-1">
+              <ng-container *appHasPermission="'PATCH /api/productos/:id'">
+                <button pButton text rounded severity="secondary" icon="pi pi-pencil"
+                        pTooltip="Editar" (click)="openEdit(row)"></button>
+              </ng-container>
+              <ng-container *appHasPermission="'PATCH /api/productos/:id/deactivate'">
+                <button pButton text rounded severity="warn" icon="pi pi-ban"
+                        pTooltip="Baja lógica" (click)="deactivate(row)"></button>
+              </ng-container>
+              <ng-container *appHasPermission="'DELETE /api/productos/:id'">
+                <button pButton text rounded severity="danger" icon="pi pi-trash"
+                        pTooltip="Eliminar" (click)="remove(row)"></button>
+              </ng-container>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6">
+            <app-empty-state
+              icon="pi pi-box"
+              title="Sin productos"
+              message="Registra el primer producto asignándole un tipo."
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '46rem', maxWidth: '95vw' }"
+>
+  <app-product-form
+    [product]="editing()"
+    [productTypes]="types()"
+    [saving]="saving()"
+    (saved)="save($event)"
+    (cancelled)="dialogVisible.set(false)"
+  />
+</p-dialog>

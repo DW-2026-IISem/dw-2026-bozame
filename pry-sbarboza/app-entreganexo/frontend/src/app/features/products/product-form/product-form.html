@@ -1,0 +1,68 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div>
+    <label for="product-name" class="field-label">Nombre *</label>
+    <input id="product-name" pInputText formControlName="name" placeholder="Arroz Premium 1kg" />
+    @if (form.controls.name.touched && form.controls.name.invalid) {
+      <small class="field-error">El nombre es obligatorio.</small>
+    }
+  </div>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="product-brand" class="field-label">Marca *</label>
+      <input id="product-brand" pInputText formControlName="brand" placeholder="Roa" />
+      @if (form.controls.brand.touched && form.controls.brand.invalid) {
+        <small class="field-error">La marca es obligatoria.</small>
+      }
+    </div>
+    <div>
+      <label for="product-type" class="field-label">Tipo de Producto *</label>
+      <p-select
+        inputId="product-type"
+        formControlName="product_type_id"
+        [options]="productTypes()"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="Selecciona un tipo"
+        [filter]="true"
+      />
+      @if (form.controls.product_type_id.touched && form.controls.product_type_id.invalid) {
+        <small class="field-error">Debe seleccionar un tipo.</small>
+      }
+    </div>
+  </div>
+  <div class="grid gap-4 sm:grid-cols-3">
+    <div>
+      <label for="product-price" class="field-label">Precio *</label>
+      <p-inputnumber
+        inputId="product-price"
+        formControlName="price"
+        mode="decimal"
+        [min]="0.01"
+        [minFractionDigits]="2"
+        [maxFractionDigits]="2"
+      />
+    </div>
+    <div>
+      <label for="product-qty" class="field-label">Stock Actual *</label>
+      <p-inputnumber inputId="product-qty" formControlName="quantity" [min]="0" />
+    </div>
+    <div>
+      <label for="product-min" class="field-label">Stock Mínimo *</label>
+      <p-inputnumber inputId="product-min" formControlName="min_stock" [min]="0" />
+    </div>
+  </div>
+  <div>
+    <label for="product-status" class="field-label">Estado</label>
+    <p-select
+      inputId="product-status"
+      formControlName="status"
+      [options]="statusOptions"
+      optionLabel="label"
+      optionValue="value"
+    />
+  </div>
+  <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+    <button pButton type="button" label="Cancelar" severity="secondary" outlined (click)="cancelled.emit()"></button>
+    <button pButton type="submit" label="Guardar" icon="pi pi-check" [loading]="saving()"></button>
+  </div>
+</form>

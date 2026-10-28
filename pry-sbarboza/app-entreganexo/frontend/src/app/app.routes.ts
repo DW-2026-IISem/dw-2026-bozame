@@ -23,4 +23,10 @@ export const routes: Routes = [
         (m) => m.ProductTypeList,
       ),
   },
+  {
+    path: 'productos',
+    title: 'Productos · EntregaNexo',
+    loadComponent: () =>
+      import('./features/products/product-list/product-list').then((m) => m.ProductList),
+  },
 ];
