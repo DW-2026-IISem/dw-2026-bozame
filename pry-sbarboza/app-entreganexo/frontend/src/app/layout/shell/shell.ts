@@ -20,6 +20,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
             <a routerLink="/tipos-producto" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Tipos de Producto</a>
             <a routerLink="/productos" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Productos</a>
             <a routerLink="/ventas" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Ventas</a>
+            <a routerLink="/perfil" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Perfil</a>
           </nav>
         </div>
       </header>

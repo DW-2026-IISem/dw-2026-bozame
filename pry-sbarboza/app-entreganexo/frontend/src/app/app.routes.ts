@@ -1,14 +1,12 @@
 import { Routes } from '@angular/router';
+import { permissionGuard } from './core/guards/permission.guard';
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./layout/shell/shell').then((m) => m.Shell),
     children: [
-      // 1. Redirige a dashboard por defecto al entrar a la app
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
-
-      // 2. Dashboard ahora vive DENTRO del Shell (con el menú superior visible)
       {
         path: 'dashboard',
         title: 'Dashboard · EntregaNexo',
@@ -44,8 +42,16 @@ export const routes: Routes = [
       {
         path: 'ventas/nueva',
         title: 'Nueva venta · EntregaNexo',
+        canActivate: [permissionGuard],
+        data: { permission: 'POST /api/ventas' },
         loadComponent: () =>
           import('./features/sales/sale-form/sale-form').then((m) => m.SaleForm),
+      },
+      {
+        path: 'perfil',
+        title: 'Mi Perfil · EntregaNexo',
+        loadComponent: () =>
+          import('./features/auth/user-profile/user-profile').then((m) => m.UserProfile),
       },
     ],
   },

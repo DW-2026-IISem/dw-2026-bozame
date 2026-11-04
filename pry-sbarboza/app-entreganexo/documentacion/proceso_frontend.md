@@ -566,3 +566,27 @@ En `src/app/app.routes.ts`, definimos `'dashboard'` como la ruta de bienvenida p
 En `src/app/features/dashboard/dashboard.html`, diseñamos la interfaz visual dividida en dos secciones principales: una cuadrícula de cuatro tarjetas estadísticas de alto impacto (Ventas Totales con `CurrencyPipe`, Conteo de Transacciones, Clientes Activos y Alertas de Stock) y dos paneles inferiores con tablas PrimeNG para el monitoreo de existencias críticas y transacciones recientes. Al navegar a `http://localhost:4200/dashboard`, comprobamos en el navegador la presentación fluida de los indicadores clave y la interacción en tiempo real del nuevo panel analítico.
 
 ![](images/clipboard-2565474443.png)
+
+ISSUE 8
+
+### aso 1: Crear el Guard de Rutas por Permisos
+
+Creamos un guard funcional para proteger las rutas en `app.routes.ts` y evitar que usuarios sin permisos accedan a formularios o módulos restringidos.
+
+![](images/clipboard-1644689027.png)
+
+### Paso 2: Proteger las Rutas en `app.routes.ts`
+
+Actualiza tu archivo `src/app/app.routes.ts` para integrar el `permissionGuard` en los módulos que lo requieran (como la creación de ventas o administración):
+
+![](images/clipboard-1819593836.png)
+
+### Paso 3: Componente de Perfil / Auditoría de Roles (Opcional pero útil)
+
+Para que el usuario pueda ver su rol actual y los permisos decodificados de su token, crearemos un componente rápido de perfil en la interfaz.
+
+![](images/clipboard-713818876.png)
+
+![![](images/clipboard-191053983.png)](images/clipboard-1289552367.png)
+
+![](images/clipboard-2480337063.png)
