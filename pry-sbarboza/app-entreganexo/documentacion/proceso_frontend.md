@@ -30,6 +30,8 @@ El desarrollo del frontend está estructurado por etapas secuenciales:
 5.  **Issue 4: Módulo de Tipos de Producto, Catálogo y Menú de Navegación (ISS-04):** Generación de componentes independientes (`ProductTypeList`, `ProductTypeForm`), creación del servicio inyectable `ProductTypeApi` adaptado a la API REST de NestJS, desarrollo del formulario reactivo para categorías de productos, tabla interactiva con estado reactivo y filtrado en memoria, registro de la ruta en `app.routes.ts`, enlace en el menú de navegación de `Shell` y comprobación visual en el navegador.
 6.  **Issue 5: Módulo de Productos, Inventario y Relación con Tipos de Producto (ISS-05):** Generación de componentes independientes (`ProductList`, `ProductForm`), creación del servicio `ProductApi` conectado al endpoint de NestJS, desarrollo del formulario reactivo con relación *many-to-one* a categorías y validaciones de precio y existencias, tabla de inventario con señales computadas para alerta de stock bajo (`lowStockCount`), carga paralela con `forkJoin`, registro de rutas en `app.routes.ts` y enlace de navegación.
 7.  **Issue 6: Módulo de Ventas, Transacciones y Líneas de Pedido (ISS-06):** Creación de componentes independientes (`SaleList`, `SaleForm`), servicio de comunicación HTTP `SaleApi` conectado a `/ventas`, formulario reactivo para registro de ventas transaccionales con líneas dinámicas y cálculo reactivo en tiempo real con Signals, tabla de historial de ventas con resolución de nombres de clientes y flujos de anulación, y registro de rutas en `app.routes.ts`.
+8.  **Issue 7: Dashboard Analítico, Métricas en Tiempo Real y Alertas de Inventario (ISS-07):** Creación del componente analítico independiente `Dashboard`, cálculo reactivo de ingresos, transacciones, clientes activos y alertas de stock con Signals, enlaces en el layout `Shell`, enrutamiento por defecto en `app.routes.ts` y verificación visual en el navegador.
+9.  **Issue 8: Control de Acceso por Permisos, Guards y Vista de Perfil (ISS-08):** Implementación del guard funcional `permissionGuard` para la protección de rutas basada en permisos RBAC del token JWT, blindaje de rutas restringidas en `app.routes.ts`, creación del componente de perfil de usuario (`UserProfile`) con detalle de roles y auditoría de permisos, integración del acceso en `Shell` y verificación visual en el navegador.
 
 A continuación, detallamos cada uno de los pasos que realizamos.
 
@@ -563,30 +565,116 @@ En `src/app/app.routes.ts`, definimos `'dashboard'` como la ruta de bienvenida p
 
 ### Paso 59: Creación de la plantilla visual del Dashboard analítico y verificación en el navegador (`dashboard.html`)
 
-En `src/app/features/dashboard/dashboard.html`, diseñamos la interfaz visual dividida en dos secciones principales: una cuadrícula de cuatro tarjetas estadísticas de alto impacto (Ventas Totales con `CurrencyPipe`, Conteo de Transacciones, Clientes Activos y Alertas de Stock) y dos paneles inferiores con tablas PrimeNG para el monitoreo de existencias críticas y transacciones recientes. Al navegar a `http://localhost:4200/dashboard`, comprobamos en el navegador la presentación fluida de los indicadores clave y la interacción en tiempo real del nuevo panel analítico.
+En `src/app/features/dashboard/dashboard.html`, diseñamos la interfaz visual dividida en dos secciones principales: una cuadrícula de cuatro tarjetas estadísticas de alto impacto (Ventas Totales con `CurrencyPipe`, Conteo de Transacciones, Clientes Activos y Alertas de Stock) y dos paneles inferiores con tablas PrimeNG para el monitoreo de existencias críticas y transacciones recientes. Al navegar a `http://localhost:4200/dashboarD`, comprobamos en el navegador la presentación fluida de los indicadores clave y la interacción en tiempo real del nuevo panel analítico.
 
 ![](images/clipboard-2565474443.png)
 
-ISSUE 8
+------------------------------------------------------------------------
 
-### aso 1: Crear el Guard de Rutas por Permisos
+## Issue 8: Control de Acceso por Permisos, Guards y Vista de Perfil (ISS-08)
 
-Creamos un guard funcional para proteger las rutas en `app.routes.ts` y evitar que usuarios sin permisos accedan a formularios o módulos restringidos.
+Implementamos la capa de seguridad y control de acceso granular en el enrutamiento del frontend. Diseñamos un guard de ruta funcional basado en la API moderna de Angular (`CanActivateFn`) que consulta reactivamente el almacén de sesión (`SessionStore`) para validar si el usuario posee los permisos requeridos antes de activar una vista. Además, construimos una vista de perfil para auditoría en tiempo real de roles y privilegios concedidos en el token JWT.
+
+### Paso 60: Creación del guard funcional de control de acceso por permisos (`permission.guard.ts`)
+
+En `src/app/core/guards/permission.guard.ts`, creamos el guard funcional `permissionGuard` de tipo `CanActivateFn`. Inyectamos `SessionStore`, `Router` y `NotificationService`. Obtenemos el permiso requerido definido en la metadata de la ruta (`route.data?.['permission']`); si el usuario cuenta con dicho privilegio (`session.canPermission(...)`) o no se requiere restricción, se autoriza la navegación. En caso contrario, emitimos una alerta flotante de acceso denegado con `NotificationService.error()` y redirigimos de forma segura hacia `/dashboard`.
 
 ![](images/clipboard-1644689027.png)
 
-### Paso 2: Proteger las Rutas en `app.routes.ts`
+------------------------------------------------------------------------
 
-Actualiza tu archivo `src/app/app.routes.ts` para integrar el `permissionGuard` en los módulos que lo requieran (como la creación de ventas o administración):
+### Paso 61: Blindaje y protección de rutas transaccionales en el enrutador (`app.routes.ts`)
+
+En `src/app/app.routes.ts`, importamos `permissionGuard` y configuramos la protección en los accesos sensibles de la aplicación. Para la ruta `'ventas/nueva'`, agregamos la propiedad `canActivate: [permissionGuard]` junto con el metadato `data: { permission: 'POST /api/ventas' }`, garantizando que únicamente usuarios con el permiso explícito de creación de ventas puedan acceder al formulario transaccional.
 
 ![](images/clipboard-1819593836.png)
 
-### Paso 3: Componente de Perfil / Auditoría de Roles (Opcional pero útil)
+------------------------------------------------------------------------
 
-Para que el usuario pueda ver su rol actual y los permisos decodificados de su token, crearemos un componente rápido de perfil en la interfaz.
+### Paso 62: Generación del componente independiente para el perfil de usuario (`user-profile`)
+
+En la terminal del proyecto dentro de `frontend/`, ejecutamos el comando de Angular CLI `npx ng g component features/auth/user-profile --skip-tests --defaults` y creamos la hoja de estilos complementaria `user-profile.css`. Angular CLI genera la estructura de archivos independientes (*standalone*) para el componente de perfil (`user-profile.ts`, `user-profile.html` y `user-profile.css`).
 
 ![](images/clipboard-713818876.png)
 
-![![](images/clipboard-191053983.png)](images/clipboard-1289552367.png)
+------------------------------------------------------------------------
+
+### Paso 63: Integración del enlace de acceso a Perfil en la barra de navegación del Shell (`shell.ts`)
+
+En `src/app/layout/shell/shell.ts`, actualizamos la cabecera compartida agregando el enlace hacia la vista de perfil (`<a routerLink="/perfil" routerLinkActive="text-slate-900 font-semibold" class="hover:text-slate-900 transition-colors">Perfil</a>`). De esta forma, el usuario puede acceder directamente desde el menú principal de navegación a su información de sesión.
+
+![](images/clipboard-191053983.png)
+
+------------------------------------------------------------------------
+
+### Paso 64: Registro de la ruta de Perfil en el enrutador de la aplicación (`app.routes.ts`)
+
+En `src/app/app.routes.ts`, registramos la ruta secundaria `'perfil'` como hija del layout `Shell`. Establecemos el título de pestaña `Mi Perfil · EntregaNexo` y configuramos la carga perezosa (*lazy loading*) del componente `UserProfile` mediante `loadComponent: () => import('./features/auth/user-profile/user-profile').then((m) => m.UserProfile)`.
+
+![](images/clipboard-1289552367.png)
+
+------------------------------------------------------------------------
+
+### Paso 65: Implementación visual y auditoría de sesión y permisos en el navegador (`user-profile.ts` / `localhost:4200/perfil`)
+
+En `src/app/features/auth/user-profile/user-profile.ts`, estructuramos la interfaz con cabecera descriptiva (`<app-page-header>`), tarjeta informativa del usuario que visualiza los roles activos (`session.roles()`) y el conteo de privilegios asignados, y una tabla interactiva `<p-table>` con paginador para auditar el listado de endpoints permitidos. Al navegar a `http://localhost:4200/perfil` en el navegador web, verificamos que la vista se renderiza perfectamente, mostrando el rol actual ("Invitado"), el total de permisos cargados y la estructura de auditoría en tiempo real.
 
 ![](images/clipboard-2480337063.png)
+
+![](images/clipboard-3863099748.png)
+
+### Completar el `SessionStore` (con persistencia)
+
+Actualiza tu `SessionStore` para que guarde y recupere la sesión del `localStorage`. Abre `src/app/core/services/session-store.ts` y reemplaza el final de la clase (los métodos `restore` y `persist`) con esto:
+
+![](images/clipboard-4116641074.png)
+
+### Crear el `AuthService`
+
+Este servicio manejará el login, la carga del perfil y permisos en paralelo, el refresco y el logout. Ejecuta
+
+![](images/clipboard-4115523326.png)
+
+crear el Interceptor de Autenticación
+
+Este interceptor inyecta el `Bearer token` y maneja el reintento si el token expira (single-flight).
+
+![](images/clipboard-564535475.png)
+
+### Registrar el Interceptor en `app.config.ts`
+
+Abre `src/app/app.config.ts` y añade el interceptor HTTP para que entre en funcionamiento. Asegúrate de tener esta importación al inicio:
+
+![](images/clipboard-2128077304.png)
+
+Componente de login
+
+![](images/clipboard-88815304.png)
+
+ISSUE 9
+
+En esta fase final de la guía de *EntregaNexo*, el issue 9 suele estar enfocado en **la preparación para producción, pruebas finales de integración y empaquetado del sistema** (o configuraciones avanzadas de calidad de código y despliegue).
+
+Como ya tenemos todo el núcleo funcional, componentes, seguridad con guards y métricas operando, vamos a dejar lista la configuración para compilar y empaquetar tu aplicación en modo producción sin errores.
+
+### Paso 1: Verificar y ejecutar la compilación de producción del Frontend
+
+Para asegurarnos de que no hay errores ocultos de TypeScript, rutas rotas o tipos incompatibles antes de entregar el proyecto, ejecutaremos la compilación oficial de Angular en tu terminal:
+
+![](images/clipboard-2708816330.png)
+
+paso2: dockerizacion OPCIONAL
+
+![](images/clipboard-2282474220.png)
+
+El archivo **`Dockerfile`** que creamos sirve para **containerizar (dockerizar)** la aplicación frontend de tu proyecto (EntregaNexo).
+
+Específicamente te sirve para lo siguiente:
+
+1.  **Portabilidad total:** Empaqueta tu aplicación de Angular junto con todas sus dependencias y un servidor web (Nginx) en un contenedor aislado. Esto garantiza que funcione exactamente igual en tu computadora, en la de tu profesor, o en cualquier servidor en la nube (como AWS, Render o DigitalOcean), sin importar si el sistema operativo es Windows, Linux o macOS.
+
+2.  **Optimización para Producción:** Utiliza una compilación multi-etapa (*multi-stage build*). La primera etapa descarga Node.js y compila el código fuente de Angular (lo que acabamos de hacer con el `ng build`), y la segunda etapa copia únicamente los archivos estáticos resultantes a un servidor web ligero y rápido (**Nginx**). Esto evita que el contenedor pese gigabytes y lo deja pesando apenas unos pocos megas.
+
+3.  **Cumplimiento de requisitos de entrega:** En muchos proyectos de ingeniería de software o desarrollo web profesional, se exige entregar el sistema listo con Docker para que pueda levantarse con un simple comando como `docker build` y `docker run` sin necesidad de instalar Node.js manualmente en el entorno de despliegue.
+
+4.  

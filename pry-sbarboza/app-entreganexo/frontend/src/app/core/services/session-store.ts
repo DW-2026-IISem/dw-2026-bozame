@@ -126,6 +126,7 @@ export class SessionStore {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
+      
       const data = JSON.parse(raw) as PersistedSession;
       if (!Array.isArray(data.permissions)) {
         this.clear();
@@ -150,9 +151,11 @@ export class SessionStore {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch {
-      /* quota llena */
+      /* almacenamiento no disponible */
     }
   }
+
+
 }
 
 function pathMatches(pattern: string, path: string): boolean {
