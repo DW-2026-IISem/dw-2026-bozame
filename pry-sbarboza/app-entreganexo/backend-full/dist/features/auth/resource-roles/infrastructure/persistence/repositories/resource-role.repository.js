@@ -49,6 +49,31 @@ let ResourceRoleRepository = class ResourceRoleRepository {
             type: QueryTypes.SELECT
         });
     }
+    async findFullEffectiveForUser(userId) {
+        const query = `
+      SELECT 
+        r.id AS resource_id,
+        r.method,
+        r.path,
+        r.description,
+        ro.id AS role_id,
+        ro.name AS role_name
+      FROM role_users ru
+      INNER JOIN roles ro ON ru.role_id = ro.id
+      INNER JOIN resource_roles rr ON ro.id = rr.role_id
+      INNER JOIN resources r ON rr.resource_id = r.id
+      WHERE rr.status = 'active'
+        AND ro.status = 'active'
+        AND ru.status = 'active'
+        AND r.status = 'active'
+        AND ru.user_id = :userId
+      ORDER BY r.path ASC, r.method ASC
+    `;
+        return this.sequelize.query(query, {
+            replacements: { userId },
+            type: QueryTypes.SELECT
+        });
+    }
 };
 ResourceRoleRepository = __decorate([
     Injectable(),

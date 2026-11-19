@@ -8,17 +8,24 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 export class LoginDto {
     username;
+    identifier;
     password;
 }
 __decorate([
-    ApiProperty({ example: 'admin' }),
+    ApiProperty({ example: 'admin', required: false }),
     IsString(),
-    IsNotEmpty(),
+    IsOptional(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "username", void 0);
+__decorate([
+    ApiProperty({ example: 'admin', required: false }),
+    IsString(),
+    IsOptional(),
+    __metadata("design:type", String)
+], LoginDto.prototype, "identifier", void 0);
 __decorate([
     ApiProperty({ example: 'Password123!' }),
     IsString(),

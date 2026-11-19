@@ -651,6 +651,10 @@ Componente de login
 
 ![](images/clipboard-88815304.png)
 
+![](images/clipboard-2687779999.png)
+
+Con esto, tu frontend ya es capaz de autenticarse enviando el payload `{ identifier, password }`, recuperar y guardar los tokens, cargar tu perfil/permisos y manejar el refresco si el JWT caduca. Una vez implementado, podemos integrar los guards del **ISS-09** con total seguridad.
+
 ISSUE 9
 
 En esta fase final de la guía de *EntregaNexo*, el issue 9 suele estar enfocado en **la preparación para producción, pruebas finales de integración y empaquetado del sistema** (o configuraciones avanzadas de calidad de código y despliegue).
@@ -677,4 +681,33 @@ Específicamente te sirve para lo siguiente:
 
 3.  **Cumplimiento de requisitos de entrega:** En muchos proyectos de ingeniería de software o desarrollo web profesional, se exige entregar el sistema listo con Docker para que pueda levantarse con un simple comando como `docker build` y `docker run` sin necesidad de instalar Node.js manualmente en el entorno de despliegue.
 
-4.  
+CREAR LOS GUARDS:
+
+![](images/clipboard-620848595.png)
+
+**Crear la pantalla de Acceso Denegado**
+Esta vista explica el error 403 mostrando el permiso exacto que le falta al usuario.
+
+![](images/clipboard-3621063989.png)
+
+**Proteger la Matriz de Rutas**
+Actualiza `src/app/app.routes.ts` para inyectar los guards y los metadatos de permisos en cada módulo:
+
+![](images/clipboard-3350103497.png)
+
+**Menú Dinámico y Logout en el Shell**
+Reemplaza `src/app/layout/shell/shell.ts` para que filtre las opciones del menú con base en `SessionStore.canPermission()` e incluya el panel de usuario con el botón de cerrar sesión:
+
+![](images/clipboard-3829773298.png)
+
+Así es! Con la actualización del archivo de rutas hemos completado oficialmente el **Issue 9**.
+
+Tu frontend ya cuenta con un modelo de seguridad RBAC visible y estructural:
+
+- **`authGuard`:** Bloquea usuarios sin sesión y los envía al login guardando la URL a la que querían ir.
+
+- **`guestGuard`:** Impide que un usuario ya autenticado vuelva a la pantalla de login por error.
+
+- **`permissionGuard` y `/forbidden`:** Evalúan si el JWT contiene los permisos exactos para la ruta solicitada y, de no ser así, muestran el acceso denegado con el permiso faltante.
+
+- **Rutas blindadas:** Toda la matriz de navegación en `app.routes.ts` ya exige los permisos adecuados por endpoint.

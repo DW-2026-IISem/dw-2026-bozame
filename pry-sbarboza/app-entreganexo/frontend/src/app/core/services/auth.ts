@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Service, inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, finalize, forkJoin, map, of, switchMap, tap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
@@ -11,19 +11,51 @@ import {
 } from '../models/auth.model';
 import { SessionStore } from './session-store';
 
-@Service()
+@Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly session = inject(SessionStore);
-  private readonly base = `${environment.apiUrl}/sesion`;
+  private readonly base = `${environment.apiUrl}/auth`;
   private readonly permissionsUrl = `${environment.apiUrl}/permisos`;
 
   login(credentials: LoginRequest): Observable<AccessPayload> {
-    return this.http.post<SessionTokens>(`${this.base}/login`, credentials).pipe(
-      tap((tokens) => this.session.setTokens(tokens)),
-      switchMap(() =>
+    const payload = {
+      username: credentials.identifier || (credentials as any).username,
+      identifier: credentials.identifier || (credentials as any).username,
+      password: credentials.password,
+    };
+
+    return this.http.post<any>(`${this.base}/login`, payload).pipe(
+      map((res) => res?.data ?? res),
+      tap((data) => {
+        const tokens: SessionTokens = {
+          access_token: data.access_token,
+          token_type: data.token_type ?? 'Bearer',
+          expires_in: data.expires_in ?? 28800,
+          refresh_token: data.refresh_token ?? data.access_token,
+          refresh_expires_in: data.refresh_expires_in ?? 86400,
+        };
+        this.session.setTokens(tokens);
+
+        if (data.user && Array.isArray(data.permissions)) {
+          this.session.setAccess({
+            user: data.user,
+            permissions: data.permissions,
+          });
+        }
+      }),
+      switchMap((data) =>
         this.me().pipe(
           catchError((error: unknown) => {
+            // Si el backend ya devolvió user y permissions en el login, usamos esa respuesta
+            if (data?.user) {
+              const fallbackAccess: AccessPayload = {
+                user: data.user,
+                permissions: data.permissions ?? [],
+              };
+              this.session.setAccess(fallbackAccess);
+              return of(fallbackAccess);
+            }
             this.session.clear();
             return throwError(() => error);
           }),
@@ -34,12 +66,12 @@ export class AuthService {
 
   me(): Observable<AccessPayload> {
     return forkJoin({
-      profile: this.http.get<ProfilePayload>(`${this.base}/perfil`),
-      permissions: this.http.get<PermissionsPayload>(this.permissionsUrl),
+      profile: this.http.get<any>(`${this.base}/perfil`).pipe(map((res) => res?.data ?? res)),
+      permissions: this.http.get<any>(this.permissionsUrl).pipe(map((res) => res?.data ?? res)),
     }).pipe(
       map(({ profile, permissions }) => ({
-        user: profile.user,
-        permissions: permissions.permissions,
+        user: profile.user ?? profile,
+        permissions: permissions.permissions ?? (Array.isArray(permissions) ? permissions : []),
       })),
       tap((access) => this.session.setAccess(access)),
     );
@@ -51,8 +83,11 @@ export class AuthService {
       return throwError(() => new Error('No hay refresh token en la sesión'));
     }
     return this.http
-      .post<SessionTokens>(`${this.base}/refresh`, { refresh_token })
-      .pipe(tap((tokens) => this.session.setTokens(tokens)));
+      .post<any>(`${this.base}/refresh`, { refresh_token })
+      .pipe(
+        map((res) => res?.data ?? res),
+        tap((tokens) => this.session.setTokens(tokens)),
+      );
   }
 
   logout(): Observable<unknown> {

@@ -42,4 +42,38 @@ export class ResourceRoleRepository {
       type: QueryTypes.SELECT
     });
   }
+
+  // Consulta detallada de permisos para auditoría y almacén de sesión del frontend
+  async findFullEffectiveForUser(userId: number): Promise<Array<{
+    resource_id: number;
+    method: string;
+    path: string;
+    description: string | null;
+    role_id: number;
+    role_name: string;
+  }>> {
+    const query = `
+      SELECT 
+        r.id AS resource_id,
+        r.method,
+        r.path,
+        r.description,
+        ro.id AS role_id,
+        ro.name AS role_name
+      FROM role_users ru
+      INNER JOIN roles ro ON ru.role_id = ro.id
+      INNER JOIN resource_roles rr ON ro.id = rr.role_id
+      INNER JOIN resources r ON rr.resource_id = r.id
+      WHERE rr.status = 'active'
+        AND ro.status = 'active'
+        AND ru.status = 'active'
+        AND r.status = 'active'
+        AND ru.user_id = :userId
+      ORDER BY r.path ASC, r.method ASC
+    `;
+    return this.sequelize.query(query, {
+      replacements: { userId },
+      type: QueryTypes.SELECT
+    });
+  }
 }

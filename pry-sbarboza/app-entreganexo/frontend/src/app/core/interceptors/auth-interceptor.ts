@@ -15,6 +15,9 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const router = inject(Router);
 
   const isPublicAuthCall =
+    req.url.includes('/auth/login') ||
+    req.url.includes('/auth/refresh') ||
+    req.url.includes('/auth/logout') ||
     req.url.includes('/sesion/login') ||
     req.url.includes('/sesion/refresh') ||
     req.url.includes('/sesion/logout');

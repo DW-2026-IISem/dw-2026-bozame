@@ -13,4 +13,12 @@ export declare class ResourceRoleRepository {
         method: string;
         path: string;
     }[]>;
+    findFullEffectiveForUser(userId: number): Promise<Array<{
+        resource_id: number;
+        method: string;
+        path: string;
+        description: string | null;
+        role_id: number;
+        role_name: string;
+    }>>;
 }

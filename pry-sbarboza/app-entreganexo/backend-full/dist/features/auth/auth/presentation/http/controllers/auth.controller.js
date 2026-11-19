@@ -10,10 +10,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import { Controller, Post, Get, Body, HttpCode, Req, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../../../application/services/auth.service.js';
 import { LoginDto } from '../../../application/dto/login.dto.js';
+import { JwtAuthGuard } from '../../../../../../common/guards/jwt-auth.guard.js';
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -21,6 +22,16 @@ let AuthController = class AuthController {
     }
     async login(dto) {
         return this.authService.login(dto);
+    }
+    async getProfile(req) {
+        const user = req.auth;
+        return this.authService.getProfile(user.id);
+    }
+    async refresh(body) {
+        return this.authService.refresh(body);
+    }
+    async logout() {
+        return { message: 'Sesión cerrada exitosamente' };
     }
 };
 __decorate([
@@ -31,9 +42,32 @@ __decorate([
     __metadata("design:paramtypes", [LoginDto]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    Get(['perfil', 'me']),
+    UseGuards(JwtAuthGuard),
+    __param(0, Req()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getProfile", null);
+__decorate([
+    Post('refresh'),
+    HttpCode(200),
+    __param(0, Body()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "refresh", null);
+__decorate([
+    Post('logout'),
+    HttpCode(200),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "logout", null);
 AuthController = __decorate([
     ApiTags('auth'),
-    Controller('auth'),
+    Controller(['auth', 'sesion']),
     __metadata("design:paramtypes", [AuthService])
 ], AuthController);
 export { AuthController };
