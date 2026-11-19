@@ -240,3 +240,110 @@ Ejecutamos `npm run dev`: `nodemon` vigila la carpeta `src/` y arranca el servid
 ![](images/express/iss01-11-npm-run-dev.png)
 
 ------------------------------------------------------------------------
+
+## ISS-02: Infraestructura de Base de Datos
+
+En este bloque instalamos Sequelize y los drivers de base de datos, creamos el archivo `.env` con la configuración de los motores, escribimos el módulo de conexión `src/database/db.ts`, reservamos la carpeta de seeders y completamos el arranque de la clase `App` para que conecte y sincronice la base de datos antes de abrir el puerto.
+
+### Paso 22: Instalación de Sequelize y los drivers de base de datos
+
+Instalamos el ORM `sequelize` junto con los drivers de los cuatro motores: `mysql2` (MySQL), `pg` y `pg-hstore` (PostgreSQL), `tedious` (SQL Server) y `oracledb` (Oracle). Los avisos que muestra npm corresponden a dependencias internas y no afectan al proyecto.
+
+![](images/express/iss02-01-npm-install-sequelize.png)
+
+------------------------------------------------------------------------
+
+### Paso 23: Instalación de los tipos de Sequelize
+
+Instalamos `@types/sequelize` como dependencia de desarrollo, tal como indica la guía del curso.
+
+![](images/express/iss02-02-npm-install-types-sequelize.png)
+
+------------------------------------------------------------------------
+
+### Paso 24: Archivo de variables de entorno (`.env`)
+
+Creamos el archivo `.env` en la raíz de `backend-express`. Definimos `PORT=3002`, el puerto que consume el frontend de EntregaNexo, y `DB_ENGINE=mysql` para seleccionar el motor activo. Declaramos los bloques de conexión de MySQL, PostgreSQL (puerto 5433, según nuestro `docker-compose.yml`), SQL Server y Oracle, con las credenciales de nuestros contenedores. Utilizamos una base de datos nueva, `entreganexo_express`, para no alterar las tablas del backend anterior. Este archivo está excluido del repositorio mediante el `.gitignore`.
+
+![](images/clipboard-2127990296.png)
+
+------------------------------------------------------------------------
+
+### Paso 25: Verificación del motor seleccionado
+
+Comprobamos que el archivo `.env` existe y que el motor activo es MySQL.
+
+![](images/express/iss02-03-env-db-engine.png)
+
+------------------------------------------------------------------------
+
+### Paso 26: Verificación de los paquetes de Sequelize
+
+Ejecutamos `npm ls sequelize mysql2 --depth=0` para confirmar que el ORM y el driver de MySQL quedaron instalados.
+
+![](images/express/iss02-04-npm-ls-sequelize.png)
+
+------------------------------------------------------------------------
+
+### Paso 27: Creación de la base de datos `entreganexo_express`
+
+Creamos la base de datos `entreganexo_express` dentro del contenedor `entreganexo-mysql`, leyendo la contraseña desde la variable de entorno del contenedor. Al listar las bases de datos se observa la nueva base junto a `entreganexo`, que conserva los datos del backend anterior.
+
+![](images/express/iss02-05-crear-base-datos.png)
+
+------------------------------------------------------------------------
+
+### Paso 28: Módulo de conexión con Sequelize (`src/database/db.ts`)
+
+Creamos `src/database/db.ts`. El mapa `dbConfigurations` define las conexiones de MySQL y PostgreSQL leyendo sus variables del `.env`; la variable `DB_ENGINE` elige cuál se usa y, si el motor no existe en el mapa, el módulo lanza un error. El archivo exporta la instancia `sequelize`, la función `getDatabaseInfo()` con los datos de la conexión activa y `testConnection()`, que verifica las credenciales con `sequelize.authenticate()`.
+
+![](images/clipboard-660850123.png)
+
+------------------------------------------------------------------------
+
+### Paso 29: Verificación de tipos del módulo de conexión
+
+Confirmamos que `src/database/db.ts` existe y que el proyecto compila sin errores con `npx tsc --noEmit`.
+
+![](images/express/iss02-06-db-ts-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 30: Carpeta reservada para los seeders
+
+Dejamos creada la carpeta `src/database/seeders/`, que alojará el ejecutor de seeders en el ISS-04. Añadimos un archivo `.gitkeep` para que Git conserve la carpeta aunque todavía esté vacía.
+
+![](images/express/iss02-07-carpeta-seeders.png)
+
+------------------------------------------------------------------------
+
+### Paso 31: Conexión y sincronización en el arranque (`src/config/index.ts`)
+
+Completamos el método `dbConnection()` de la clase `App`. Ahora importa `sequelize`, `getDatabaseInfo` y `testConnection` desde `../database/db`, verifica la conexión y ejecuta `sequelize.sync()` para crear o alterar las tablas a partir de los modelos. En MySQL desactiva temporalmente la verificación de claves foráneas durante la sincronización. Si la conexión falla, el proceso termina con un error. El método `listen()` espera a que termine esta etapa antes de abrir el puerto, para que las sentencias de creación de tablas no compitan con las peticiones entrantes.
+
+![](images/clipboard-3442480901.png)
+
+![](images/clipboard-2917064811.png)
+
+------------------------------------------------------------------------
+
+### Paso 32: Verificación del ISS-02
+
+Ejecutamos la verificación del ISS: el proyecto compila sin errores y existen `src/database/db.ts`, el archivo `.env` y la carpeta `src/database/seeders/`.
+
+![](images/express/iss02-08-verificacion.png)
+
+------------------------------------------------------------------------
+
+### Paso 33: Arranque del servidor conectado a MySQL (GATE)
+
+Ejecutamos `npm run dev`. El servidor lee las 22 variables del `.env`, se conecta a MySQL, sincroniza la base de datos y queda escuchando en el puerto 3002; luego lo detenemos con `Ctrl+C`. Con esto se cumplen los criterios de aceptación del ISS-02:
+
+- [x] Sequelize y los drivers instalados; `.env` con `DB_ENGINE` y los bloques de los cuatro motores.
+- [x] `src/database/db.ts` exporta `sequelize`, `getDatabaseInfo` y `testConnection`.
+- [x] Carpeta `src/database/seeders/` creada, sin lógica todavía.
+- [x] `npx tsc --noEmit` sin errores.
+
+![](images/express/iss02-09-npm-run-dev.png)
+
+------------------------------------------------------------------------
