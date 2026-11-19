@@ -621,3 +621,97 @@ Arrancamos el servidor con `npm run dev`: conecta a MySQL, sincroniza la tabla `
 ------------------------------------------------------------------------
 
 ![](images/clipboard-3638131339.png)
+
+------------------------------------------------------------------------
+
+## ISS-04: Seeders con Faker
+
+En este issue llenamos la base de datos con datos de prueba. Para ello usamos *seeders*: pequeños programas que se ejecutan por consola con `npm run db:seed` y que insertan registros falsos, pero con aspecto realista, generados con la librería `@faker-js/faker`. Los *seeders* no forman parte de la API: no pasan por rutas, *controllers* ni *services*, sino que escriben directamente con el modelo. Cada *feature* tiene su propio *seeder* y un orquestador externo, el **SeedersRunner**, los ejecuta todos indicando cuántos registros crear de cada entidad.
+
+------------------------------------------------------------------------
+
+### Paso 68: Instalación de Faker
+
+Instalamos `@faker-js/faker` como dependencia de desarrollo, ya que solo se usa para generar datos de prueba y no hace falta en producción.
+
+![](images/express/iss04-01-npm-install-faker.png)
+
+------------------------------------------------------------------------
+
+### Paso 69: Seeder de la feature de clientes
+
+Creamos `src/features/business/clients/clients.seeder.ts`. La función `seedClients(count)` recibe cuántos clientes generar y es **idempotente**: antes de insertar consulta `Client.count()` y, si la tabla ya tiene filas, avisa y no hace nada, de modo que ejecutarlo varias veces nunca duplica datos. Los nombres, direcciones y teléfonos los genera Faker; el correo incluye el índice y un sufijo aleatorio para que sea único, y todos los clientes quedan activos con la contraseña `Password123!`, que el *hook* `beforeBulkCreate` del modelo encripta al insertar con `bulkCreate`.
+
+![](images/express/iss04-02-cat-clients-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 70: Cantidad de registros por entidad
+
+Creamos `src/database/seeders/counts.ts`, que define cuántos registros sembrar de cada entidad. La función `resolveSeedCounts` decide la cantidad con este orden de prioridad: primero el argumento de consola (`--clients=20`), luego la variable de entorno (`SEED_CLIENTS`) y, si no hay ninguno, el valor por defecto (10). Cuando agreguemos nuevas *features* solo habrá que añadir su clave aquí.
+
+![](images/express/iss04-03-cat-counts.png)
+
+------------------------------------------------------------------------
+
+### Paso 71: SeedersRunner
+
+Creamos `src/database/seeders/index.ts`, el orquestador que vive fuera de las *features*. `runAllSeeders` calcula los conteos, comprueba la conexión con `testConnection()` para fallar con un mensaje claro si la base no responde, sincroniza los modelos con `sync({ force: false, alter: true })` para que las tablas existan aunque la base esté recién creada, y llama a cada *seeder* en orden (primero las tablas padre, luego las hijas). El `import` del modelo de clientes es intencional: registra el modelo en Sequelize antes del `sync`. Al terminar cierra la conexión y finaliza el proceso.
+
+![](images/express/iss04-04-cat-runner.png)
+
+------------------------------------------------------------------------
+
+### Paso 72: Script `db:seed`
+
+Añadimos en `package.json` el script `db:seed`, que ejecuta el *runner* con `ts-node`.
+
+![](images/express/iss04-05-scripts-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 73: Primera ejecución de los seeders
+
+Vaciamos la tabla `clients` y ejecutamos `npm run db:seed`. Sin argumentos ni variables de entorno se usa la cantidad por defecto, así que el *runner* informa `{ clients: 10 }`, se conecta a MySQL e inserta 10 clientes falsos.
+
+![](images/express/iss04-06-db-seed-default.png)
+
+------------------------------------------------------------------------
+
+### Paso 74: Idempotencia del seeder
+
+Volvemos a ejecutar `npm run db:seed` sin vaciar la tabla. Esta vez el *seeder* detecta que ya hay 10 registros y se omite, por lo que no se duplican datos.
+
+![](images/express/iss04-07-db-seed-idempotente.png)
+
+------------------------------------------------------------------------
+
+### Paso 75: Cantidad por argumento de consola
+
+Vaciamos de nuevo la tabla y ejecutamos `npm run db:seed -- --clients=20`. El primer `--` le indica a npm que lo que sigue es para el script; el *runner* lo lee de `process.argv` y siembra 20 clientes.
+
+![](images/express/iss04-08-db-seed-cli-20.png)
+
+------------------------------------------------------------------------
+
+### Paso 76: Cantidad por variable de entorno
+
+Vaciamos la tabla otra vez y ejecutamos `SEED_CLIENTS=5 npm run db:seed`. La variable de entorno sustituye al valor por defecto y se insertan 5 clientes.
+
+![](images/express/iss04-09-db-seed-env-5.png)
+
+------------------------------------------------------------------------
+
+### Paso 77: Clientes sembrados en la base de datos
+
+Consultamos la tabla `clients` en MySQL y vemos los 5 clientes generados por Faker, todos activos y con la contraseña guardada como *hash* de bcrypt (prefijo `$2b$10$`), lo que confirma que el *hook* del modelo también actúa con `bulkCreate`.
+
+![](images/express/iss04-10-tabla-sembrada.png)
+
+------------------------------------------------------------------------
+
+### Paso 78: Arranque del servidor (GATE)
+
+Para cerrar el issue comprobamos que la aplicación sigue en pie: `npm run dev` conecta a MySQL, sincroniza la base y queda escuchando en el puerto 3002; luego lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-04: la *feature* de clientes tiene su *seeder* con Faker, que recibe la cantidad y no duplica datos; el SeedersRunner en `src/database/seeders/` orquesta los *seeders* con conteos configurables por defecto, por variable de entorno o por consola; y el script `npm run db:seed` funciona en sus tres variantes.
+
+![](images/express/iss04-11-npm-run-dev.png)
