@@ -92,11 +92,7 @@ Ejecutamos `mysqladmin ping` dentro del contenedor, leyendo la contraseña desde
 
 ### Paso 5: Verificación conjunta del ISS-00 (GATE)
 
-Ejecutamos `node -v && npm -v`, el comando de verificación que define el ISS. El operador `&&` ejecuta el segundo comando solo si el primero tuvo éxito, por lo que ambas versiones impresas sin errores confirman que el entorno cumple los criterios de aceptación:
-
-- [x] `node -v` muestra v20 o superior (v24.x).
-- [x] `npm -v` responde.
-- [x] Motor de base de datos accesible (MySQL).
+Ejecutamos `node -v && npm -v`, el comando de verificación que define el ISS. El operador `&&` ejecuta el segundo comando solo si el primero tuvo éxito, por lo que ambas versiones impresas sin errores confirman que el entorno está listo: Node.js en la versión 24 (se exige v20 o superior), npm respondiendo y el motor MySQL accesible, tal como comprobamos en el paso anterior.
 
 ![](images/express/iss00-05-verificacion-gate.png)
 
@@ -228,14 +224,7 @@ Listamos los archivos de `src/` con `find src -type f | sort`, confirmando que e
 
 ### Paso 21: Arranque del servidor en modo desarrollo (GATE)
 
-Ejecutamos `npm run dev`: `nodemon` vigila la carpeta `src/` y arranca el servidor con `ts-node`. El servidor inicia sin errores y queda escuchando en el puerto 4000; luego lo detenemos con `Ctrl+C`. Con esto se cumplen los criterios de aceptación del ISS-01:
-
-- [x] `package.json` con `"type": "commonjs"` y scripts `build` / `dev`.
-- [x] Árbol `src/` con `config`, `database/seeders`, `routes`, `shared` y `features/business/clients`.
-- [x] Dependencias de Express y TypeScript instaladas.
-- [x] `tsconfig.json` con `rootDir: ./src`, `outDir: ./dist` y `strict: true`.
-- [x] Existen `src/server.ts` y `src/config/index.ts`.
-- [x] `npx tsc --noEmit` sin errores.
+Ejecutamos `npm run dev`: `nodemon` vigila la carpeta `src/` y arranca el servidor con `ts-node`. El servidor inicia sin errores y queda escuchando en el puerto 4000; luego lo detenemos con `Ctrl+C`. Con esto queda cerrado el ISS-01: el proyecto tiene su `package.json` en CommonJS con los scripts `build` y `dev`, la estructura de carpetas por *features*, las dependencias de Express y TypeScript instaladas, un `tsconfig.json` estricto y el esqueleto del servidor en `src/server.ts` y `src/config/index.ts`, todo compilando sin errores.
 
 ![](images/express/iss01-11-npm-run-dev.png)
 
@@ -337,13 +326,298 @@ Ejecutamos la verificación del ISS: el proyecto compila sin errores y existen `
 
 ### Paso 33: Arranque del servidor conectado a MySQL (GATE)
 
-Ejecutamos `npm run dev`. El servidor lee las 22 variables del `.env`, se conecta a MySQL, sincroniza la base de datos y queda escuchando en el puerto 3002; luego lo detenemos con `Ctrl+C`. Con esto se cumplen los criterios de aceptación del ISS-02:
-
-- [x] Sequelize y los drivers instalados; `.env` con `DB_ENGINE` y los bloques de los cuatro motores.
-- [x] `src/database/db.ts` exporta `sequelize`, `getDatabaseInfo` y `testConnection`.
-- [x] Carpeta `src/database/seeders/` creada, sin lógica todavía.
-- [x] `npx tsc --noEmit` sin errores.
+Ejecutamos `npm run dev`. El servidor lee las 22 variables del `.env`, se conecta a MySQL, sincroniza la base de datos y queda escuchando en el puerto 3002; luego lo detenemos con `Ctrl+C`. Con esto queda cerrado el ISS-02: Sequelize y los drivers están instalados, el `.env` define el motor activo y los bloques de los cuatro motores, `src/database/db.ts` exporta `sequelize`, `getDatabaseInfo` y `testConnection`, la carpeta de seeders está reservada y el proyecto compila sin errores.
 
 ![](images/express/iss02-09-npm-run-dev.png)
 
 ------------------------------------------------------------------------
+
+## ISS-03: Feature de Clientes (CRUD por capas)
+
+En este bloque construimos la primera *feature* de negocio, `clients`, expuesta en `/api/clientes`. Se desarrolla en cinco variantes encadenadas: **A** (fundación: capa compartida, modelo, DTOs, esqueletos y cableado), **B** (consultar todos y uno), **C** (crear), **D** (actualizar con PUT y PATCH) y **E** (eliminar físico y lógico). Cada petición recorre siempre el mismo camino, sin saltarse ninguna capa:
+
+`HTTP (routes) → Controller → Service → Repository → Model → Sequelize → BD`
+
+### ISS-03-A: Fundación de la feature
+
+### Paso 34: Instalación de bcryptjs
+
+Instalamos `bcryptjs`, la librería que usa el modelo de clientes para encriptar la contraseña antes de guardarla en la base de datos.
+
+![](images/express/iss03-01-npm-install-bcryptjs.png)
+
+------------------------------------------------------------------------
+
+### Paso 35: Instalación de los tipos de bcryptjs
+
+Instalamos `@types/bcryptjs` como dependencia de desarrollo para que TypeScript reconozca los tipos de la librería.
+
+![](images/express/iss03-02-npm-install-types-bcryptjs.png)
+
+------------------------------------------------------------------------
+
+### Paso 36: Error de aplicación (`src/shared/errors/app-error.ts`)
+
+Creamos la clase `AppError`, que extiende de `Error` y transporta un código HTTP (`statusCode`). Los *services* la lanzan cuando una regla de negocio no se cumple (por ejemplo, un registro no encontrado) y los *controllers* la traducen a una respuesta HTTP. Así la capa de negocio no necesita conocer `req` ni `res`.
+
+![](images/clipboard-3087082082.png)
+
+------------------------------------------------------------------------
+
+### Paso 37: Controlador base (`src/shared/http/base-controller.ts`)
+
+Creamos la clase abstracta `BaseController`, de la que heredarán todos los controladores. Concentra tres responsabilidades HTTP para no repetirlas en cada método: `run()` ejecuta el cuerpo del *handler* dentro de un único `try/catch`; `paramId()` lee el `:id` de la URL y lo valida como entero positivo (si no lo es, responde 400); y `handleError()` convierte un `AppError` en su código de estado y cualquier otro error en un 500.
+
+![](images/clipboard-1281696068.png)
+
+------------------------------------------------------------------------
+
+### Paso 38: Transacciones (`src/shared/database/with-transaction.ts`)
+
+Creamos la función `withTransaction()`, que ejecuta un bloque de trabajo dentro de una transacción de Sequelize (patrón *unit of work*): confirma con `commit` si todo sale bien y revierte con `rollback` si ocurre un error. La utilizaremos en el ISS-08 para registrar las ventas.
+
+![](images/clipboard-837891823.png)
+
+------------------------------------------------------------------------
+
+### Paso 39: Modelo de clientes (`client.model.ts`)
+
+Creamos el modelo `Client` con `Model.init()` de Sequelize sobre la tabla `clients`. Define los campos `name`, `address`, `phone`, `email` (único y validado como correo) y `password`, además de `status` como enumeración `active`/`inactive`, cuyo valor por defecto es `inactive` para que una fila insertada sin estado no quede visible en la API. Activamos `timestamps: true` para registrar `createdAt` y `updatedAt`, y añadimos *hooks* que encriptan la contraseña con bcrypt antes de crear o actualizar.
+
+![](images/clipboard-3068669066.png)
+
+------------------------------------------------------------------------
+
+### Paso 40: DTOs de entrada de clientes (`create`, `update` y `patch`)
+
+Creamos la carpeta `dto/` con un archivo por operación. `CreateClientDto` define los datos del `POST`, con `status` opcional; `UpdateClientDto` define el reemplazo completo del `PUT`, sin `status` (el estado solo cambia con el borrado lógico) y con `password` opcional; y `PatchClientDto` es un `Partial` del anterior para las actualizaciones parciales.
+
+![](images/clipboard-2980688176.png)
+
+![](images/clipboard-3245392965.png)
+
+![](images/clipboard-69818739.png)
+
+------------------------------------------------------------------------
+
+### Paso 41: DTO de respuesta y barrel de DTOs
+
+Creamos `client-response.dto.ts` con el tipo `ClientResponseDto`, que omite el campo `password`, y el *mapper* `toClientResponse()`, que convierte la instancia de Sequelize en un objeto plano sin la contraseña. El archivo `index.ts` reexporta todos los DTOs, de modo que las demás capas los importan desde un único punto (`./dto`).
+
+![](images/express/iss03-07-cat-client-response-dto.png)
+
+![](images/express/iss03-08-cat-dto-index.png)
+
+------------------------------------------------------------------------
+
+### Paso 42: Esqueletos de las capas y carpeta `http/`
+
+Creamos los esqueletos de `clients.repository.ts`, `clients.service.ts`, `clients.controller.ts` y `clients.routes.ts`, cada uno con secciones comentadas (*READ*, *CREATE*, *UPDATE* y *DELETE*) que se completan en las variantes B a E. El *service* recibe el *repository* por constructor y el *controller* recibe el *service* y hereda de `BaseController`. También creamos la carpeta `http/` para los archivos de prueba de peticiones.
+
+![](images/express/iss03-03-carpeta-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 43: Agregador de rutas (`src/routes/index.ts`)
+
+Creamos la clase `Routes`, que agrupa las rutas de todas las *features*. Por ahora contiene `clientsRoutes`.
+
+![](images/clipboard-3840891147.png)
+
+------------------------------------------------------------------------
+
+### Paso 44: Cableado en la clase `App` (`src/config/index.ts`)
+
+Modificamos `src/config/index.ts` para importar el modelo `Client` (así Sequelize lo registra antes de sincronizar) y la clase `Routes`. Añadimos la propiedad `routePrv` y, dentro del método `routes()`, registramos las rutas de clientes con `this.routePrv.clientsRoutes.routes(this.app)`.
+
+------------------------------------------------------------------------
+
+### Paso 45: Verificación de tipos y archivos de la fundación
+
+Ejecutamos `npx tsc --noEmit`, que termina sin errores, y listamos los archivos de `src/` para comprobar la capa compartida, el modelo, los DTOs y los esqueletos de la *feature*.
+
+![](images/express/iss03-04-tsc-archivos-fundacion.png)
+
+------------------------------------------------------------------------
+
+### Paso 46: Arranque y sincronización de la tabla `clients`
+
+Arrancamos el servidor con `npm run dev`. Al importar el modelo, `sequelize.sync()` crea la tabla `clients` en la base de datos y el servidor queda escuchando en el puerto 3002.
+
+![](images/express/iss03-05-npm-run-dev-fundacion.png)
+
+------------------------------------------------------------------------
+
+### Paso 47: Verificación de la estructura de la tabla `clients`
+
+Consultamos la estructura de la tabla con `DESCRIBE clients`. Se observan las columnas del modelo, `email` como clave única, `status` como enumeración con valor por defecto `inactive` y las columnas `createdAt` y `updatedAt` generadas por `timestamps: true`.
+
+![](images/express/iss03-06-tabla-clients.png)
+
+------------------------------------------------------------------------
+
+### ISS-03-B a ISS-03-E: Implementación de las operaciones CRUD
+
+Completamos las cuatro capas de la *feature* en el orden que define la guía: consultar todos y uno (**B**), crear (**C**), actualizar con PUT y PATCH (**D**) y eliminar de forma física y lógica (**E**). En cada variante se añade el método correspondiente en el *repository*, el *service*, el *controller* y las rutas, siempre debajo de su sección (*READ*, *CREATE*, *UPDATE* o *DELETE*). A continuación se muestra el código final de cada capa.
+
+### Paso 48: Capa Repository (`clients.repository.ts`)
+
+El *repository* es la única capa que habla con Sequelize. Implementa `findAllActive()` (solo clientes con `status: "active"`), `findById()` (acepta una transacción para usarlo en ventas), `create()`, `update()`, que persiste los cambios sobre una instancia ya cargada, y `delete()`, que elimina la fila físicamente.
+
+![](images/express/iss03-22-cat-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 49: Capa Service (`clients.service.ts`)
+
+El *service* concentra las reglas de negocio y siempre devuelve DTOs mediante `toClientResponse()`, nunca instancias de Sequelize. `create()` asigna `status: "active"` si no se envía; `updatePut()` conserva la contraseña actual si no llega una nueva; `updatePatch()` aplica solo los campos enviados; `deleteLogical()` cambia el estado a `inactive` y `deletePhysical()` borra el registro. El método privado `findOrFail()` es el único lugar que decide qué significa «no existe»: lanza un `AppError(404)` si el cliente no existe o está inactivo.
+
+![](images/express/iss03-23-cat-service.png)
+
+------------------------------------------------------------------------
+
+### Paso 50: Capa Controller (`clients.controller.ts`)
+
+El *controller* hereda de `BaseController` y solo se ocupa de HTTP. Cada método se envuelve en `this.run()`, lee el `:id` con `this.paramId()`, llama al *service* y responde con el código adecuado: 200 en consultas, actualizaciones y borrados, y 201 al crear.
+
+![](images/express/iss03-24-cat-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 51: Rutas de clientes (`clients.routes.ts`)
+
+Registramos las siete rutas de `/api/clientes`, todas sin autenticación en esta fase: `GET` (todos y uno), `POST`, `PUT` y `PATCH` sobre `/:id`, `DELETE` sobre `/:id` (borrado físico) y `PATCH /:id/deactivate` (borrado lógico). Cada ruta enlaza su método del *controller* con `bind`.
+
+![](images/express/iss03-25-cat-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 52: Archivos de peticiones HTTP (`http/`)
+
+Creamos los archivos `.http` de la *feature*, que permiten ejecutar las peticiones desde el editor con la extensión REST Client. Todos llevan la leyenda **SIN AUTH** porque en la Fase I las rutas no requieren autenticación.
+
+![](images/express/iss03-26-cat-http-get-create.png)
+
+![](images/express/iss03-27-cat-http-update-delete.png)
+
+------------------------------------------------------------------------
+
+### Paso 53: ISS-03-B — Consulta de todos los clientes con la tabla vacía
+
+Con el servidor en marcha, consultamos `GET /api/clientes`. Como la tabla todavía no tiene registros, la respuesta es una lista vacía.
+
+![](images/express/iss03-09-b-get-all-vacio.png)
+
+------------------------------------------------------------------------
+
+### Paso 54: ISS-03-B — Contrato de errores (404 y 400)
+
+Comprobamos las respuestas de error: consultar un cliente que no existe devuelve **404** (`Client not found`), lanzado por `findOrFail()`; y un `:id` no numérico (`abc`) o igual a cero devuelve **400**, validado por `paramId()` en el `BaseController` antes de llegar al *service*.
+
+![](images/express/iss03-10-b-errores-404-400.png)
+
+------------------------------------------------------------------------
+
+### Paso 55: ISS-03-C — Creación de un cliente
+
+Creamos a la clienta Ana Pérez con `POST /api/clientes`. La respuesta es **201** y el cliente se crea con `status: "active"` por defecto. La respuesta no incluye el campo `password`.
+
+![](images/express/iss03-11-c-create-ana.png)
+
+------------------------------------------------------------------------
+
+### Paso 56: ISS-03-C — Creación de un segundo cliente
+
+Creamos un segundo cliente, Luis Gómez, que usaremos para comprobar las actualizaciones y los borrados.
+
+![](images/express/iss03-12-c-create-luis.png)
+
+------------------------------------------------------------------------
+
+### Paso 57: ISS-03-C — Consulta de los clientes creados
+
+Consultamos de nuevo `GET /api/clientes` y obtenemos los dos clientes activos, sin el campo `password`.
+
+![](images/express/iss03-13-c-get-all.png)
+
+------------------------------------------------------------------------
+
+### Paso 58: ISS-03-C — Contraseñas encriptadas en la base de datos
+
+Consultamos la tabla `clients` directamente en MySQL y verificamos que la columna `password` guarda el *hash* generado por bcrypt (prefijo `$2b$10$`) y no la contraseña en texto plano. El *hook* `beforeCreate` del modelo se encargó de encriptarla.
+
+![](images/express/iss03-14-c-password-hash.png)
+
+------------------------------------------------------------------------
+
+### Paso 59: ISS-03-D — Actualización completa con PUT
+
+Actualizamos el cliente 1 con `PUT /api/clientes/1` enviando todos sus datos excepto la contraseña. La respuesta es **200**, los campos se reemplazan y el *service* conserva la contraseña anterior.
+
+![](images/express/iss03-15-d-put.png)
+
+------------------------------------------------------------------------
+
+### Paso 60: ISS-03-D — Actualización parcial con PATCH
+
+Con `PATCH /api/clientes/1` modificamos únicamente la dirección; el resto de campos permanece igual.
+
+![](images/express/iss03-16-d-patch.png)
+
+------------------------------------------------------------------------
+
+### Paso 61: ISS-03-D — El estado no se modifica por PUT
+
+Enviamos un `PUT` al cliente 2 incluyendo `"status": "inactive"`. Como `status` no forma parte de `UpdateClientDto`, el *service* lo ignora y el cliente sigue `active`: el estado solo cambia con el borrado lógico.
+
+![](images/express/iss03-17-d-put-status-ignorado.png)
+
+------------------------------------------------------------------------
+
+### Paso 62: ISS-03-E — Borrado lógico
+
+Ejecutamos `PATCH /api/clientes/1/deactivate`. La respuesta es **200** y el cliente queda con `status: "inactive"`; la fila no se elimina de la base de datos.
+
+![](images/express/iss03-18-e-delete-logico.png)
+
+------------------------------------------------------------------------
+
+### Paso 63: ISS-03-E — Un cliente inactivo deja de ser visible
+
+Tras el borrado lógico, consultar el cliente 1 devuelve **404** y la lista de clientes solo muestra a Luis Gómez: `getOne` y `getAll` aplican la misma regla.
+
+![](images/express/iss03-19-e-inactivo-oculto.png)
+
+------------------------------------------------------------------------
+
+### Paso 64: ISS-03-E — Borrado físico
+
+Con `DELETE /api/clientes/1` eliminamos definitivamente el registro. El borrado físico usa `findOrFail(id, false)`, por lo que también permite purgar un cliente que ya estaba desactivado.
+
+![](images/express/iss03-20-e-delete-fisico.png)
+
+------------------------------------------------------------------------
+
+### Paso 65: ISS-03-E — Estado final de la tabla `clients`
+
+Consultamos la tabla en MySQL y confirmamos que el cliente 1 ya no existe y que solo queda Luis Gómez, activo.
+
+![](images/express/iss03-21-e-tabla-final.png)
+
+------------------------------------------------------------------------
+
+### Paso 66: Verificación de tipos del ISS-03
+
+Ejecutamos `npx tsc --noEmit` con la *feature* completa y el proyecto compila sin errores.
+
+![](images/express/iss03-28-tsc-final.png)
+
+------------------------------------------------------------------------
+
+### Paso 67: Arranque del servidor con la feature de clientes (GATE)
+
+Arrancamos el servidor con `npm run dev`: conecta a MySQL, sincroniza la tabla `clients` y queda escuchando en el puerto 3002. Con esto queda cerrado el ISS-03: la *feature* de clientes recorre todas sus capas (rutas, *controller*, *service*, *repository* y modelo) apoyada en la capa compartida `src/shared/`, y las pruebas confirmaron que la consulta general solo devuelve clientes activos y nunca la contraseña, que un cliente inexistente o inactivo responde 404 y un identificador inválido 400, que PUT conserva la contraseña y PATCH actualiza solo lo enviado sin permitir cambiar el estado, y que el borrado lógico desactiva el registro mientras el físico lo elimina.
+
+------------------------------------------------------------------------
+
+![](images/clipboard-3638131339.png)

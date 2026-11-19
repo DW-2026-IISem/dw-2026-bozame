@@ -3,11 +3,14 @@ import express, { Application, ErrorRequestHandler } from "express";
 import morgan from "morgan";
 var cors = require("cors");
 import { sequelize, getDatabaseInfo, testConnection } from "../database/db";
+import "../features/business/clients/client.model";
+import { Routes } from "../routes/index";
 
 dotenv.config();
 
 export class App {
   public app: Application;
+  public routePrv: Routes = new Routes();
 
   constructor(private port?: number | string) {
     this.app = express();
@@ -30,7 +33,8 @@ export class App {
   }
 
   private routes(): void {
-    // Placeholder: aquí se registrarán las rutas de cada feature (ISS-03 en adelante).
+    // Fase I — Business
+    this.routePrv.clientsRoutes.routes(this.app);
   }
 
   private docs(): void {

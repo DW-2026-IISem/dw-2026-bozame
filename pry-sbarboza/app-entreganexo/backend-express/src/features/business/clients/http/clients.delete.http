@@ -1,0 +1,12 @@
+### Feature Client — DELETE físico / DELETE lógico (status = inactive)
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+@id = 1
+
+### DELETE lógico — status = inactive
+# @name deleteClientLogical
+PATCH {{baseUrl}}/api/clientes/{{id}}/deactivate
+
+### DELETE físico — borra la fila
+# @name deleteClientPhysical
+DELETE {{baseUrl}}/api/clientes/{{id}}

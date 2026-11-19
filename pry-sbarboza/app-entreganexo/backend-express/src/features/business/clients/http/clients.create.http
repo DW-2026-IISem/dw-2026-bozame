@@ -1,0 +1,17 @@
+### Feature Client — CREATE
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+
+### CREATE — 201
+# @name createClient
+POST {{baseUrl}}/api/clientes
+Content-Type: application/json
+
+{
+  "name": "Ana Pérez",
+  "address": "Calle 10 #20-30",
+  "phone": "3001234567",
+  "email": "ana.perez@example.com",
+  "password": "Password123!",
+  "status": "active"
+}
