@@ -21,9 +21,9 @@ export const bearerSecurityScheme = {
     scheme: "bearer",
     bearerFormat: "JWT",
     description:
-      "Access token JWT obtenido en `POST /api/sesion/login`. Enviar como " +
+      "Access token JWT obtenido en `POST /api/auth/login`. Enviar como " +
       "`Authorization: Bearer <access_token>`. Vida útil corta (por defecto 15 min); " +
-      "se renueva con `POST /api/sesion/refresh`.",
+      "se renueva con `POST /api/auth/refresh`.",
   },
 };
 

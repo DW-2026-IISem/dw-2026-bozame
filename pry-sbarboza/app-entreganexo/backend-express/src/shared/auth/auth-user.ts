@@ -5,7 +5,7 @@ import { AppError } from "../errors/app-error";
  * Identidad resuelta que los middlewares de acceso dejan en la petición.
  *
  * Se guarda en `req.auth` (ver la ampliación de tipos más abajo) y la consumen:
- *  - los controllers que necesitan saber quién llama (`GET /api/sesion/perfil`);
+ *  - los controllers que necesitan saber quién llama (`GET /api/auth/perfil`);
  *  - `authorize`, para consultar los permisos efectivos del usuario.
  */
 export interface AuthUser {

@@ -56,6 +56,9 @@ export class App {
     this.routePrv.productsRoutes.routes(this.app);
     this.routePrv.salesRoutes.routes(this.app);
     this.routePrv.productSalesRoutes.routes(this.app);
+
+    // Fase II — Auth con RBAC (JWT + RBAC)
+    this.routePrv.usersRoutes.routes(this.app);
   }
 
   private docs(): void {

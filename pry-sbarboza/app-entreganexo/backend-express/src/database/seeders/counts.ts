@@ -5,16 +5,17 @@
  * Cuando agregues features, suma aquí la clave (nombre de tabla) y léela en el runner.
  */
 export type SeedCounts = {
+  users: number;
   clients: number;
   product_types: number;
   products: number;
   sales: number;
   product_sales: number;
-  // users?: number;
-  // roles?: number;
 };
 
 export const DEFAULT_SEED_COUNTS: SeedCounts = {
+  // 2 usuarios canónicos: admin y seller (sus roles se asignan en el ISS-12).
+  users: 2,
   clients: 10,
   product_types: 25,
   products: 15,
@@ -26,6 +27,7 @@ export function resolveSeedCounts(argv: string[] = process.argv.slice(2)): SeedC
   const counts: SeedCounts = { ...DEFAULT_SEED_COUNTS };
 
   const envMap: Array<[keyof SeedCounts, string | undefined]> = [
+    ["users", process.env.SEED_USERS],
     ["clients", process.env.SEED_CLIENTS],
     ["product_types", process.env.SEED_PRODUCT_TYPES],
     ["products", process.env.SEED_PRODUCTS],

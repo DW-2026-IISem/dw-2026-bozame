@@ -1927,3 +1927,177 @@ Como este issue no añade middlewares, las cinco APIs de negocio siguen respondi
 Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-09. Las variables de JWT están en el `.env`. Las utilidades de contraseñas, tokens, JWT, comparación de rutas, usuario autenticado, errores y seguridad de Swagger están en `src/shared/`. Los seis modelos de autenticación tienen sus restricciones únicas, índices y claves foráneas, y sus asociaciones están registradas en la configuración y en el SeedersRunner. El proyecto compila sin errores, las rutas de negocio siguen funcionando sin autenticación y la tabla `clients` quedó libre de índices duplicados.
 
 ![](images/express/iss09-22-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-10: Feature de Usuarios
+
+En este issue construimos la administración de usuarios (`/api/usuarios`) con las mismas cuatro capas y DTOs que las *features* de negocio, pero con dos diferencias: la contraseña nunca entra ni sale en claro, y todas las rutas quedan **protegidas desde el principio** (modalidad JWT + RBAC). Para ello necesitamos los *middlewares* `authenticate` y `authorize`, que la guía construye en el ISS-13. Adelantamos `authenticate` tal como es en el ISS-13. `authorize` necesita los roles y recursos de los ISS-11 y 12, así que de momento usamos una versión provisional que deniega todo. Por el mismo motivo dejamos para el ISS-12 la consulta de permisos efectivos del usuario (`GET /api/usuarios/:id/permisos`), que en la guía depende de la *feature* `resource-roles`.
+
+------------------------------------------------------------------------
+
+### Paso 226: Estructura de la feature
+
+Creamos `src/features/auth/users/` con sus DTOs, *repository*, *service*, *controller*, rutas, *seeder*, Swagger y peticiones HTTP, junto al modelo `user.model.ts` del ISS-09. Además creamos `src/features/auth/access/` para los *middlewares* de acceso.
+
+![](images/express/iss10-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 227: DTOs
+
+`CreateUserDto` recibe nombre de usuario, correo, contraseña y avatar. `UpdateUserDto` y `PatchUserDto` no incluyen ni la contraseña ni el estado: la contraseña se cambia con su propia operación y el estado solo con el borrado lógico. `ChangePasswordDto` exige la contraseña actual y la nueva. `toUserResponse` construye la respuesta **sin** el campo `password`.
+
+![](images/express/iss10-02-cat-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 228: Repository
+
+Además del CRUD, el *repository* tiene `findByUsernameOrEmail`, que usará el *login* del ISS-15 para aceptar el nombre de usuario o el correo en un solo campo, y `findByIdWithPassword`, la única lectura que incluye el *hash* de la contraseña, necesaria para comprobar la contraseña actual.
+
+![](images/express/iss10-03-cat-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 229: Service
+
+El *service* aplica las reglas de los usuarios. El nombre de usuario y el correo deben ser únicos; si ya existen responde 409. El estado por defecto es `active`. Un usuario inactivo deja de ser visible. Para cambiar la contraseña hay que enviar la actual, que se compara con el *hash* guardado. El *hash* de la nueva contraseña lo calculan los *hooks* del modelo, así que el *service* nunca maneja contraseñas en claro al guardarlas.
+
+![](images/express/iss10-04-cat-service.png)
+
+------------------------------------------------------------------------
+
+### Paso 230: Controller
+
+El *controller* sigue el patrón de siempre (`run` y `paramId` del `BaseController`) y añade la operación de cambio de contraseña, que responde `{ message: "Password updated", id }`.
+
+![](images/express/iss10-05-cat-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 231: Rutas protegidas
+
+Las ocho rutas de `/api/usuarios` pasan primero por `authenticate` y `authorize` antes de llegar al *controller*. No basta con haber iniciado sesión: hace falta además el permiso concreto para esa operación (por ejemplo, `GET /api/usuarios`).
+
+![](images/express/iss10-06-cat-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 232: Middleware `authenticate`
+
+`authenticate` responde a la pregunta «¿quién eres?». Lee el token de la cabecera `Authorization: Bearer ...`, lo verifica con `jwt.ts` y comprueba en la base de datos que el usuario sigue existiendo y está activo; así, desactivar una cuenta tiene efecto inmediato aunque su token no haya caducado. Si todo va bien deja la identidad en `req.auth`; si no, responde 401.
+
+![](images/express/iss10-07-cat-authenticate.png)
+
+------------------------------------------------------------------------
+
+### Paso 233: Middleware `authorize` provisional
+
+`authorize` responde a «¿puedes hacer esto?». La versión definitiva del ISS-13 consulta los roles y recursos del usuario, pero esas tablas todavía no tienen *features* ni datos. Mientras tanto, esta versión aplica la regla de denegar por defecto en su forma más estricta: 401 si no hay identidad y 403 para cualquier usuario autenticado, porque aún no existe ningún permiso concedido.
+
+![](images/express/iss10-08-cat-authorize-provisional.png)
+
+------------------------------------------------------------------------
+
+### Paso 234: Seeder de usuarios
+
+El *seeder* crea los dos usuarios del laboratorio, `admin` (`Admin123!`) y `seller` (`Seller123!`), con correos del dominio `entreganexo.local`. Es idempotente: busca por nombre de usuario y, si ya existen pero están inactivos, los reactiva. Sus roles se asignarán en el ISS-12.
+
+![](images/express/iss10-09-cat-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 235: Peticiones HTTP de prueba
+
+Los archivos `.http` obtienen primero un token con `POST /api/auth/login`, la ruta de *login* que usa el *frontend*, en lugar de la `/api/sesion/login` de la guía. Después lo envían en cada petición. Funcionarán cuando exista el *login* (ISS-15).
+
+![](images/express/iss10-10-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 236: Registro de la feature
+
+Registramos `UsersRoutes` en `src/routes/index.ts` y en `routes()` de la configuración. En el SeedersRunner añadimos la clave `users` (2 por defecto, configurable con `SEED_USERS`) y llamamos a `seedUsers` antes que a los *seeders* de negocio.
+
+![](images/express/iss10-11-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 237: Esquema de seguridad en Swagger
+
+Añadimos `usersSwagger` al *registry* y registramos el esquema `bearerAuth` y las respuestas 401 y 403 que creamos en el ISS-09. Esto activa el botón **Authorize** de Swagger UI. Solo lo usan las operaciones que declaran seguridad, así que las rutas de negocio siguen documentadas como abiertas.
+
+![](images/express/iss10-12-swagger-registro.png)
+
+------------------------------------------------------------------------
+
+### Paso 238: Configuración de `ts-node`
+
+Al arrancar, `ts-node` falló con «Property 'auth' does not exist on type 'Request'». La propiedad `req.auth` se declara en `auth-user.ts` ampliando el tipo `Request` de Express. `tsc` la ve porque compila todo el proyecto, pero `ts-node` compila archivo por archivo y no carga esa declaración. La solución es añadir `"ts-node": { "files": true }` en `tsconfig.json`, para que `ts-node` también lea los archivos del proyecto.
+
+![](images/express/iss10-13-tsconfig.png)
+
+------------------------------------------------------------------------
+
+### Paso 239: Crear los usuarios
+
+`npm run db:seed` crea los dos usuarios canónicos. Las tablas de negocio se omiten porque ya tienen datos.
+
+![](images/express/iss10-14-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 240: Contraseñas guardadas como hash
+
+En la tabla `users` las contraseñas aparecen como *hashes* bcrypt, que empiezan por `$2b$12$` (el 12 son las rondas). Nunca se guardan en claro.
+
+![](images/express/iss10-15-tabla-users.png)
+
+------------------------------------------------------------------------
+
+### Paso 241: Sin token, 401
+
+Sin cabecera `Authorization`, `GET /api/usuarios` responde 401 («Missing Bearer token»). Con un token inventado también responde 401 («Invalid or expired access token»), porque la firma no es válida.
+
+![](images/express/iss10-16-sin-token-401.png)
+
+------------------------------------------------------------------------
+
+### Paso 242: Token válido, 403
+
+Todavía no hay *login*, así que firmamos un token para `admin` llamando directamente a `signAccessToken` de `jwt.ts`. Con ese token, `authenticate` acepta la petición, pero el `authorize` provisional responde 403, porque aún no hay ningún permiso concedido. Esto demuestra que las dos comprobaciones están separadas: estar autenticado no basta.
+
+![](images/express/iss10-17-token-valido-403.png)
+
+------------------------------------------------------------------------
+
+### Paso 243: Usuario inexistente, 401
+
+Un token con la firma correcta pero para un usuario que no existe (id 999) responde 401 («User is not active»), porque `authenticate` revisa la base de datos en cada petición.
+
+![](images/express/iss10-18-usuario-inexistente-401.png)
+
+------------------------------------------------------------------------
+
+### Paso 244: El negocio sigue sin autenticación
+
+Las cinco APIs de negocio siguen respondiendo 200 sin token, porque su protección llega en el ISS-13.
+
+![](images/express/iss10-19-business-sin-auth.png)
+
+------------------------------------------------------------------------
+
+### Paso 245: Swagger UI
+
+En `http://localhost:3002/api/docs` aparece el grupo «Usuarios» con sus ocho operaciones marcadas con un candado y, arriba a la derecha, el botón **Authorize** para introducir el token. Los grupos de negocio siguen sin candado.
+
+![](images/express/iss10-20-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 246: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-10. La *feature* de usuarios tiene sus DTOs, *repository*, *service*, *controller*, rutas protegidas, *seeder*, Swagger y peticiones HTTP, y los usuarios `admin` y `seller` existen con sus contraseñas cifradas. `authenticate` está operativo y `authorize` deniega todo hasta que el ISS-13 lo complete. Las respuestas nunca incluyen la contraseña. Las pruebas completas del CRUD (crear, 409 por duplicado y cambio de contraseña) se harán por HTTP en el ISS-13, cuando existan los permisos; como recoge la guía, en este punto las rutas responden 401 sin token.
+
+![](images/express/iss10-21-npm-run-dev.png)

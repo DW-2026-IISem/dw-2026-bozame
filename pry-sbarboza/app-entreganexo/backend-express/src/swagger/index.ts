@@ -5,6 +5,12 @@ import { productTypesSwagger } from "../features/business/product-types/product-
 import { productsSwagger } from "../features/business/products/products.swagger";
 import { salesSwagger } from "../features/business/sales/sales.swagger";
 import { productSalesSwagger } from "../features/business/product-sales/product-sales.swagger";
+import { usersSwagger } from "../features/auth/users/users.swagger";
+import {
+  bearerSecurityScheme,
+  forbiddenResponse,
+  unauthorizedResponse,
+} from "../shared/http/swagger-security";
 
 export type FeatureSwaggerModule = {
   tags: unknown[];
@@ -17,6 +23,7 @@ export type FeatureSwaggerModule = {
  * (mismo patrón que SeedersRunner).
  */
 const featureSwaggerModules: FeatureSwaggerModule[] = [
+  usersSwagger,
   clientsSwagger,
   productTypesSwagger,
   productsSwagger,
@@ -53,7 +60,17 @@ export function buildOpenApiDocument() {
     ],
     tags,
     paths,
-    components: { schemas },
+    components: {
+      // Esquema `bearerAuth` (Authorization: Bearer <access_token>): activa el botón
+      // Authorize de Swagger UI. Solo lo usan las operaciones que declaran `security`;
+      // las rutas de negocio siguen abiertas hasta el ISS-13.
+      securitySchemes: bearerSecurityScheme,
+      responses: {
+        Unauthorized: unauthorizedResponse,
+        Forbidden: forbiddenResponse,
+      },
+      schemas,
+    },
   };
 }
 

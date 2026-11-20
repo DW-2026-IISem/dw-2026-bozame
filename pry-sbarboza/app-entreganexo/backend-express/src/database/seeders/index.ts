@@ -17,6 +17,7 @@ import "../../features/auth/role-users/role-user.model";
 import "../../features/auth/resource-roles/resource-role.model";
 import "../../features/auth/refresh-tokens/refresh-token.model";
 import "../../features/auth/rbac.associations";
+import { seedUsers } from "../../features/auth/users/users.seeder";
 import { seedClients } from "../../features/business/clients/clients.seeder";
 import { seedProductTypes } from "../../features/business/product-types/product-types.seeder";
 import { seedProducts } from "../../features/business/products/products.seeder";
@@ -66,7 +67,8 @@ export async function runAllSeeders(): Promise<void> {
     }
   }
 
-  // Orden: business (padres → hijos)
+  // Orden: seguridad primero, después business (padres → hijos)
+  await seedUsers(counts.users);
   await seedClients(counts.clients);
   await seedProductTypes(counts.product_types);
   await seedProducts(counts.products);
