@@ -2957,3 +2957,208 @@ Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y 
 En el ISS-15 conectaremos este servicio con el *login*, el *refresh* y el *logout* de `/api/auth`.
 
 ![](images/express/iss14-22-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-15: Feature de Sesión (login y perfil)
+
+Este issue construye la puerta de entrada al sistema y demuestra que las tres modalidades conviven:
+
+- **OPEN** (sin token): `POST /api/auth/login`, `/refresh` y `/logout`.
+- **JWT**: `GET /api/auth/perfil` y `GET /api/permisos`.
+- **JWT + RBAC**: el resto de la API.
+
+La guía usa el prefijo `/api/sesion`, pero lo cambiamos por `/api/auth`, que es el que usa el *frontend* de EntregaNexo. Las respuestas tienen exactamente la forma que espera: `access_token`, `token_type`, `expires_in`, `refresh_token` y `refresh_expires_in` en el *login*; `{ user }` en el perfil; y `{ permissions }` en los permisos. Con este issue el *frontend* puede volver a iniciar sesión.
+
+------------------------------------------------------------------------
+
+### Paso 347: Estructura de la feature
+
+Creamos `src/features/auth/session/` con sus DTOs, *service*, *controller*, rutas, Swagger y peticiones HTTP. No tiene modelo ni *repository* propios: reutiliza los de usuarios y sesiones.
+
+![](images/express/iss15-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 348: DTOs de entrada
+
+El *login* recibe `identifier`, que puede ser el nombre de usuario o el correo, y `password`. El *refresh* y el *logout* reciben el `refresh_token`.
+
+![](images/express/iss15-02-cat-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 349: DTOs de respuesta
+
+`SessionTokensDto` es la respuesta del *login* y del *refresh*: el *access token*, su tipo (`Bearer`), su duración en segundos, el *refresh token* y la duración de este. `ProfileDto` son los datos públicos del usuario, sin la contraseña.
+
+![](images/express/iss15-03-cat-response-dto.png)
+
+------------------------------------------------------------------------
+
+### Paso 350: Service (login y refresh)
+
+El *service* reutiliza lo construido en los issues anteriores.
+
+**Login:**
+
+- Busca al usuario por nombre o correo con `findByIdentifierWithPassword` y compara la contraseña con su *hash*.
+- Si el usuario no existe, está inactivo o la contraseña no coincide, responde el mismo 401 genérico («Invalid credentials»). Así no se puede averiguar qué usuarios existen.
+- Si todo es correcto, abre una sesión con `RefreshTokensService.issue`, guardando el navegador como dispositivo, y firma el *access token*.
+
+**Refresh:**
+
+- Llama a `rotate`. Si el token es válido devuelve un par de tokens nuevo; si caducó, no existe o ya se usó, responde 401.
+
+![](images/express/iss15-04-cat-service-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 351: Service (logout, perfil y permisos)
+
+El *logout* revoca la sesión del *refresh token* presentado, y es idempotente. El perfil devuelve los datos públicos del usuario autenticado. `myPermissions` devuelve sus permisos efectivos con la misma consulta que usa `authorize`. `buildTokens` firma el *access token* y lo junta con el *refresh token* en la respuesta.
+
+![](images/express/iss15-05-cat-service-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 352: Controller
+
+El *controller* devuelve los tokens tal cual en el *login* y el *refresh*, `{ message: "Session closed" }` en el *logout*, `{ user }` en el perfil y `{ permissions }` en los permisos. El dispositivo se toma de la cabecera `User-Agent`.
+
+![](images/express/iss15-06-cat-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 353: Rutas con las tres modalidades
+
+En un solo archivo conviven el *login*, el *refresh* y el *logout* sin *middlewares* (OPEN), y el perfil y los permisos con `authenticate` (JWT). Ninguna lleva `authorize`: son el paso previo a la matriz de permisos.
+
+![](images/express/iss15-07-cat-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 354: Peticiones HTTP de prueba
+
+Los archivos `.http` prueban el *login*, el perfil, los permisos y el ciclo de renovación, todo con las rutas `/api/auth/*`.
+
+![](images/express/iss15-08-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 355: Registro de la feature
+
+Registramos `SessionRoutes` antes que el resto de rutas de seguridad, y `sessionSwagger` el primero del *registry*. En Swagger, las operaciones OPEN anulan la seguridad global del documento.
+
+![](images/express/iss15-09-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 356: Tipado
+
+`npx tsc --noEmit` compila el proyecto sin errores.
+
+![](images/express/iss15-10-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 357: Login
+
+`POST /api/auth/login` como `admin` devuelve 200 con el *access token* (JWT, 900 segundos), el tipo `Bearer` y el *refresh token* opaco (7 días). Es exactamente la respuesta que guarda el *frontend*. A partir de aquí ya no necesitamos firmar tokens a mano.
+
+![](images/express/iss15-11-login.png)
+
+------------------------------------------------------------------------
+
+### Paso 358: Login fallido
+
+Con una contraseña incorrecta o con un usuario que no existe la respuesta es la misma: 401 «Invalid credentials». En cambio, iniciar sesión con el correo en lugar del nombre de usuario funciona (200).
+
+![](images/express/iss15-12-login-fallido.png)
+
+------------------------------------------------------------------------
+
+### Paso 359: Perfil
+
+Con el token de `seller`, `GET /api/auth/perfil` devuelve `{ user }` con sus datos públicos. Sin token, responde 401.
+
+![](images/express/iss15-13-perfil.png)
+
+------------------------------------------------------------------------
+
+### Paso 360: Permisos
+
+`GET /api/permisos` devuelve los permisos efectivos de cada usuario: 7 para `seller` y 68 para `admin`. Es la lista que usa el *frontend* para decidir qué menús y páginas mostrar.
+
+![](images/express/iss15-14-permisos.png)
+
+------------------------------------------------------------------------
+
+### Paso 361: Las tres modalidades
+
+Con un solo *login* de `seller` recorremos las tres modalidades:
+
+- **OPEN:** el *login*, que no exige identidad.
+- **JWT:** el perfil, que solo exige el token (200).
+- **JWT + RBAC:** listar clientes, que está concedido (200), y crear un cliente, que no lo está (403).
+
+![](images/express/iss15-15-tres-modalidades.png)
+
+------------------------------------------------------------------------
+
+### Paso 362: Renovación y reutilización
+
+1. `seller` inicia sesión y hace *refresh* con su *refresh token*: recibe un par de tokens nuevo.
+2. Volver a usar el *refresh token* original se detecta como reutilización: 401 y se revoca toda la familia.
+3. Por eso el *refresh token* nuevo tampoco sirve ya.
+
+El interceptor del *frontend* llama a este *refresh* automáticamente cuando recibe un 401, así que el usuario puede seguir trabajando sin volver a iniciar sesión.
+
+![](images/express/iss15-16-refresh.png)
+
+------------------------------------------------------------------------
+
+### Paso 363: Logout
+
+`POST /api/auth/logout` con el *refresh token* cierra la sesión («Session closed»). Después, ese token ya no permite renovar: responde 401.
+
+![](images/express/iss15-17-logout.png)
+
+------------------------------------------------------------------------
+
+### Paso 364: Sesiones en la base de datos
+
+Cada *login* de las pruebas abrió una sesión con su propia familia, y el dispositivo es el `User-Agent` de `curl`. Las dos filas de la misma familia (la del *refresh*) y la del *logout* están inactivas.
+
+![](images/express/iss15-18-tabla-sesiones.png)
+
+------------------------------------------------------------------------
+
+### Paso 365: CORS para el frontend
+
+Simulamos la petición previa (*preflight*) que hace el navegador desde `http://localhost:4200` antes del *login*. El servidor responde 204 y permite `POST` y las cabeceras `content-type` y `authorization`, así que Angular puede llamar a la API.
+
+![](images/express/iss15-19-cors-frontend.png)
+
+------------------------------------------------------------------------
+
+### Paso 366: Swagger UI
+
+El grupo «Sesión» aparece el primero. El *login*, el *refresh* y el *logout* no tienen candado, porque son OPEN; el perfil y los permisos sí, porque son JWT. En Swagger ya se puede usar el *login*, copiar el `access_token` y pulsar **Authorize** para probar el resto de la API.
+
+![](images/express/iss15-20-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 367: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-15:
+
+- El *login*, el *refresh*, el *logout*, el perfil y los permisos funcionan en `/api/auth` y `/api/permisos`, con las respuestas que espera el *frontend*.
+- Las tres modalidades se pueden observar con `curl`: 401 sin token, 403 sin permiso y 200 con él.
+- Los permisos reflejan la matriz real (68 para `admin` y 7 para `seller`).
+- La rotación del *refresh token* invalida el anterior.
+
+Con esto el *backend* de la Fase II está completo; solo queda el cierre.
+
+![](images/express/iss15-21-npm-run-dev.png)

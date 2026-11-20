@@ -58,6 +58,8 @@ export class App {
     this.routePrv.productSalesRoutes.routes(this.app);
 
     // Fase II — Auth con RBAC
+    // Sesión: login/refresh/logout OPEN; perfil y permisos JWT.
+    this.routePrv.sessionRoutes.routes(this.app);
     // Sesiones propias: modalidad JWT (authenticate, sin authorize).
     this.routePrv.refreshTokensRoutes.routes(this.app);
     // Administración de seguridad: modalidad JWT + RBAC.

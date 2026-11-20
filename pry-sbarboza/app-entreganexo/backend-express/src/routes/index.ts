@@ -3,6 +3,7 @@ import { ProductTypesRoutes } from "../features/business/product-types/product-t
 import { ProductsRoutes } from "../features/business/products/products.routes";
 import { SalesRoutes } from "../features/business/sales/sales.routes";
 import { ProductSalesRoutes } from "../features/business/product-sales/product-sales.routes";
+import { SessionRoutes } from "../features/auth/session/session.routes";
 import { UsersRoutes } from "../features/auth/users/users.routes";
 import { RolesRoutes } from "../features/auth/roles/roles.routes";
 import { ResourcesRoutes } from "../features/auth/resources/resources.routes";
@@ -16,6 +17,7 @@ export class Routes {
   public productsRoutes: ProductsRoutes = new ProductsRoutes();
   public salesRoutes: SalesRoutes = new SalesRoutes();
   public productSalesRoutes: ProductSalesRoutes = new ProductSalesRoutes();
+  public sessionRoutes: SessionRoutes = new SessionRoutes();
   public usersRoutes: UsersRoutes = new UsersRoutes();
   public rolesRoutes: RolesRoutes = new RolesRoutes();
   public resourcesRoutes: ResourcesRoutes = new ResourcesRoutes();
