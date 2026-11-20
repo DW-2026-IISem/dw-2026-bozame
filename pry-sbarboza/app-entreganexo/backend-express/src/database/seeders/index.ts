@@ -8,8 +8,6 @@ import "../../features/business/product-sales/product-sale.model";
 import "../../features/business/products/products.associations";
 import "../../features/business/sales/sales.associations";
 import "../../features/business/product-sales/product-sales.associations";
-// Fase II — Auth con RBAC: primero los seis modelos, después las asociaciones
-// (las asociaciones referencian los modelos, no al revés).
 import "../../features/auth/users/user.model";
 import "../../features/auth/roles/role.model";
 import "../../features/auth/resources/resource.model";
@@ -34,17 +32,26 @@ dotenv.config();
 /**
  * SeedersRunner — ejecuta los seeders de TODAS las tablas (features).
  *
- * Tablas actuales (orden padres → hijos):
- *   clients → product_types → products → sales → product_sales
+ * Orden: seguridad (Fase II) → negocio (Fase I).
+ *
+ * ```text
+ * Fase II  roles → resources → users → role_users → resource_roles
+ * Fase I   clients → product_types → products → sales → product_sales
+ * ```
+ *
+ * La seguridad va primero porque deja el sistema **operable de inmediato**: los
+ * dos usuarios canónicos con sus roles y sus concesiones, es decir, con la matriz
+ * RBAC completa. A partir de ahí, cualquier petición de negocio ya tiene sentido.
  *
  * Ejecutar seeders de todas las tablas:
  *   npm run db:seed
  *
  * Variar cantidades (CLI o env; claves = nombre de tabla):
- *   npm run db:seed -- --clients=20 --product_types=5 --products=15 --sales=5 --product_sales=12
- *   SEED_CLIENTS=5 SEED_PRODUCT_TYPES=3 SEED_PRODUCTS=10 SEED_SALES=2 SEED_PRODUCT_SALES=6 npm run db:seed
+ *   npm run db:seed -- --users=5 --clients=20 --products=15
+ *   SEED_USERS=2 SEED_CLIENTS=5 npm run db:seed
  *
- * Defaults: ver `counts.ts`. Cada seeder es idempotente (si ya hay filas, omite).
+ * Defaults: ver `counts.ts`. Los seeders de catálogo (roles, resources, ...) son
+ * deterministas y **reconciliadores**: reejecutarlos deja la matriz exacta.
  * Ubicación de cada seeder: `src/features/.../<plural>.seeder.ts`
  * Este archivo solo orquesta; no define datos.
  */
@@ -71,14 +78,14 @@ export async function runAllSeeders(): Promise<void> {
     }
   }
 
-  // Orden: seguridad primero, después business (padres → hijos)
-  // Catálogos de seguridad deterministas (sin conteo): roles y recursos.
+  // Fase II — Auth con RBAC (el orden respeta las dependencias de la cadena)
   await seedRoles();
   await seedResources();
   await seedUsers(counts.users);
-  // La matriz: quién tiene qué rol y qué recursos concede cada rol.
   await seedRoleUsers();
   await seedResourceRoles();
+
+  // Fase I — Business (padres → hijos)
   await seedClients(counts.clients);
   await seedProductTypes(counts.product_types);
   await seedProducts(counts.products);

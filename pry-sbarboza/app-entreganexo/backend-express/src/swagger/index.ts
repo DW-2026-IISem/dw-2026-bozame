@@ -60,9 +60,21 @@ export function buildOpenApiDocument() {
     openapi: "3.0.3",
     info: {
       title: "EntregaNexo API",
-      version: "1.0.0",
-      description:
-        "API EntregaNexo (Express + Sequelize). Desde el ISS-13 todas las rutas son **JWT + RBAC** salvo las de sesión; pulsa **Authorize** con `Bearer <access_token>`.",
+      version: "2.0.0",
+      description: [
+        "API EntregaNexo (Express + Sequelize) con **Auth con RBAC**.",
+        "",
+        "**Las tres modalidades de acceso** (se declaran por operación, no globalmente):",
+        "",
+        "- **OPEN** — sin identidad previa: `POST /api/auth/login`, `/refresh`, `/logout`.",
+        "- **JWT** — token de acceso válido: `/api/auth/perfil`, `/api/permisos`, `/api/sesiones/*`.",
+        "- **JWT + RBAC** — token válido **y** concesión activa de `(method, path)`: todo el CRUD de negocio y de administración de seguridad.",
+        "",
+        "Autenticación: obtener el `access_token` en `POST /api/auth/login` y pulsar **Authorize** con " +
+          "`Bearer <access_token>`. La autorización aplica **deny by default**: sin concesión explícita, 403.",
+        "",
+        "Credenciales de laboratorio: `admin / Admin123!` y `seller / Seller123!`.",
+      ].join("\n"),
     },
     servers: [
       {

@@ -2,6 +2,12 @@
  * Cantidad de registros por tabla (snake_case = nombre de tabla BD).
  * Prioridad: CLI (--clients=N) > env (SEED_CLIENTS) > default de este archivo.
  *
+ * Solo las tablas con datos **variables** tienen conteo. Los catálogos de
+ * seguridad (`roles`, `resources`, `role_users`, `resource_roles`) son
+ * deterministas: su contenido vive en el código
+ * (`resource-catalog.ts` y los `*.seeder.ts` de cada feature de auth), no en un
+ * número. `refresh_tokens` no tiene seeder: lo puebla el login.
+ *
  * Cuando agregues features, suma aquí la clave (nombre de tabla) y léela en el runner.
  */
 export type SeedCounts = {
@@ -14,7 +20,7 @@ export type SeedCounts = {
 };
 
 export const DEFAULT_SEED_COUNTS: SeedCounts = {
-  // 2 usuarios canónicos: admin y seller (sus roles se asignan en el ISS-12).
+  // 2 usuarios canónicos: admin (ADMIN, 68 permisos) y seller (SELLER, 7 permisos).
   users: 2,
   clients: 10,
   product_types: 25,

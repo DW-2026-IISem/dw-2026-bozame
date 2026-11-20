@@ -3162,3 +3162,108 @@ Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y 
 Con esto el *backend* de la Fase II está completo; solo queda el cierre.
 
 ![](images/express/iss15-21-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## Cierre de la Fase II: Auth con RBAC (backend completo)
+
+El cierre de la Fase II comprueba que el *backend* cumple la definición de terminado (DoD) del laboratorio completo:
+
+- 12 *features* (5 de negocio y 7 de autenticación) y 11 tablas.
+- Las tres modalidades de acceso aplicadas ruta por ruta.
+- Permisos como concesiones rol–recurso, con denegación por defecto.
+- *Access token* corto y *refresh token* opaco, rotativo y revocable.
+- *Seeders* deterministas.
+- Swagger con `bearerAuth`.
+- El proyecto compila sin errores.
+
+El único cambio de código es dejar el cableado final como en la guía: comentarios de `routes`, `seeders` y `counts`, y la descripción definitiva de Swagger. Las cifras son las de EntregaNexo (68 recursos y 75 concesiones en lugar de 58 y 65) y las rutas de sesión las de su *frontend* (`/api/auth`).
+
+------------------------------------------------------------------------
+
+### Paso 368: Las 12 features
+
+En `src/features/business/` están las cinco *features* de negocio. En `src/features/auth/` están las siete de autenticación (`session`, `refresh-tokens`, `users`, `roles`, `resources`, `role-users` y `resource-roles`), junto con los *middlewares* de `access` y el grafo `rbac.associations.ts`. En `src/shared/` está la infraestructura común: contraseñas, JWT, comparación de rutas, usuario autenticado, errores, `BaseController`, Swagger y transacciones.
+
+![](images/express/cierre2-01-features.png)
+
+------------------------------------------------------------------------
+
+### Paso 369: Cableado final
+
+El agregador de rutas registra las cinco *features* de la Fase I y las siete de la Fase II. Cada una decide su modalidad de acceso con los *middlewares* que coloca delante de sus *controllers*.
+
+![](images/express/cierre2-02-cableado-final.png)
+
+------------------------------------------------------------------------
+
+### Paso 370: Tipado global
+
+`npx tsc --noEmit` compila todo el proyecto sin errores.
+
+![](images/express/cierre2-03-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 371: Seeders deterministas
+
+Al ejecutar `npm run db:seed` sobre la base de datos ya poblada, los catálogos de seguridad se reconcilian sin cambios: 2 roles, 68 recursos, 2 usuarios, 2 asignaciones, 68 concesiones de `ADMIN` y 7 de `SELLER`, todos con «0 nuevos», «0 altas» y «0 bajas». Las tablas de negocio se omiten porque ya tienen datos.
+
+![](images/express/cierre2-04-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 372: Las 11 tablas
+
+Contamos las filas de las once tablas: las cinco de negocio, con los datos de los *seeders*, y las seis de autenticación. Hay 2 usuarios, 2 roles, 68 recursos, 2 asignaciones, 75 concesiones activas y las sesiones que abrieron los *logins* de las pruebas.
+
+![](images/express/cierre2-05-tablas.png)
+
+------------------------------------------------------------------------
+
+### Paso 373: Prueba de extremo a extremo de las tres modalidades
+
+Iniciamos sesión como `admin` y como `seller` (OPEN) y recorremos la API con y sin token:
+
+- **JWT:** el perfil y las sesiones propias responden 401 sin token y 200 con él.
+- **JWT + RBAC:** las diez APIs responden 401 sin token, 200 para `admin` y, para `seller`, 200 solo en clientes, productos y ventas, y 403 en el resto.
+
+![](images/express/cierre2-06-smoke-e2e.png)
+
+------------------------------------------------------------------------
+
+### Paso 374: Los dos modos de `AUTH_ENABLED`
+
+El `.env` queda con `AUTH_ENABLED=true`, el valor de entrega. En un segundo servidor arrancado con `AUTH_ENABLED=false` (puerto 4001), clientes y ventas responden sin token, mientras que usuarios, permisos y perfil siguen respondiendo 401. En el servidor normal, clientes sin token responde 401.
+
+![](images/express/cierre2-07-modo-laboratorio.png)
+
+------------------------------------------------------------------------
+
+### Paso 375: Documento OpenAPI
+
+El documento `/api/docs.json` («EntregaNexo API» 2.0.0) tiene 43 rutas y 78 operaciones: 68 con RBAC, 3 OPEN, el perfil, los permisos y las 5 de sesiones. La seguridad global es `bearerAuth`, y solo el *login*, el *refresh* y el *logout* la anulan con `security: []`.
+
+![](images/express/cierre2-08-swagger-json.png)
+
+------------------------------------------------------------------------
+
+### Paso 376: Swagger UI
+
+La descripción definitiva de Swagger explica las tres modalidades, cómo obtener el token y pulsar **Authorize**, y las credenciales del laboratorio.
+
+![](images/express/cierre2-09-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 377: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el laboratorio completo, Fase I y Fase II. El *backend* de EntregaNexo en Express tiene:
+
+- Las cinco *features* de negocio y las siete de autenticación, cada una con sus capas.
+- Once tablas con sus claves foráneas y restricciones únicas.
+- Las tres modalidades de acceso, con denegación por defecto y revocación inmediata de permisos.
+- *Login*, renovación y cierre de sesión compatibles con el *frontend* Angular.
+- *Seeders* reconciliadores y la documentación completa en Swagger.
+
+![](images/express/cierre2-10-npm-run-dev.png)
