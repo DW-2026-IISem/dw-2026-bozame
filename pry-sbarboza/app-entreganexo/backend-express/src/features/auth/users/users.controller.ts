@@ -92,4 +92,11 @@ export class UsersController extends BaseController {
     });
   }
 
+  /** Permisos efectivos del usuario: recursos concedidos por sus roles activos. */
+  public async getEffectivePermissions(req: Request, res: Response): Promise<void> {
+    await this.run(res, async () => {
+      const permissions = await this.service.getEffectivePermissions(this.paramId(req));
+      res.status(200).json({ permissions });
+    });
+  }
 }

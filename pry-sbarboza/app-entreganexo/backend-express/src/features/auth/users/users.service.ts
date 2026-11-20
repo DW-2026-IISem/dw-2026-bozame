@@ -10,6 +10,8 @@ import { UsersRepository } from "./users.repository";
 import { User } from "./user.model";
 import { AppError } from "../../../shared/errors/app-error";
 import { comparePassword } from "../../../shared/auth/password";
+import { ResourceRolesService } from "../resource-roles/resource-roles.service";
+import { EffectivePermissionDto } from "../resource-roles/dto";
 
 /**
  * Capa Service del feature Users.
@@ -22,7 +24,10 @@ import { comparePassword } from "../../../shared/auth/password";
  * No conoce `req`/`res` ni escribe Sequelize directamente.
  */
 export class UsersService {
-  public constructor(private readonly repository: UsersRepository = new UsersRepository()) {}
+  public constructor(
+    private readonly repository: UsersRepository = new UsersRepository(),
+    private readonly resourceRolesService: ResourceRolesService = new ResourceRolesService()
+  ) {}
 
   // ================== READ ==================
   public async getAll(): Promise<UserResponseDto[]> {
@@ -34,6 +39,11 @@ export class UsersService {
     return toUserResponse(await this.findOrFail(id));
   }
 
+  /** Permisos efectivos del usuario (cadena RBAC completa). 404 si no existe. */
+  public async getEffectivePermissions(id: number): Promise<EffectivePermissionDto[]> {
+    await this.findOrFail(id);
+    return this.resourceRolesService.findEffectiveForUser(id);
+  }
 
   // ================== CREATE ==================
   public async create(body: CreateUserDto): Promise<UserResponseDto> {

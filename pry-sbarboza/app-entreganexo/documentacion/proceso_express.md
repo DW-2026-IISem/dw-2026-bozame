@@ -2307,3 +2307,233 @@ En Swagger aparecen los grupos «Roles» y «Recursos» con sus siete operacione
 Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-11. Los roles y los recursos tienen su CRUD protegido, *seeders* idempotentes y Swagger. El catálogo de 68 recursos coincide con las rutas reales de la API. La base de datos tiene los roles `ADMIN` y `SELLER` (todavía sin permisos) y la restricción única impide recursos duplicados. Además, el *frontend* comprueba ya el permiso de tipos de producto con la ruta correcta.
 
 ![](images/express/iss11-25-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-12: Asignaciones de roles y concesiones de permisos
+
+Con este issue el modelo de autorización queda completo. Construimos las dos tablas que unen las piezas: **`role_users`** (`/api/asignaciones-rol`) dice qué usuario tiene qué rol, y **`resource_roles`** (`/api/concesiones-rol`) dice qué recursos concede cada rol. Una concesión rol–recurso es, precisamente, un permiso. Recorriendo la cadena usuario → rol → recurso sabemos qué puede hacer cada usuario. También recuperamos la consulta de permisos efectivos de un usuario (`GET /api/usuarios/:id/permisos`), que dejamos pendiente en el ISS-10 porque necesitaba esta *feature*. En EntregaNexo la matriz tiene 75 concesiones (68 de `ADMIN` y 7 de `SELLER`) en lugar de las 65 de la guía, por el catálogo ampliado del ISS-11.
+
+------------------------------------------------------------------------
+
+### Paso 272: Estructura de las dos features
+
+Creamos `src/features/auth/role-users/` y `src/features/auth/resource-roles/`, con sus DTOs, *repository*, *service*, *controller*, rutas, *seeder*, Swagger y peticiones HTTP. Los modelos ya existían desde el ISS-09.
+
+![](images/express/iss12-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 273: DTOs de asignaciones
+
+Para asignar un rol basta con `user_id` y `role_id`. La respuesta incluye el usuario (id, nombre y correo) y el rol (id y nombre) anidados, que es lo que espera el modelo `RoleUser` del *frontend*.
+
+![](images/express/iss12-02-cat-role-users-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 274: Repository de asignaciones
+
+El *repository* carga cada asignación con su usuario y su rol mediante `include`, y permite buscar una asignación por el par usuario–rol.
+
+![](images/express/iss12-03-cat-role-users-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 275: Service de asignaciones
+
+Asignar un rol no es una inserción a ciegas. Si el par usuario–rol no existe, se crea. Si ya existe y está activo, responde 409. Si existe pero está inactivo, se reactiva la misma fila en lugar de duplicarla. Además se comprueba que el usuario y el rol existan y estén activos. No hay borrado físico: quitar un rol es desactivar la asignación, y así queda constancia de quién tuvo qué rol.
+
+![](images/express/iss12-04-cat-role-users-service.png)
+
+------------------------------------------------------------------------
+
+### Paso 276: Controller de asignaciones
+
+El *controller* responde con `{ assignments }` o `{ assignment }`, más un mensaje al desactivar o reactivar.
+
+![](images/express/iss12-05-cat-role-users-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 277: Rutas de asignaciones
+
+Las cinco rutas de `/api/asignaciones-rol` (listar, consultar, asignar, desactivar y reactivar) están protegidas con `authenticate` y `authorize`.
+
+![](images/express/iss12-06-cat-role-users-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 278: Seeder de asignaciones
+
+El *seeder* asigna `admin` → `ADMIN` y `seller` → `SELLER` con la misma lógica: crea la asignación si falta y la reactiva si estaba inactiva.
+
+![](images/express/iss12-07-cat-role-users-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 279: DTOs de concesiones
+
+Para conceder un permiso se envían `role_id` y `resource_id`. El listado admite dos filtros: `?role_id=` («¿qué concede este rol?») y `?resource_id=` («¿qué roles conceden este recurso?»). `EffectivePermissionDto` describe un permiso efectivo: recurso, método, ruta, descripción y el rol que lo concede. Es la misma forma que espera el `EffectivePermission` del *frontend*.
+
+![](images/express/iss12-08-cat-resource-roles-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 280: Repository de concesiones (consultas)
+
+La primera parte del *repository* lista las concesiones activas con sus filtros, busca por rol y recurso, y crea y actualiza concesiones.
+
+![](images/express/iss12-09-cat-resource-roles-repository-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 281: Repository de concesiones (permisos efectivos)
+
+`findEffectiveForUser` recorre la cadena completa en una sola consulta: usuario → asignación activa → rol activo → concesión activa → recurso activo. Si cualquier eslabón está inactivo, el permiso no cuenta. Es la consulta que usará `authorize` en el ISS-13 para decidir cada petición.
+
+![](images/express/iss12-10-cat-resource-roles-repository-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 282: Service de concesiones (conceder y retirar)
+
+Conceder sigue la misma lógica que asignar: crea la concesión, responde 409 si ya está activa o la reactiva si estaba inactiva. Retirar un permiso es desactivar la concesión.
+
+![](images/express/iss12-11-cat-resource-roles-service-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 283: Service de concesiones (`reconcileRole`)
+
+`reconcileRole(roleId, resourceIds)` permite declarar los permisos de un rol en lugar de modificarlos uno a uno. Recibe la lista completa de recursos que debe tener el rol. Concede los que faltan, reactiva los que estaban inactivos, no toca los que ya están activos y desactiva los que sobran. Al terminar, las concesiones activas del rol son exactamente las de la lista.
+
+![](images/express/iss12-12-cat-resource-roles-service-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 284: Controller de concesiones
+
+El *controller* responde con `{ grants }` o `{ grant }`, y lee del *query string* los filtros `role_id` y `resource_id`.
+
+![](images/express/iss12-13-cat-resource-roles-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 285: Rutas de concesiones
+
+Las cinco rutas de `/api/concesiones-rol` (listar, consultar, conceder, desactivar y reactivar) también están protegidas.
+
+![](images/express/iss12-14-cat-resource-roles-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 286: Seeder de la matriz
+
+El *seeder* llama a `reconcileRole` con el catálogo del ISS-11: `ADMIN` recibe todos los recursos y `SELLER` solo los 7 marcados con `seller: true`. Como reconcilia, volver a ejecutarlo nunca hace que un rol acumule permisos por error.
+
+![](images/express/iss12-15-cat-resource-roles-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 287: Peticiones HTTP de prueba
+
+El archivo de concesiones muestra el efecto inmediato de la autorización. Primero, `seller` intenta crear un cliente y recibe 403. Después, `admin` le concede `POST /api/clientes`. La siguiente petición de `seller` funciona sin reiniciar el servidor, porque los permisos se leen de la base de datos en cada petición. Lo probaremos de verdad cuando estén el *login* y el `authorize` definitivo.
+
+![](images/express/iss12-16-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 288: Permisos efectivos de un usuario
+
+Ahora que existe `resource-roles`, restauramos la versión completa de la guía en la *feature* de usuarios: `UsersService` recibe `ResourceRolesService` y expone `getEffectivePermissions`, y la ruta `GET /api/usuarios/:id/permisos` vuelve a estar registrada.
+
+![](images/express/iss12-17-users-permisos.png)
+
+------------------------------------------------------------------------
+
+### Paso 289: Registro de las features
+
+Registramos las rutas de asignaciones y concesiones, sus módulos de Swagger, y en el SeedersRunner llamamos a `seedRoleUsers` y `seedResourceRoles` después de `seedUsers`. El orden completo queda: roles, recursos, usuarios, asignaciones, concesiones y, después, el negocio.
+
+![](images/express/iss12-18-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 290: Tipado
+
+`npx tsc --noEmit` compila sin errores. Volvemos a comparar el catálogo con las rutas del código: ahora hay 68 rutas y 68 recursos, y coinciden exactamente.
+
+![](images/express/iss12-19-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 291: Ejecución de los seeders
+
+`npm run db:seed` crea las 2 asignaciones y la matriz: 68 concesiones para `ADMIN` y 7 para `SELLER`.
+
+![](images/express/iss12-20-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 292: La matriz en MySQL
+
+En la base de datos vemos `admin` con el rol `ADMIN` y `seller` con `SELLER`, y 75 concesiones activas: 68 de `ADMIN` y 7 de `SELLER`.
+
+![](images/express/iss12-21-matriz.png)
+
+------------------------------------------------------------------------
+
+### Paso 293: Permisos efectivos de seller
+
+Recorriendo la cadena usuario → rol → concesión → recurso, con todos los eslabones activos, obtenemos los 7 permisos de `seller`: ver clientes y productos, y ver y registrar ventas. Es la misma consulta que hace `findEffectiveForUser`.
+
+![](images/express/iss12-22-permisos-seller.png)
+
+------------------------------------------------------------------------
+
+### Paso 294: Alterar la matriz a mano
+
+Para probar la reconciliación modificamos la matriz directamente en MySQL. Le damos a `SELLER` un permiso que no le corresponde (`POST /api/clientes`) y le quitamos uno que sí (`GET /api/clientes`).
+
+![](images/express/iss12-23-matriz-alterada.png)
+
+------------------------------------------------------------------------
+
+### Paso 295: El seeder reconcilia
+
+Al volver a ejecutar `npm run db:seed`, `reconcileRole` detecta las diferencias en `SELLER`: 1 alta (reactiva `GET /api/clientes`) y 1 baja (desactiva `POST /api/clientes`). `ADMIN` no cambia.
+
+![](images/express/iss12-24-db-seed-reconcilia.png)
+
+------------------------------------------------------------------------
+
+### Paso 296: Matriz reconciliada
+
+`SELLER` vuelve a tener exactamente sus 7 permisos (`POST /api/clientes` queda inactivo) y el total sigue en 75 concesiones activas.
+
+![](images/express/iss12-25-matriz-reconciliada.png)
+
+------------------------------------------------------------------------
+
+### Paso 297: Rutas protegidas
+
+Las nuevas rutas (`/api/asignaciones-rol`, `/api/concesiones-rol` y `/api/usuarios/2/permisos`) responden 401 sin token y 403 con el token de `admin`. Aunque `admin` ya tiene sus 68 permisos en la base de datos, el `authorize` provisional todavía no los consulta. En el ISS-13 lo sustituimos por el definitivo, que usa esta matriz.
+
+![](images/express/iss12-26-rutas-protegidas.png)
+
+------------------------------------------------------------------------
+
+### Paso 298: Swagger UI
+
+En Swagger aparecen los grupos «Asignaciones usuario-rol» y «Concesiones rol-recurso», y en «Usuarios» vuelve la operación de permisos efectivos.
+
+![](images/express/iss12-27-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 299: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-12. Las asignaciones y las concesiones tienen su CRUD protegido, con altas idempotentes (409 si ya está activo, reactivación si estaba inactivo). La matriz se construye de forma declarativa con `reconcileRole`. La base de datos tiene `admin` con 68 permisos y `seller` con 7, y la consulta de permisos efectivos está disponible para usuarios. Además comprobamos directamente sobre los *services* el 409 al reasignar un rol, la reactivación de una asignación desactivada y que los permisos efectivos tienen la forma que espera el *frontend*. Por HTTP lo probaremos en el ISS-13, con el `authorize` definitivo.
+
+![](images/express/iss12-28-npm-run-dev.png)

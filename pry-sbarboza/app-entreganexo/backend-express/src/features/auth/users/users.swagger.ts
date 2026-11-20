@@ -18,7 +18,7 @@ export const usersSwagger = {
     {
       name: "Usuarios",
       description:
-        "CRUD de identidades + cambio de contraseña — **JWT + RBAC**",
+        "CRUD de identidades + cambio de contraseña + permisos efectivos — **JWT + RBAC**",
     },
   ],
   paths: {
@@ -160,6 +160,24 @@ export const usersSwagger = {
         responses: {
           "200": { description: "Contraseña actualizada (`{ message, id }`)" },
           "400": { description: "Faltan campos o `current_password` incorrecta" },
+          "401": unauthorizedResponse,
+          "403": forbiddenResponse,
+          "404": notFoundResponse,
+        },
+      },
+    },
+    "/api/usuarios/{id}/permisos": {
+      get: {
+        tags: ["Usuarios"],
+        summary: "Permisos efectivos del usuario",
+        description:
+          "JWT + RBAC — recurso `GET /api/usuarios/:id/permisos`. Ejecuta la consulta de autorización " +
+          "(`resource_roles → roles → role_users → resources`, todos los eslabones activos) y devuelve el par `(method, path)` de cada permiso.",
+        security: bearerSecurity,
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "integer" } }],
+        responses: {
+          "200": { description: "Permisos efectivos (`{ permissions: [...] }`)" },
+          "400": invalidIdResponse,
           "401": unauthorizedResponse,
           "403": forbiddenResponse,
           "404": notFoundResponse,

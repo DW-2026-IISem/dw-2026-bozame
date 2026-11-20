@@ -61,5 +61,14 @@ export class UsersRoutes {
         authorize,
         this.usersController.changePassword.bind(this.usersController)
       );
+
+    // permisos efectivos del usuario
+    app
+      .route("/api/usuarios/:id/permisos")
+      .get(
+        authenticate,
+        authorize,
+        this.usersController.getEffectivePermissions.bind(this.usersController)
+      );
   }
 }

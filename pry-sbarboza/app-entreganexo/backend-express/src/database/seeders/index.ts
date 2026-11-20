@@ -20,6 +20,8 @@ import "../../features/auth/rbac.associations";
 import { seedRoles } from "../../features/auth/roles/roles.seeder";
 import { seedResources } from "../../features/auth/resources/resources.seeder";
 import { seedUsers } from "../../features/auth/users/users.seeder";
+import { seedRoleUsers } from "../../features/auth/role-users/role-users.seeder";
+import { seedResourceRoles } from "../../features/auth/resource-roles/resource-roles.seeder";
 import { seedClients } from "../../features/business/clients/clients.seeder";
 import { seedProductTypes } from "../../features/business/product-types/product-types.seeder";
 import { seedProducts } from "../../features/business/products/products.seeder";
@@ -74,6 +76,9 @@ export async function runAllSeeders(): Promise<void> {
   await seedRoles();
   await seedResources();
   await seedUsers(counts.users);
+  // La matriz: quién tiene qué rol y qué recursos concede cada rol.
+  await seedRoleUsers();
+  await seedResourceRoles();
   await seedClients(counts.clients);
   await seedProductTypes(counts.product_types);
   await seedProducts(counts.products);
