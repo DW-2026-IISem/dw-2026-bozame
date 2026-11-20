@@ -1,11 +1,23 @@
 ### Feature Sale — UPDATE (PUT) / UPDATE (PATCH) — solo cabecera
-### SIN AUTH (Fase I — Business). `status` no se envía: la venta se desactiva (con sus
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión. `status` no se envía: la venta se desactiva (con sus
 ### líneas) con PATCH {{baseUrl}}/api/ventas/{{id}}/deactivate.
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 @id = 1
 
 # @name updateSalePut
 PUT {{baseUrl}}/api/ventas/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -18,6 +30,7 @@ Content-Type: application/json
 ###
 # @name updateSalePatch
 PATCH {{baseUrl}}/api/ventas/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

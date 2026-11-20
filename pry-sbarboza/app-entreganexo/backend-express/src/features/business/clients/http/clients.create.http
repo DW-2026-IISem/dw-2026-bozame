@@ -1,10 +1,22 @@
 ### Feature Client — CREATE
-### SIN AUTH (Fase I — Business)
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 
 ### CREATE — 201
 # @name createClient
 POST {{baseUrl}}/api/clientes
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

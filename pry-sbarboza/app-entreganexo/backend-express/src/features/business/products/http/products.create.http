@@ -1,9 +1,21 @@
 ### Feature Product — CREATE
-### SIN AUTH (Fase I — Business)
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 
 # @name createProduct
 POST {{baseUrl}}/api/productos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -19,6 +31,7 @@ Content-Type: application/json
 ### CREATE con las claves camelCase que envía el frontend (minStock, productTypeId)
 # @name createProductCamelCase
 POST {{baseUrl}}/api/productos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -32,6 +45,7 @@ Content-Type: application/json
 
 ### 404 — el tipo de producto no existe
 POST {{baseUrl}}/api/productos
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

@@ -1,12 +1,24 @@
 ### Feature ProductSale — UPDATE (PUT) / UPDATE (PATCH)
-### SIN AUTH (Fase I — Business). Solo cambia `quantity`: ajusta el stock por la
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión. Solo cambia `quantity`: ajusta el stock por la
 ### diferencia y recalcula la venta. Para desactivar una línea (restaurando stock)
 ### se usa PATCH {{baseUrl}}/api/detalle-ventas/{{id}}/deactivate.
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 @id = 1
 
 # @name updateProductSalePut
 PUT {{baseUrl}}/api/detalle-ventas/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -16,6 +28,7 @@ Content-Type: application/json
 ###
 # @name updateProductSalePatch
 PATCH {{baseUrl}}/api/detalle-ventas/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

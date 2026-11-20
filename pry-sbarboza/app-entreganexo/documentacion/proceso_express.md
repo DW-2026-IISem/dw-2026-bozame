@@ -2537,3 +2537,215 @@ En Swagger aparecen los grupos «Asignaciones usuario-rol» y «Concesiones rol-
 Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-12. Las asignaciones y las concesiones tienen su CRUD protegido, con altas idempotentes (409 si ya está activo, reactivación si estaba inactivo). La matriz se construye de forma declarativa con `reconcileRole`. La base de datos tiene `admin` con 68 permisos y `seller` con 7, y la consulta de permisos efectivos está disponible para usuarios. Además comprobamos directamente sobre los *services* el 409 al reasignar un rol, la reactivación de una asignación desactivada y que los permisos efectivos tienen la forma que espera el *frontend*. Por HTTP lo probaremos en el ISS-13, con el `authorize` definitivo.
 
 ![](images/express/iss12-28-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-13: Middlewares de acceso y las tres modalidades
+
+En este issue la autorización empieza a funcionar de verdad. Cada ruta usa una de las tres modalidades de acceso, según los *middlewares* que lleve delante del *controller*:
+
+- **OPEN:** sin *middlewares*; la usarán el *login*, el *refresh* y el *logout*.
+- **JWT:** solo `authenticate`; basta con un token válido.
+- **JWT + RBAC:** `authenticate` y `authorize`; hace falta además el permiso concreto en la matriz.
+
+Sustituimos el `authorize` provisional del ISS-10 por el definitivo, que consulta la matriz del ISS-12, y protegemos las cinco rutas de negocio de la Fase I sin tocar sus *controllers*, *services* ni *repositories*. También añadimos el modo laboratorio (`AUTH_ENABLED=false`), que vuelve a abrir solo las rutas de negocio para poder trabajar como en la Fase I.
+
+------------------------------------------------------------------------
+
+### Paso 300: Estructura de `access`
+
+La carpeta `src/features/auth/access/` reúne los dos *middlewares*, el selector del modo laboratorio y el `index.ts` que los exporta.
+
+![](images/express/iss13-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 301: `authenticate`
+
+`authenticate` (modalidad JWT) es el mismo que adelantamos en el ISS-10, con una comprobación nueva al principio: si el modo laboratorio está activo y la ruta es de negocio, deja pasar la petición. Si no, lee el token, lo verifica, comprueba en la base de datos que el usuario sigue activo y deja la identidad en `req.auth`. Cualquier fallo responde 401.
+
+![](images/express/iss13-02-cat-authenticate.png)
+
+------------------------------------------------------------------------
+
+### Paso 302: `authorize` definitivo
+
+`authorize` (modalidad JWT + RBAC) toma el método y la ruta reales de la petición, consulta con `findEffectiveForUser` los permisos del usuario recorriendo la cadena completa de la matriz y comprueba si alguno encaja (`/api/productos/:id` encaja con `/api/productos/42`). Si ninguno encaja responde 403: se deniega por defecto. Como la consulta se hace en cada petición y los permisos no viajan en el token, conceder o retirar un permiso tiene efecto inmediato.
+
+![](images/express/iss13-03-cat-authorize.png)
+
+------------------------------------------------------------------------
+
+### Paso 303: `lab-mode.ts`
+
+La guía describe este archivo pero no incluye su código, así que lo escribimos a partir de su especificación. `isAuthEnabled` lee `AUTH_ENABLED` del `.env` (si no está, vale `true`). `isLabBusinessRequest` devuelve `true` solo si el modo laboratorio está activo y la ruta empieza por uno de los cinco prefijos de negocio, con `/api/product-types` en lugar de `/api/tipos-producto`. La lista es explícita: una ruta nueva no se abre por accidente y `/api/productos-falsos` no coincide con `/api/productos`.
+
+![](images/express/iss13-04-cat-lab-mode.png)
+
+------------------------------------------------------------------------
+
+### Paso 304: Rutas de negocio protegidas
+
+En cada una de las cinco *features* de negocio importamos `authenticate` y `authorize` y los colocamos delante del *controller* en todas sus rutas. Es el único cambio: ni el contrato de la API ni las capas de negocio se modifican. Este es el ejemplo de clientes.
+
+![](images/express/iss13-05-cat-clients-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 305: Las cinco features protegidas
+
+Comprobamos que cada archivo de rutas de negocio tiene sus 7 rutas con `authenticate, authorize`.
+
+![](images/express/iss13-06-rutas-negocio.png)
+
+------------------------------------------------------------------------
+
+### Paso 306: Swagger seguro por defecto
+
+En el *registry* de Swagger declaramos `security: [{ bearerAuth: [] }]` a nivel de documento: toda operación que no declare otra cosa exige el token. Las operaciones OPEN del ISS-15 lo anularán con `security: []`. También cambiamos las etiquetas de negocio de «SIN AUTH» a «JWT + RBAC».
+
+![](images/express/iss13-07-swagger-seguro.png)
+
+------------------------------------------------------------------------
+
+### Paso 307: Peticiones HTTP de negocio
+
+Los veinte archivos `.http` de negocio obtienen ahora un token con `POST /api/auth/login` como `admin` y lo envían en cada petición con `Authorization: Bearer {{token}}`.
+
+![](images/express/iss13-08-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 308: `AUTH_ENABLED` en el `.env`
+
+Añadimos `AUTH_ENABLED=true` al `.env`, que es el valor de entrega. Con `false` se activa el modo laboratorio.
+
+![](images/express/iss13-09-env-auth-enabled.png)
+
+------------------------------------------------------------------------
+
+### Paso 309: Tipado
+
+`npx tsc --noEmit` compila el proyecto sin errores.
+
+![](images/express/iss13-23-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 310: Tokens de prueba
+
+El *login* llega en el ISS-15, así que para las pruebas firmamos los tokens de `admin` (id 1) y `seller` (id 2) llamando a `signAccessToken`, como en el ISS-10, y los guardamos en `/tmp`. Son tokens normales: `authenticate` los verifica exactamente igual que los que dará el *login*.
+
+![](images/express/iss13-10-tokens.png)
+
+------------------------------------------------------------------------
+
+### Paso 311: Sin token, 401
+
+`GET /api/clientes`, que hasta ahora era público, responde 401 sin token y también con un token manipulado.
+
+![](images/express/iss13-11-401.png)
+
+------------------------------------------------------------------------
+
+### Paso 312: Lo que puede hacer seller
+
+Con el token de `seller`, listar clientes responde 200 porque tiene ese permiso. Crear un cliente responde 403 porque no tiene la concesión `POST /api/clientes`. Listar tipos de producto también responde 403.
+
+![](images/express/iss13-12-seller.png)
+
+------------------------------------------------------------------------
+
+### Paso 313: Lo que puede hacer admin
+
+Con el token de `admin`, crear un cliente responde 201. Un id no numérico sigue respondiendo 400, porque la validación de `paramId` llega después de pasar los dos *middlewares*.
+
+![](images/express/iss13-13-admin.png)
+
+------------------------------------------------------------------------
+
+### Paso 314: Matriz de respuestas
+
+Recorremos las diez APIs protegidas con los dos tokens. `admin` recibe 200 en todas. `seller` recibe 200 solo en clientes, productos y ventas, que son sus permisos, y 403 en el resto.
+
+![](images/express/iss13-14-matriz-respuestas.png)
+
+------------------------------------------------------------------------
+
+### Paso 315: CRUD de usuarios por HTTP
+
+Las pruebas de usuarios que quedaron pendientes en el ISS-10 ya se pueden hacer por HTTP. `admin` crea el usuario `cajero` (201), y la respuesta no incluye la contraseña. Volver a crear un usuario con el mismo nombre responde 409.
+
+![](images/express/iss13-15-usuarios-crear.png)
+
+------------------------------------------------------------------------
+
+### Paso 316: Cambio de contraseña
+
+Cambiar la contraseña de `cajero` con una contraseña actual incorrecta responde 400. Con la correcta responde 200 («Password updated»).
+
+![](images/express/iss13-16-usuarios-password.png)
+
+------------------------------------------------------------------------
+
+### Paso 317: Permisos efectivos de seller
+
+`GET /api/usuarios/2/permisos` devuelve los 7 permisos de `seller` con el rol que los concede.
+
+![](images/express/iss13-17-permisos-seller.png)
+
+------------------------------------------------------------------------
+
+### Paso 318: Conceder un permiso tiene efecto inmediato
+
+`seller` intenta crear un cliente y recibe 403. `admin` le concede `POST /api/clientes` con `POST /api/concesiones-rol`; como la concesión 76 ya existía inactiva (de la prueba de reconciliación del ISS-12), se reactiva. La siguiente petición de `seller` responde 201, con el mismo token y sin reiniciar el servidor.
+
+![](images/express/iss13-18-conceder.png)
+
+------------------------------------------------------------------------
+
+### Paso 319: Retirar un permiso tiene efecto inmediato
+
+`admin` desactiva la concesión 76 y la siguiente petición de `seller` vuelve a recibir 403. Revocar un permiso no exige esperar a que caduque el token, porque los permisos no viajan en él.
+
+![](images/express/iss13-19-retirar.png)
+
+------------------------------------------------------------------------
+
+### Paso 320: Asignación duplicada
+
+Asignar a `seller` el rol `SELLER`, que ya tiene activo, responde 409.
+
+![](images/express/iss13-20-asignacion-409.png)
+
+------------------------------------------------------------------------
+
+### Paso 321: Limpieza
+
+Borramos con `admin` los dos clientes y el usuario creados en las pruebas. Las tres peticiones responden 200, y la base de datos queda como antes.
+
+![](images/express/iss13-21-limpieza.png)
+
+------------------------------------------------------------------------
+
+### Paso 322: Modo laboratorio
+
+Arrancamos un segundo servidor en el puerto 4001 con `AUTH_ENABLED=false`; las variables de la línea de comandos tienen prioridad sobre el `.env`. Sin enviar ningún token, las cinco rutas de negocio responden 200, como en la Fase I, mientras que `/api/usuarios` sigue respondiendo 401: el modo laboratorio solo abre el negocio. Al terminar detenemos ese servidor.
+
+![](images/express/iss13-22-modo-laboratorio.png)
+
+------------------------------------------------------------------------
+
+### Paso 323: Swagger UI
+
+Los grupos de negocio aparecen ahora como «JWT + RBAC» y con candado en todas sus operaciones.
+
+![](images/express/iss13-24-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 324: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-13. Funcionan las tres modalidades: `authenticate` responde 401 sin token válido y `authorize` responde 403 sin permiso. Las cinco rutas de negocio están protegidas sin haber cambiado sus capas. `seller` solo puede hacer lo suyo, mientras que `admin` puede hacerlo todo. Conceder o retirar un permiso tiene efecto inmediato. El modo laboratorio abre solo el negocio, y `AUTH_ENABLED=true` queda como valor de entrega. El *frontend*, que tiene `requireAuth: true`, necesitará el *login* del ISS-15 para volver a acceder a los datos.
+
+![](images/express/iss13-25-npm-run-dev.png)

@@ -1,31 +1,61 @@
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../../shared/errors/app-error";
 import { sendError } from "../../../shared/http/error-response";
+import { isOperationGranted, normalizePath } from "../../../shared/auth/resource-match";
+import { ResourceRolesRepository } from "../resource-roles/resource-roles.repository";
+import { isLabBusinessRequest } from "./lab-mode";
 
 /**
- * **MODALIDAD 3 — RBAC.** Versión PROVISIONAL (ISS-10).
+ * **MODALIDAD 3 — RBAC (identidad + autorización granular).** Middleware de
+ * autorización.
  *
- * La matriz de permisos (`roles`, `resources`, `role_users`, `resource_roles`)
- * todavía no tiene features ni datos: llegan en los ISS-11 y ISS-12. Mientras
- * tanto, este middleware aplica **deny by default** en su forma más estricta:
+ * Debe montarse **después** de `authenticate`. Responde a la segunda pregunta:
+ * *¿puede esta identidad ejecutar `method + path`?*
  *
- *  - **401** si no hay identidad (no pasó por `authenticate`);
- *  - **403** para cualquier identidad válida, porque aún no existe ninguna concesión.
+ * Cómo resuelve la decisión:
+ *  1. Toma la identidad ya resuelta en `req.auth`.
+ *  2. Consulta la **cadena completa** de autorización en la base de datos
+ *     (`resource_roles → roles → role_users → resources`, todos los eslabones
+ *     activos) para ese `user_id`.
+ *  3. Compara el par `(method, path)` de la petición con las concesiones,
+ *     por patrón (`/api/productos/:id` casa con `/api/productos/42`).
  *
- * En el ISS-13 se reemplaza por la versión definitiva, que consulta la cadena
- * `role_users → roles → resource_roles → resources` del usuario.
+ * Reglas:
+ *  - **Deny by default**: sin concesión activa que cubra la operación -> 403.
+ *  - **401** si no hay identidad (falta `authenticate` o el token no valió).
+ *  - **403** si hay identidad válida pero no hay permiso.
+ *
+ * No recibe parámetros: el recurso y la acción se derivan de la propia petición.
+ * Añadir un permiso es insertar filas en la base de datos, nunca tocar el código.
  */
+const resourceRolesRepository = new ResourceRolesRepository();
+
 export async function authorize(
   req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): Promise<void> {
   try {
+    // Modo laboratorio (§18.7): con AUTH_ENABLED=false, las rutas de negocio son OPEN.
+    if (isLabBusinessRequest(req.originalUrl)) {
+      next();
+      return;
+    }
+
     if (!req.auth) {
       throw new AppError(401, "Authentication required");
     }
+
     const method = req.method.toUpperCase();
-    throw new AppError(403, `Forbidden: no grant for ${method} ${req.originalUrl}`);
+    const path = normalizePath(req.originalUrl);
+
+    const granted = await resourceRolesRepository.findEffectiveForUser(req.auth.id);
+
+    if (!isOperationGranted(granted, method, path)) {
+      throw new AppError(403, `Forbidden: no grant for ${method} ${path}`);
+    }
+
+    next();
   } catch (error) {
     sendError(res, error);
   }

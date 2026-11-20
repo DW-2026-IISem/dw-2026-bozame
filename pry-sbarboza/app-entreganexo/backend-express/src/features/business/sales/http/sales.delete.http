@@ -1,11 +1,24 @@
 ### Feature Sale — DELETE físico / DELETE lógico (status = inactive)
-### SIN AUTH (Fase I — Business). Ambos restauran el stock de las líneas activas.
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión. Ambos restauran el stock de las líneas activas.
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 @id = 1
 
 # @name deleteSalePhysical
 DELETE {{baseUrl}}/api/ventas/{{id}}
+Authorization: Bearer {{token}}
 
 ###
 # @name deleteSaleLogical
 PATCH {{baseUrl}}/api/ventas/{{id}}/deactivate
+Authorization: Bearer {{token}}

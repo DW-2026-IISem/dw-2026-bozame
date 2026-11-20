@@ -2,7 +2,7 @@
  * Documentación OpenAPI del feature ProductSale (tabla product_sales).
  * Se agrega desde `src/swagger` (registry externo), no se monta aquí.
  *
- * Leyenda: en la Fase I todos los endpoints son **SIN AUTH**.
+ * Leyenda: desde el ISS-13 todos los endpoints son **JWT + RBAC** (seguridad global del documento).
  */
 
 export const productSalesSwagger = {
@@ -10,7 +10,7 @@ export const productSalesSwagger = {
     {
       name: "DetalleVentas",
       description:
-        "CRUD de líneas Sale↔Product (tabla product_sales) — **SIN AUTH**",
+        "CRUD de líneas Sale↔Product (tabla product_sales) — **JWT + RBAC**",
     },
   ],
   paths: {
@@ -18,7 +18,7 @@ export const productSalesSwagger = {
       get: {
         tags: ["DetalleVentas"],
         summary: "Listar detalles de venta activos",
-        description: "SIN AUTH — retorna product_sales con status=active",
+        description: "JWT + RBAC — retorna product_sales con status=active",
         responses: {
           "200": {
             description: "Lista de detalles",
@@ -42,7 +42,7 @@ export const productSalesSwagger = {
         tags: ["DetalleVentas"],
         summary: "Agregar línea a una venta",
         description:
-          "SIN AUTH — valida venta/producto activos y stock; crea product_sale, reduce quantity y recalcula totales de la venta",
+          "JWT + RBAC — valida venta/producto activos y stock; crea product_sale, reduce quantity y recalcula totales de la venta",
         requestBody: {
           required: true,
           content: {
@@ -74,7 +74,7 @@ export const productSalesSwagger = {
       get: {
         tags: ["DetalleVentas"],
         summary: "Obtener detalle por id",
-        description: "SIN AUTH — 404 si no existe o tiene borrado lógico",
+        description: "JWT + RBAC — 404 si no existe o tiene borrado lógico",
         parameters: [
           {
             name: "id",
@@ -105,7 +105,7 @@ export const productSalesSwagger = {
       put: {
         tags: ["DetalleVentas"],
         summary: "Actualizar cantidad de línea (PUT)",
-        description: "SIN AUTH — ajusta stock y recalcula totales",
+        description: "JWT + RBAC — ajusta stock y recalcula totales",
         parameters: [
           {
             name: "id",
@@ -132,7 +132,7 @@ export const productSalesSwagger = {
       patch: {
         tags: ["DetalleVentas"],
         summary: "Actualizar línea (PATCH — parcial)",
-        description: "SIN AUTH — quantity",
+        description: "JWT + RBAC — quantity",
         parameters: [
           {
             name: "id",
@@ -159,7 +159,7 @@ export const productSalesSwagger = {
       delete: {
         tags: ["DetalleVentas"],
         summary: "Eliminar línea (físico)",
-        description: "SIN AUTH — restaura stock y recalcula (también si tiene borrado lógico)",
+        description: "JWT + RBAC — restaura stock y recalcula (también si tiene borrado lógico)",
         parameters: [
           {
             name: "id",
@@ -180,7 +180,7 @@ export const productSalesSwagger = {
       patch: {
         tags: ["DetalleVentas"],
         summary: "Eliminar línea (lógico)",
-        description: "SIN AUTH — status = inactive; restaura stock y recalcula totales",
+        description: "JWT + RBAC — status = inactive; restaura stock y recalcula totales",
         parameters: [
           {
             name: "id",

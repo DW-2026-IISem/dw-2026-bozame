@@ -1,41 +1,42 @@
 import { Application } from "express";
+import { authenticate, authorize } from "../../auth/access";
 import { ProductsController } from "./products.controller";
 
 export class ProductsRoutes {
   public productsController: ProductsController = new ProductsController();
 
   public routes(app: Application): void {
-    // ================== RUTAS SIN AUTENTICACIÓN / SIN MIDDLEWARE JWT ==================
+    // ================== JWT + RBAC: authenticate (¿quién eres?) + authorize (¿puedes?) ==================
 
     // getAll
     app
       .route("/api/productos")
-      .get(this.productsController.getAll.bind(this.productsController));
+      .get(authenticate, authorize, this.productsController.getAll.bind(this.productsController));
 
     // getOne
     app
       .route("/api/productos/:id")
-      .get(this.productsController.getOne.bind(this.productsController));
+      .get(authenticate, authorize, this.productsController.getOne.bind(this.productsController));
 
     // create
     app
       .route("/api/productos")
-      .post(this.productsController.create.bind(this.productsController));
+      .post(authenticate, authorize, this.productsController.create.bind(this.productsController));
 
     // update (PUT / PATCH)
     app
       .route("/api/productos/:id")
-      .put(this.productsController.updatePut.bind(this.productsController))
-      .patch(this.productsController.updatePatch.bind(this.productsController));
+      .put(authenticate, authorize, this.productsController.updatePut.bind(this.productsController))
+      .patch(authenticate, authorize, this.productsController.updatePatch.bind(this.productsController));
 
     // delete físico
     app
       .route("/api/productos/:id")
-      .delete(this.productsController.deletePhysical.bind(this.productsController));
+      .delete(authenticate, authorize, this.productsController.deletePhysical.bind(this.productsController));
 
     // delete lógico
     app
       .route("/api/productos/:id/deactivate")
-      .patch(this.productsController.deleteLogical.bind(this.productsController));
+      .patch(authenticate, authorize, this.productsController.deleteLogical.bind(this.productsController));
   }
 }

@@ -3,6 +3,7 @@ import { AppError } from "../../../shared/errors/app-error";
 import { sendError } from "../../../shared/http/error-response";
 import { extractBearerToken, verifyAccessToken } from "../../../shared/auth/jwt";
 import { UsersRepository } from "../users/users.repository";
+import { isLabBusinessRequest } from "./lab-mode";
 
 /**
  * **MODALIDAD 2 — JWT (identidad).** Middleware de autenticación.
@@ -29,6 +30,12 @@ export async function authenticate(
   next: NextFunction
 ): Promise<void> {
   try {
+    // Modo laboratorio (§18.7): con AUTH_ENABLED=false, las rutas de negocio son OPEN.
+    if (isLabBusinessRequest(req.originalUrl)) {
+      next();
+      return;
+    }
+
     const token = extractBearerToken(req.headers.authorization);
     if (!token) {
       throw new AppError(401, "Missing Bearer token");

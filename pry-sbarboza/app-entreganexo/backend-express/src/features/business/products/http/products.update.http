@@ -1,11 +1,23 @@
 ### Feature Product — UPDATE (PUT) / UPDATE (PATCH)
-### SIN AUTH (Fase I — Business). `status` no se envía: el estado solo cambia con
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión. `status` no se envía: el estado solo cambia con
 ### PATCH {{baseUrl}}/api/productos/{{id}}/deactivate (borrado lógico).
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 @id = 1
 
 # @name updateProductPut
 PUT {{baseUrl}}/api/productos/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -20,6 +32,7 @@ Content-Type: application/json
 ###
 # @name updateProductPatch
 PATCH {{baseUrl}}/api/productos/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

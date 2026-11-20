@@ -2,14 +2,14 @@
  * Documentación OpenAPI del feature Sale.
  * Se agrega desde `src/swagger` (registry externo), no se monta aquí.
  *
- * Leyenda: en la Fase I todos los endpoints son **SIN AUTH**.
+ * Leyenda: desde el ISS-13 todos los endpoints son **JWT + RBAC** (seguridad global del documento).
  */
 
 export const salesSwagger = {
   tags: [
     {
       name: "Ventas",
-      description: "CRUD de ventas — **SIN AUTH**",
+      description: "CRUD de ventas — **JWT + RBAC**",
     },
   ],
   paths: {
@@ -17,7 +17,7 @@ export const salesSwagger = {
       get: {
         tags: ["Ventas"],
         summary: "Listar ventas activas",
-        description: "SIN AUTH — retorna ventas con status=active e items (ProductSale)",
+        description: "JWT + RBAC — retorna ventas con status=active e items (ProductSale)",
         responses: {
           "200": {
             description: "Lista de ventas",
@@ -41,7 +41,7 @@ export const salesSwagger = {
         tags: ["Ventas"],
         summary: "Crear venta (transaccional)",
         description:
-          "SIN AUTH — valida cliente/productos activos y stock; crea Sale + ProductSale y reduce quantity",
+          "JWT + RBAC — valida cliente/productos activos y stock; crea Sale + ProductSale y reduce quantity",
         requestBody: {
           required: true,
           content: {
@@ -77,7 +77,7 @@ export const salesSwagger = {
       get: {
         tags: ["Ventas"],
         summary: "Obtener venta por id",
-        description: "SIN AUTH — incluye items; 404 si no existe o tiene borrado lógico",
+        description: "JWT + RBAC — incluye items; 404 si no existe o tiene borrado lógico",
         parameters: [
           {
             name: "id",
@@ -109,7 +109,7 @@ export const salesSwagger = {
         tags: ["Ventas"],
         summary: "Actualizar cabecera de venta (PUT)",
         description:
-          "SIN AUTH — solo tax, discounts, client_id, sale_date, status; recalcula total; no reescribe items",
+          "JWT + RBAC — solo tax, discounts, client_id, sale_date, status; recalcula total; no reescribe items",
         parameters: [
           {
             name: "id",
@@ -136,7 +136,7 @@ export const salesSwagger = {
       patch: {
         tags: ["Ventas"],
         summary: "Actualizar cabecera de venta (PATCH)",
-        description: "SIN AUTH — parcial; recalcula total si cambian tax/discounts",
+        description: "JWT + RBAC — parcial; recalcula total si cambian tax/discounts",
         parameters: [
           {
             name: "id",
@@ -163,7 +163,7 @@ export const salesSwagger = {
       delete: {
         tags: ["Ventas"],
         summary: "Eliminar venta (físico)",
-        description: "SIN AUTH — restaura stock de las líneas activas, borra product_sales y luego la venta (transacción; también si tiene borrado lógico)",
+        description: "JWT + RBAC — restaura stock de las líneas activas, borra product_sales y luego la venta (transacción; también si tiene borrado lógico)",
         parameters: [
           {
             name: "id",
@@ -184,7 +184,7 @@ export const salesSwagger = {
       patch: {
         tags: ["Ventas"],
         summary: "Eliminar venta (lógico)",
-        description: "SIN AUTH — status = inactive en venta e items, restaurando stock",
+        description: "JWT + RBAC — status = inactive en venta e items, restaurando stock",
         parameters: [
           {
             name: "id",

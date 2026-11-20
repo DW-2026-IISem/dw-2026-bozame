@@ -1,12 +1,24 @@
 ### Feature Client — UPDATE (PUT) / UPDATE (PATCH)
-### SIN AUTH (Fase I — Business). `status` no se envía: el estado solo cambia con
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión. `status` no se envía: el estado solo cambia con
 ### PATCH {{baseUrl}}/api/clientes/{{id}}/deactivate (borrado lógico).
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 @id = 1
 
 ### PUT — reemplazo completo (conserva el password si no se envía)
 # @name updateClientPut
 PUT {{baseUrl}}/api/clientes/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -19,6 +31,7 @@ Content-Type: application/json
 ### PATCH — actualización parcial
 # @name updateClientPatch
 PATCH {{baseUrl}}/api/clientes/{{id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

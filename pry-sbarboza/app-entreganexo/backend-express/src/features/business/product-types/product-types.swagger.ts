@@ -2,7 +2,7 @@
  * Documentación OpenAPI del feature ProductType.
  * Se agrega desde `src/swagger` (registry externo), no se monta aquí.
  *
- * Leyenda: en la Fase I todos los endpoints son **SIN AUTH**.
+ * Leyenda: desde el ISS-13 todos los endpoints son **JWT + RBAC** (seguridad global del documento).
  */
 
 const idParam = {
@@ -24,7 +24,7 @@ export const productTypesSwagger = {
   tags: [
     {
       name: "TiposProducto",
-      description: "CRUD de tipos de producto — **SIN AUTH**",
+      description: "CRUD de tipos de producto — **JWT + RBAC**",
     },
   ],
   paths: {
@@ -32,7 +32,7 @@ export const productTypesSwagger = {
       get: {
         tags: ["TiposProducto"],
         summary: "Listar tipos de producto activos",
-        description: "SIN AUTH — retorna tipos con status=active",
+        description: "JWT + RBAC — retorna tipos con status=active",
         responses: {
           "200": {
             description: "Lista de tipos de producto",
@@ -55,7 +55,7 @@ export const productTypesSwagger = {
       post: {
         tags: ["TiposProducto"],
         summary: "Crear tipo de producto",
-        description: "SIN AUTH",
+        description: "JWT + RBAC",
         requestBody: {
           required: true,
           content: {
@@ -77,7 +77,7 @@ export const productTypesSwagger = {
       get: {
         tags: ["TiposProducto"],
         summary: "Obtener tipo de producto por id",
-        description: "SIN AUTH — 404 si no existe o tiene borrado lógico",
+        description: "JWT + RBAC — 404 si no existe o tiene borrado lógico",
         parameters: [idParam],
         responses: {
           "200": {
@@ -91,7 +91,7 @@ export const productTypesSwagger = {
       put: {
         tags: ["TiposProducto"],
         summary: "Actualizar tipo de producto (PUT — reemplazo)",
-        description: "SIN AUTH",
+        description: "JWT + RBAC",
         parameters: [idParam],
         requestBody: {
           required: true,
@@ -110,7 +110,7 @@ export const productTypesSwagger = {
       patch: {
         tags: ["TiposProducto"],
         summary: "Actualizar tipo de producto (PATCH — parcial)",
-        description: "SIN AUTH",
+        description: "JWT + RBAC",
         parameters: [idParam],
         requestBody: {
           required: true,
@@ -129,7 +129,7 @@ export const productTypesSwagger = {
       delete: {
         tags: ["TiposProducto"],
         summary: "Eliminar tipo de producto (físico)",
-        description: "SIN AUTH — borra la fila (también si tiene borrado lógico)",
+        description: "JWT + RBAC — borra la fila (también si tiene borrado lógico)",
         parameters: [idParam],
         responses: {
           "200": { description: "Eliminado" },
@@ -142,7 +142,7 @@ export const productTypesSwagger = {
       patch: {
         tags: ["TiposProducto"],
         summary: "Eliminar tipo de producto (lógico)",
-        description: "SIN AUTH — status = inactive",
+        description: "JWT + RBAC — status = inactive",
         parameters: [idParam],
         responses: {
           "200": { description: "Desactivado" },

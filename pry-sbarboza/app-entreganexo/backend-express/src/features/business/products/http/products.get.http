@@ -1,15 +1,29 @@
 ### Feature Product — GET ALL / GET ONE
-### SIN AUTH (Fase I — Business)
+### JWT + RBAC (desde el ISS-13): requiere el token de un usuario con la concesión
 @baseUrl = http://localhost:3002
+
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "identifier": "admin",
+  "password": "Admin123!"
+}
+
+@token = {{loginAdmin.response.body.$.access_token}}
 @id = 1
 
 ### GET ALL — solo productos activos
 # @name getAllProducts
 GET {{baseUrl}}/api/productos
+Authorization: Bearer {{token}}
 
 ### GET ONE — 404 si no existe o está inactivo
 # @name getOneProduct
 GET {{baseUrl}}/api/productos/{{id}}
+Authorization: Bearer {{token}}
 
 ### 400 — :id no numérico
 GET {{baseUrl}}/api/productos/abc
+Authorization: Bearer {{token}}

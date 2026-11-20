@@ -58,7 +58,7 @@ export function buildOpenApiDocument() {
       title: "EntregaNexo API",
       version: "1.0.0",
       description:
-        "API EntregaNexo (Express + Sequelize). En la Fase I todas las rutas business son **SIN AUTH**.",
+        "API EntregaNexo (Express + Sequelize). Desde el ISS-13 todas las rutas son **JWT + RBAC** salvo las de sesión; pulsa **Authorize** con `Bearer <access_token>`.",
     },
     servers: [
       {
@@ -68,10 +68,12 @@ export function buildOpenApiDocument() {
     ],
     tags,
     paths,
+    // Seguro por defecto: toda operación que no declare su propio `security` exige
+    // el access token. Las operaciones OPEN (login, refresh, logout) lo anulan con `security: []`.
+    security: [{ bearerAuth: [] }],
     components: {
       // Esquema `bearerAuth` (Authorization: Bearer <access_token>): activa el botón
-      // Authorize de Swagger UI. Solo lo usan las operaciones que declaran `security`;
-      // las rutas de negocio siguen abiertas hasta el ISS-13.
+      // Authorize de Swagger UI.
       securitySchemes: bearerSecurityScheme,
       responses: {
         Unauthorized: unauthorizedResponse,

@@ -14,3 +14,6 @@ pry-sbarboza/app-entreganexo/data/
 # Backups
 backups/
 pry-sbarboza/app-entreganexo/backup/
+
+# Scripts de capturas de Claude (copia local, no se sube)
+pry-sbarboza/app-entreganexo/documentacion/herramientas-capturas/
