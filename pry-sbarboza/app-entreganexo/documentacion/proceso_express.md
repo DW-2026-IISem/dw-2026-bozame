@@ -2749,3 +2749,211 @@ Los grupos de negocio aparecen ahora como «JWT + RBAC» y con candado en todas 
 Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-13. Funcionan las tres modalidades: `authenticate` responde 401 sin token válido y `authorize` responde 403 sin permiso. Las cinco rutas de negocio están protegidas sin haber cambiado sus capas. `seller` solo puede hacer lo suyo, mientras que `admin` puede hacerlo todo. Conceder o retirar un permiso tiene efecto inmediato. El modo laboratorio abre solo el negocio, y `AUTH_ENABLED=true` queda como valor de entrega. El *frontend*, que tiene `requireAuth: true`, necesitará el *login* del ISS-15 para volver a acceder a los datos.
 
 ![](images/express/iss13-25-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-14: Feature de Sesiones (refresh tokens)
+
+El *access token* dura solo 15 minutos para acotar el daño si lo roban. Para que el usuario no tenga que volver a iniciar sesión cada 15 minutos existe el **refresh token**, que dura 7 días y sirve para pedir un *access token* nuevo. En este issue construimos su gestión (`/api/sesiones`):
+
+- **Opaco y guardado como hash:** el refresh token es un valor aleatorio, no un JWT. En la base de datos solo se guarda su *hash*, así que una copia robada de la tabla no sirve para iniciar sesión.
+- **Rotación:** cada vez que se usa se sustituye por otro nuevo, de modo que cada refresh token sirve una sola vez.
+- **Detección de reutilización:** si alguien presenta un token que ya se usó, se interpreta como un robo y se revoca toda su familia de sesiones.
+
+El *login*, el *refresh* y el *logout* que usan este servicio llegan en el ISS-15. Aquí construimos el servicio y las rutas para que cada usuario vea y revoque sus propias sesiones.
+
+------------------------------------------------------------------------
+
+### Paso 325: Estructura de la feature
+
+Creamos `src/features/auth/refresh-tokens/` con su DTO, *repository*, *service*, *controller*, rutas, Swagger y peticiones HTTP, junto al modelo `refresh-token.model.ts` del ISS-09.
+
+![](images/express/iss14-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 326: DTO de respuesta
+
+`toRefreshTokenResponse` elimina el campo `token_hash`, que nunca sale de la API, y añade `is_expired` para indicar si la sesión ya caducó.
+
+![](images/express/iss14-02-cat-dto.png)
+
+------------------------------------------------------------------------
+
+### Paso 327: Repository (búsquedas)
+
+`findByHash` busca una sesión por el *hash* del token, ya que el token en claro no se guarda. Con `lock = true` añade `SELECT ... FOR UPDATE` dentro de la transacción. Así, si dos peticiones intentan usar el mismo token a la vez, solo una puede rotarlo.
+
+![](images/express/iss14-03-cat-repository-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 328: Repository (revocaciones)
+
+`revokeFamily` desactiva todas las sesiones de una familia (las que nacen de un mismo *login*), `revokeAllByUser` desactiva todas las sesiones de un usuario y `purgeInactiveByUser` borra físicamente sus sesiones revocadas o caducadas.
+
+![](images/express/iss14-04-cat-repository-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 329: Service (sesiones propias y emisión)
+
+La primera parte del *service* gestiona las sesiones del propio usuario: listar, consultar, revocar una, revocar todas y purgar. Siempre filtra por el usuario autenticado, así que nadie puede ver ni tocar sesiones ajenas. `issue` crea una sesión nueva: genera el token aleatorio, abre una familia nueva y guarda solo el *hash* con su fecha de caducidad.
+
+![](images/express/iss14-05-cat-service-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 330: Service (rotación y detección de reutilización)
+
+`rotate` busca la sesión por el *hash* con bloqueo de fila, dentro de una transacción:
+
+- **Token activo y vigente:** lo desactiva y emite uno nuevo en la misma familia.
+- **Token caducado:** responde `expired`.
+- **Token ya usado o revocado:** es una señal de robo, así que revoca toda la familia y responde `reuse`.
+
+El resultado se devuelve como un valor, en lugar de lanzar un error dentro de la transacción. Si lanzara un error, el *rollback* desharía la revocación de la familia. `revokeByToken` servirá para el *logout*.
+
+![](images/express/iss14-06-cat-service-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 331: Controller
+
+El *controller* obtiene el usuario autenticado con `requireAuthUser` y responde con `{ sessions }` o `{ session }`, más un mensaje en las revocaciones y la purga.
+
+![](images/express/iss14-07-cat-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 332: Rutas (modalidad JWT)
+
+Las rutas de `/api/sesiones` solo llevan `authenticate`, sin `authorize`: ver y cerrar las propias sesiones es un derecho de cualquier usuario autenticado, no un permiso que haya que conceder. Por eso tampoco están en el catálogo de recursos. La ruta literal `/deactivate-all` se registra antes que `/:id/deactivate`.
+
+![](images/express/iss14-08-cat-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 333: Peticiones HTTP de prueba
+
+El archivo `.http` inicia sesión con `/api/auth/login` (ISS-15) y prueba listar, consultar, revocar una, revocar todas y purgar.
+
+![](images/express/iss14-09-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 334: Registro de la feature
+
+Registramos `RefreshTokensRoutes` en las rutas y en la configuración, separada del bloque de administración porque es de modalidad JWT, y `refreshTokensSwagger` en el *registry*.
+
+![](images/express/iss14-10-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 335: Tipado
+
+`npx tsc --noEmit` compila sin errores. Las cinco rutas de `/api/sesiones` son las únicas que no tienen recurso en el catálogo, que es lo correcto para la modalidad JWT.
+
+![](images/express/iss14-11-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 336: Emitir sesiones
+
+Como el *login* llega en el ISS-15, creamos dos sesiones de `admin` llamando directamente a `issue`, como si hubiera iniciado sesión desde dos dispositivos. Cada una tiene su propio token, su familia y su caducidad a 7 días.
+
+![](images/express/iss14-12-emitir-sesiones.png)
+
+------------------------------------------------------------------------
+
+### Paso 337: En la base de datos solo hay hashes
+
+En la tabla `refresh_tokens` aparece el *hash* SHA-256 de cada token, nunca el token en claro. Los primeros caracteres del *hash* no tienen nada que ver con los del token de la captura anterior.
+
+![](images/express/iss14-13-tabla-hash.png)
+
+------------------------------------------------------------------------
+
+### Paso 338: Mis sesiones
+
+Con el token de `admin`, `GET /api/sesiones` devuelve sus dos sesiones activas con el dispositivo, la familia, la caducidad e `is_expired`, sin el campo `token_hash`.
+
+![](images/express/iss14-14-mis-sesiones.png)
+
+------------------------------------------------------------------------
+
+### Paso 339: Las sesiones ajenas no existen
+
+Con el token de `seller`, consultar o revocar la sesión 1 de `admin` responde 404: para cada usuario, las sesiones de los demás no existen. Sin token, la ruta responde 401.
+
+![](images/express/iss14-15-sesion-ajena.png)
+
+------------------------------------------------------------------------
+
+### Paso 340: Rotación y detección de reutilización
+
+Simulamos el ciclo de una sesión de `seller`:
+
+1. Inicia sesión y obtiene el token A.
+2. Hace *refresh* con A y obtiene B (`rotated`).
+3. Hace *refresh* con B y obtiene C (`rotated`).
+4. Alguien presenta de nuevo el token A, que ya se usó. Se detecta la reutilización (`reuse`) y se revoca la familia: la única sesión activa que quedaba era la de C.
+5. Desde ese momento, C tampoco sirve.
+
+Si un atacante roba un refresh token, en cuanto se use dos veces la sesión entera queda cortada.
+
+![](images/express/iss14-16-rotacion-reuso.png)
+
+------------------------------------------------------------------------
+
+### Paso 341: La familia en la base de datos
+
+Las tres filas de `seller` (A, B y C) comparten la misma familia y están las tres inactivas. Las dos sesiones de `admin` siguen activas, porque la revocación solo afecta a esa familia.
+
+![](images/express/iss14-17-tabla-familia.png)
+
+------------------------------------------------------------------------
+
+### Paso 342: Revocar una sesión
+
+`admin` revoca su sesión 1 con `PATCH /api/sesiones/1/deactivate`; la respuesta la muestra con `status: "inactive"`.
+
+![](images/express/iss14-18-revocar-una.png)
+
+------------------------------------------------------------------------
+
+### Paso 343: Revocar todas y purgar
+
+`PATCH /api/sesiones/deactivate-all` revoca la sesión que le quedaba activa (1). La lista queda vacía, y `DELETE /api/sesiones` borra físicamente sus 2 sesiones inactivas.
+
+![](images/express/iss14-19-revocar-todas-purgar.png)
+
+------------------------------------------------------------------------
+
+### Paso 344: Estado final de la tabla
+
+Solo quedan las tres filas inactivas de `seller`: la purga de `admin` no tocó las sesiones de otros usuarios.
+
+![](images/express/iss14-20-tabla-final.png)
+
+------------------------------------------------------------------------
+
+### Paso 345: Swagger UI
+
+El grupo «Sesiones» aparece en primer lugar con sus cinco operaciones, marcadas como modalidad JWT.
+
+![](images/express/iss14-21-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 346: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-14:
+
+- Los refresh tokens se guardan solo como *hash* y rotan en cada uso.
+- Reutilizar un token ya usado revoca toda su familia.
+- Cada usuario puede listar, revocar y purgar únicamente sus propias sesiones, en modalidad JWT.
+
+En el ISS-15 conectaremos este servicio con el *login*, el *refresh* y el *logout* de `/api/auth`.
+
+![](images/express/iss14-22-npm-run-dev.png)
