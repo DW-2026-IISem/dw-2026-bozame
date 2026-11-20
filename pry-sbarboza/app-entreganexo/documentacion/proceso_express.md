@@ -1667,3 +1667,81 @@ En `http://localhost:3002/api/docs` aparecen los cinco grupos de la Fase I: «Cl
 Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores con las cinco *features* y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-08 y, con él, todo el negocio de la Fase I. Las ventas y su detalle tienen modelos, DTOs, *repositories*, *services*, *controllers*, rutas, peticiones HTTP, asociaciones, *seeders* y documentación Swagger. Las pruebas confirmaron que crear una venta descuenta stock y calcula los totales; que si falta stock la transacción se revierte sin guardar nada; que añadir, modificar o desactivar líneas ajusta el stock y recalcula la venta; que los borrados lógico y físico devuelven el stock; y que el *frontend* puede crear ventas con sus propias claves.
 
 ![](images/express/iss08-47-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## Cierre de la Fase I: Business (sin autenticación)
+
+El cierre de la Fase I no crea ni modifica archivos: es una verificación. Comprobamos que el *backend* cumple la definición de terminado (DoD) de la guía: cinco *features* con sus cuatro capas y sus DTOs, cinco tablas, las cinco APIs, el SeedersRunner, Swagger, todas las rutas sin autenticación y el proyecto compilando sin errores de tipos. Recorremos la matriz de pruebas de la guía con las rutas de EntregaNexo. La única diferencia con la guía es la ruta de tipos de producto: usamos `/api/product-types`, la que espera el *frontend*, en lugar de `/api/tipos-producto`.
+
+------------------------------------------------------------------------
+
+### Paso 195: Las cinco features
+
+Listamos `src/features/business/`. Cada una de las cinco *features* (`clients`, `product-types`, `products`, `sales` y `product-sales`) tiene su modelo, *repository*, *service*, *controller* y rutas, más las carpetas `dto/` y `http/`, su *seeder* y su módulo de Swagger. Las tres que tienen claves foráneas incluyen también su archivo `*.associations.ts`.
+
+![](images/express/cierre1-01-features.png)
+
+------------------------------------------------------------------------
+
+### Paso 196: Tipado global
+
+`npx tsc --noEmit` compila todo el proyecto sin generar archivos. No muestra ningún error, así que se cumple el criterio transversal de tipos.
+
+![](images/express/cierre1-02-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 197: Las cinco tablas con datos
+
+En MySQL contamos las filas de las cinco tablas de negocio. Todas tienen datos de los *seeders*, así que las rutas GET tienen filas reales que devolver.
+
+![](images/express/cierre1-03-tablas.png)
+
+------------------------------------------------------------------------
+
+### Paso 198: Listar en todas las APIs
+
+Hacemos un `GET` a cada una de las cinco APIs sin enviar ninguna cabecera `Authorization`. Todas responden 200, lo que cubre los casos de listado de la matriz y confirma que las rutas de negocio no tienen autenticación.
+
+![](images/express/cierre1-04-get-todas.png)
+
+------------------------------------------------------------------------
+
+### Paso 199: Crear en todas las APIs
+
+Creamos un registro en cada API, encadenando las claves foráneas: un cliente (id 6), un tipo de producto (id 27), un producto de ese tipo (id 16), una venta de ese cliente con ese producto (id 6) y una línea más para esa venta. Las cinco peticiones responden 201.
+
+![](images/express/cierre1-05-post-todas.png)
+
+------------------------------------------------------------------------
+
+### Paso 200: La cadena completa en una venta
+
+Consultamos la venta 6. Pertenece al cliente 6 y tiene dos líneas del producto 16: la creada con la venta (2 unidades) y la añadida desde `/api/detalle-ventas` (1 unidad). El subtotal, 30, se recalculó con ambas.
+
+![](images/express/cierre1-06-venta-cadena.png)
+
+------------------------------------------------------------------------
+
+### Paso 201: Actualizar y eliminar
+
+Actualizamos el cliente 6 con PATCH y después borramos los registros de prueba en orden inverso a las dependencias: primero la venta (con sus líneas, devolviendo el stock), luego el producto, el tipo de producto y el cliente. Todas las operaciones responden 200.
+
+![](images/express/cierre1-07-limpieza.png)
+
+------------------------------------------------------------------------
+
+### Paso 202: Documentación
+
+`GET /api/docs/` responde 200 con Swagger UI, y `GET /api/docs.json` devuelve el documento OpenAPI «EntregaNexo API» con las 15 rutas de la fase: tres por cada una de las cinco *features*.
+
+![](images/express/cierre1-08-docs.png)
+
+------------------------------------------------------------------------
+
+### Paso 203: Estado final de la base de datos (GATE)
+
+Volvemos a contar las filas: son las mismas que en el Paso 197, así que la prueba no dejó datos sueltos. Con esto queda cerrada la Fase I. El *backend* tiene las cinco *features* de negocio por capas con sus DTOs, las cinco tablas con sus claves foráneas, las APIs `/api/clientes`, `/api/product-types`, `/api/productos`, `/api/ventas` y `/api/detalle-ventas`, el SeedersRunner y Swagger en `/api/docs`. Todas las rutas responden sin autenticación y el proyecto compila sin errores de tipos. A partir del ISS-09 empieza la Fase II, que protege estas rutas con autenticación y roles.
+
+![](images/express/cierre1-09-tablas-final.png)
