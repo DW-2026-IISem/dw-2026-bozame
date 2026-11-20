@@ -13,6 +13,8 @@ export interface ProductSaleI {
   quantity: number;
   unit_price: number;
   line_total: number;
+  /** Alias de solo lectura de `line_total` para el frontend (campo VIRTUAL). */
+  total?: number;
   status: "active" | "inactive";
   createdAt?: Date;
   updatedAt?: Date;
@@ -51,6 +53,14 @@ ProductSale.init(
     line_total: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: false,
+    },
+    // EntregaNexo: el frontend lee el total de cada línea como `total`.
+    // Campo VIRTUAL (no es columna): repite `line_total` en las respuestas.
+    total: {
+      type: DataTypes.VIRTUAL,
+      get(this: ProductSale) {
+        return this.getDataValue("line_total");
+      },
     },
     status: {
       type: DataTypes.ENUM("active", "inactive"),

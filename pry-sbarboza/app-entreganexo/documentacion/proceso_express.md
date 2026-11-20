@@ -3267,3 +3267,25 @@ Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y 
 - *Seeders* reconciliadores y la documentación completa en Swagger.
 
 ![](images/express/cierre2-10-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## Ajuste final: total por línea de venta
+
+Al revisar la compatibilidad con el *frontend* vimos que, en la lista de ventas, lee el total de cada línea como `item.total`, mientras que la API lo devuelve como `line_total`, el nombre de la columna. Sin este ajuste, el total de cada línea aparecería como 0 en pantalla.
+
+------------------------------------------------------------------------
+
+### Paso 378: Campo virtual `total`
+
+En el modelo `ProductSale` añadimos un campo `total` de tipo `VIRTUAL`, que no es una columna de la tabla. Su *getter* devuelve el valor de `line_total`, así que aparece en todas las respuestas que incluyen líneas de venta: `/api/detalle-ventas` y los `items` de `/api/ventas`. No cambia la base de datos ni rompe nada de lo que ya devolvía la API.
+
+![](images/express/ajuste-01-total-virtual.png)
+
+------------------------------------------------------------------------
+
+### Paso 379: Comprobación
+
+Al consultar una venta, cada línea trae ahora `line_total` y `total` con el mismo valor, que es lo que espera el *frontend*.
+
+![](images/express/ajuste-02-total-api.png)
