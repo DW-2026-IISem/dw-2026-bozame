@@ -1,0 +1,13 @@
+### Feature ProductType — CREATE
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+
+# @name createProductType
+POST {{baseUrl}}/api/product-types
+Content-Type: application/json
+
+{
+  "name": "Electrónica",
+  "description": "Dispositivos y accesorios",
+  "status": "active"
+}

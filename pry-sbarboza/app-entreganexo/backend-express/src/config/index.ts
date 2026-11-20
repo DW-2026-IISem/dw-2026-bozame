@@ -4,7 +4,9 @@ import morgan from "morgan";
 var cors = require("cors");
 import { sequelize, getDatabaseInfo, testConnection } from "../database/db";
 import "../features/business/clients/client.model";
+import "../features/business/product-types/product-type.model";
 import { Routes } from "../routes/index";
+import { setupSwagger } from "../swagger/index";
 
 dotenv.config();
 
@@ -35,10 +37,11 @@ export class App {
   private routes(): void {
     // Fase I — Business
     this.routePrv.clientsRoutes.routes(this.app);
+    this.routePrv.productTypesRoutes.routes(this.app);
   }
 
   private docs(): void {
-    // Placeholder: aquí se montará Swagger (ISS-05).
+    setupSwagger(this.app);
   }
 
   /**

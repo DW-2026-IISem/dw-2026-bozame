@@ -1,0 +1,23 @@
+### Feature ProductType — UPDATE (PUT) / UPDATE (PATCH)
+### SIN AUTH (Fase I — Business). `status` no se envía: el estado solo cambia con
+### PATCH {{baseUrl}}/api/product-types/{{id}}/deactivate (borrado lógico).
+@baseUrl = http://localhost:3002
+@id = 1
+
+# @name updateProductTypePut
+PUT {{baseUrl}}/api/product-types/{{id}}
+Content-Type: application/json
+
+{
+  "name": "Electrónica Actualizada",
+  "description": "Categoría renovada"
+}
+
+###
+# @name updateProductTypePatch
+PATCH {{baseUrl}}/api/product-types/{{id}}
+Content-Type: application/json
+
+{
+  "description": "Descripción parcial"
+}

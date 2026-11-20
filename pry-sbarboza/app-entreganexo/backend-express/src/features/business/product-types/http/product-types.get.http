@@ -1,0 +1,15 @@
+### Feature ProductType — GET ALL / GET ONE
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+@id = 1
+
+### GET ALL — solo tipos activos
+# @name getAllProductTypes
+GET {{baseUrl}}/api/product-types
+
+### GET ONE — 404 si no existe o está inactivo
+# @name getOneProductType
+GET {{baseUrl}}/api/product-types/{{id}}
+
+### 400 — :id no numérico
+GET {{baseUrl}}/api/product-types/abc

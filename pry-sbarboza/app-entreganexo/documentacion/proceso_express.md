@@ -715,3 +715,311 @@ Consultamos la tabla `clients` en MySQL y vemos los 5 clientes generados por Fak
 Para cerrar el issue comprobamos que la aplicación sigue en pie: `npm run dev` conecta a MySQL, sincroniza la base y queda escuchando en el puerto 3002; luego lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-04: la *feature* de clientes tiene su *seeder* con Faker, que recibe la cantidad y no duplica datos; el SeedersRunner en `src/database/seeders/` orquesta los *seeders* con conteos configurables por defecto, por variable de entorno o por consola; y el script `npm run db:seed` funciona en sus tres variantes.
 
 ![](images/express/iss04-11-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-05: Documentación con Swagger / OpenAPI
+
+En este issue documentamos la API de clientes con el estándar **OpenAPI 3** y la publicamos con **Swagger UI**, una página web desde la que se pueden ver y probar los *endpoints*. Seguimos el mismo patrón que con los *seeders*: cada *feature* declara su propia documentación en un archivo `.swagger.ts`, y un *registry* externo en `src/swagger/` las reúne todas en un único documento y lo monta en la aplicación. Como en la Fase I todavía no hay autenticación, los *endpoints* se documentan como **SIN AUTH**; el esquema de seguridad JWT se añadirá cuando llegue el login.
+
+------------------------------------------------------------------------
+
+### Paso 79: Instalación de Swagger UI
+
+Instalamos `swagger-ui-express`, el paquete que sirve la interfaz web de Swagger desde Express.
+
+![](images/express/iss05-01-npm-install-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 80: Tipos de Swagger UI
+
+Instalamos `@types/swagger-ui-express` como dependencia de desarrollo para que TypeScript reconozca los tipos del paquete.
+
+![](images/express/iss05-02-npm-install-types-swagger.png)
+
+------------------------------------------------------------------------
+
+### Paso 81: Documentación de la feature de clientes (1/3)
+
+Creamos `src/features/business/clients/clients.swagger.ts`, que exporta el objeto `clientsSwagger` con tres partes: `tags` (agrupa los *endpoints* bajo «Clientes»), `paths` (cada ruta con sus operaciones) y `components.schemas` (los modelos de datos). Para no repetir código, el parámetro `id` y el cuerpo de respuesta `{ client }` se definen una sola vez al principio. En esta primera parte se documentan `GET /api/clientes`, que devuelve la lista de clientes activos, y `POST /api/clientes`, que recibe un `ClientCreate` y responde 201.
+
+![](images/express/iss05-03-swagger-clientes-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 82: Documentación de la feature de clientes (2/3)
+
+Continuamos con las operaciones sobre un cliente concreto, `/api/clientes/{id}`: consultar (GET), reemplazar (PUT), actualizar parcialmente (PATCH) y borrar físicamente (DELETE), además del borrado lógico `PATCH /api/clientes/{id}/deactivate`. Todas documentan las respuestas 400 (identificador inválido) y 404 (no encontrado), que son las que devuelve nuestro `BaseController`.
+
+![](images/express/iss05-04-swagger-clientes-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 83: Documentación de la feature de clientes (3/3)
+
+Por último definimos los *schemas*: `Client` (lo que devuelve la API, sin contraseña), `ClientCreate`, `ClientUpdate` y `ClientPatch`, que reflejan los DTO de entrada del ISS-03.
+
+![](images/express/iss05-05-swagger-clientes-3.png)
+
+------------------------------------------------------------------------
+
+### Paso 84: Registry de Swagger
+
+Creamos `src/swagger/index.ts`. La lista `featureSwaggerModules` reúne los módulos de documentación de cada *feature*; `buildOpenApiDocument()` fusiona sus `tags`, `paths` y `schemas` en un único documento OpenAPI 3.0.3 con el título «EntregaNexo API» y el servidor local en el puerto del `.env`; y `setupSwagger(app)` monta la interfaz en `/api/docs` y el documento en formato JSON en `/api/docs.json`. Cuando agreguemos nuevas *features* solo habrá que importar su módulo y añadirlo a la lista.
+
+![](images/express/iss05-06-cat-swagger-registry.png)
+
+------------------------------------------------------------------------
+
+### Paso 85: Montaje de Swagger en la aplicación
+
+En `src/config/index.ts` importamos `setupSwagger` y lo llamamos desde el método `docs()`, que hasta ahora era un *placeholder* y que el constructor ya invocaba justo después de registrar las rutas.
+
+![](images/express/iss05-07-config-docs.png)
+
+------------------------------------------------------------------------
+
+### Paso 86: Documento OpenAPI en `/api/docs.json`
+
+Con el servidor en marcha consultamos `/api/docs.json` y vemos el inicio del documento: versión `3.0.3`, el título de la API, el servidor `http://localhost:3002`, la etiqueta «Clientes» y las rutas documentadas.
+
+![](images/express/iss05-08-docs-json.png)
+
+------------------------------------------------------------------------
+
+### Paso 87: Swagger UI responde
+
+Comprobamos que `/api/docs/` responde 200 con una página HTML: es la interfaz de Swagger UI.
+
+![](images/express/iss05-09-docs-ui-200.png)
+
+------------------------------------------------------------------------
+
+### Paso 88: Swagger UI en el navegador
+
+Abrimos `http://localhost:3002/api/docs` en el navegador. Aparecen la descripción de la API, el servidor local, los siete *endpoints* de clientes agrupados bajo «Clientes» y, al final, los *schemas*.
+
+![](images/express/iss05-10-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 89: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`: ahora, además de conectarse a MySQL y quedar escuchando en el puerto 3002, el servidor anuncia dónde está la documentación (`/api/docs` y `/api/docs.json`). Lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-05: la *feature* de clientes tiene su documentación OpenAPI con *tags*, rutas y *schemas* marcados como SIN AUTH, el *registry* de `src/swagger/` la reúne y la monta, la aplicación la carga desde `docs()`, y tanto la interfaz `/api/docs` como el documento `/api/docs.json` responden correctamente.
+
+![](images/express/iss05-11-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-06: Feature de Tipos de Producto
+
+En este issue añadimos la segunda entidad del negocio: los **tipos de producto** (tabla `product_types`), que más adelante servirán para clasificar los productos. Repetimos el mismo patrón que con los clientes: modelo, DTO, *repository*, *service*, *controller* y rutas, más su *seeder* y su documentación Swagger. Mantenemos la ruta `/api/product-types`, que es la que ya usa el *frontend* de EntregaNexo, y las respuestas con las claves `product_types` y `product_type` que el *frontend* espera.
+
+------------------------------------------------------------------------
+
+### Paso 90: Estructura de la feature
+
+Creamos la carpeta `src/features/business/product-types/` con la misma organización que la de clientes: la carpeta `dto/` con un archivo por operación, la carpeta `http/` con las peticiones de prueba y los archivos de cada capa, junto al *seeder* y al módulo de Swagger.
+
+![](images/express/iss06-01-arbol-product-types.png)
+
+------------------------------------------------------------------------
+
+### Paso 91: Modelo `ProductType`
+
+El modelo define la tabla `product_types` con `name` (obligatorio), `description` (opcional) y `status`. Al igual que en clientes, el estado por defecto en la base de datos es `inactive` como medida de seguridad: una fila insertada sin estado no queda visible en la API, mientras que la creación desde la API siempre envía `active`.
+
+![](images/express/iss06-02-cat-model.png)
+
+------------------------------------------------------------------------
+
+### Paso 92: DTOs
+
+Los DTOs describen qué datos acepta y devuelve cada operación. `CreateProductTypeDto` permite enviar el estado, que por defecto será `active`; `UpdateProductTypeDto` (PUT) no incluye `status` a propósito, porque el estado solo cambia con el borrado lógico; `PatchProductTypeDto` hace opcionales esos mismos campos; y `toProductTypeResponse` convierte el modelo en un objeto plano para la respuesta.
+
+![](images/express/iss06-03-cat-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 93: Repository
+
+El *repository* es la única capa que habla con Sequelize: lista los tipos activos, busca por id, crea, actualiza y elimina.
+
+![](images/express/iss06-04-cat-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 94: Service
+
+El *service* contiene las reglas de negocio: al crear copia los campos uno a uno y pone `active` si no se indica estado; el PUT reemplaza nombre y descripción sin tocar el estado; el borrado lógico cambia el estado a `inactive`; y `findOrFail` responde 404 si el tipo no existe o está inactivo, salvo en el borrado físico, que también permite eliminar un registro ya desactivado.
+
+![](images/express/iss06-05-cat-service.png)
+
+------------------------------------------------------------------------
+
+### Paso 95: Controller
+
+El *controller* solo se ocupa de HTTP: lee la petición, llama al *service* y responde con `{ product_types }` o `{ product_type }`. Los errores los gestiona `run()` del `BaseController` que creamos en el ISS-03.
+
+![](images/express/iss06-06-cat-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 96: Rutas
+
+Registramos las siete rutas bajo `/api/product-types`: listar, consultar, crear, PUT, PATCH, borrado físico y borrado lógico (`PATCH /:id/deactivate`). Son las mismas que usa el *frontend*.
+
+![](images/express/iss06-07-cat-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 97: Peticiones HTTP de prueba
+
+En la carpeta `http/` dejamos las peticiones de prueba agrupadas por operación (*get*, *create*, *update* y *delete*), sin autenticación porque seguimos en la Fase I. Como ejemplo, este es el archivo de actualización con el PUT y el PATCH.
+
+![](images/express/iss06-08-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 98: Registro de la feature en la aplicación
+
+En `src/routes/index.ts` añadimos `ProductTypesRoutes`, y en `src/config/index.ts` importamos el modelo, para que Sequelize cree la tabla al sincronizar, y registramos sus rutas debajo de las de clientes.
+
+![](images/express/iss06-09-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 99: Lista vacía
+
+Con el servidor en marcha, `GET /api/product-types` devuelve una lista vacía: la tabla `product_types` se creó al arrancar y todavía no tiene registros.
+
+![](images/express/iss06-10-get-all-vacio.png)
+
+------------------------------------------------------------------------
+
+### Paso 100: Crear un tipo de producto
+
+Creamos el tipo «Electrónica» con `POST /api/product-types`. La API responde 201 con el registro creado.
+
+![](images/express/iss06-11-create-electronica.png)
+
+------------------------------------------------------------------------
+
+### Paso 101: Crear sin indicar el estado
+
+Creamos «Bebidas» sin enviar `status`: el *service* le asigna `active` por defecto.
+
+![](images/express/iss06-12-create-bebidas.png)
+
+------------------------------------------------------------------------
+
+### Paso 102: Listar los tipos de producto
+
+`GET /api/product-types` devuelve ahora los dos tipos activos.
+
+![](images/express/iss06-13-get-all.png)
+
+------------------------------------------------------------------------
+
+### Paso 103: Reemplazo con PUT
+
+Actualizamos el tipo 1 con PUT enviando también `"status": "inactive"`. El nombre y la descripción cambian, pero el estado sigue en `active`: el PUT no permite modificar el estado.
+
+![](images/express/iss06-14-put.png)
+
+------------------------------------------------------------------------
+
+### Paso 104: Actualización parcial con PATCH
+
+Con PATCH enviamos solo la descripción, y únicamente ese campo cambia.
+
+![](images/express/iss06-15-patch.png)
+
+------------------------------------------------------------------------
+
+### Paso 105: Errores 404 y 400
+
+Un id que no existe responde 404 («Product type not found») y un id no numérico responde 400, gracias a `paramId` del `BaseController`.
+
+![](images/express/iss06-16-errores-404-400.png)
+
+------------------------------------------------------------------------
+
+### Paso 106: Borrado lógico
+
+Con `PATCH /api/product-types/2/deactivate` desactivamos «Bebidas»: la respuesta muestra el registro con `status: "inactive"`.
+
+![](images/express/iss06-17-delete-logico.png)
+
+------------------------------------------------------------------------
+
+### Paso 107: Un tipo inactivo deja de ser visible
+
+Tras el borrado lógico, consultar el tipo 2 devuelve 404 y la lista solo muestra el tipo 1.
+
+![](images/express/iss06-18-inactivo-oculto.png)
+
+------------------------------------------------------------------------
+
+### Paso 108: Borrado físico
+
+Con `DELETE /api/product-types/2` eliminamos definitivamente el registro, aunque ya estuviera desactivado.
+
+![](images/express/iss06-19-delete-fisico.png)
+
+------------------------------------------------------------------------
+
+### Paso 109: Tabla `product_types` en MySQL
+
+Consultamos la tabla directamente en MySQL: solo queda el tipo 1, activo, con los cambios del PUT y el PATCH.
+
+![](images/express/iss06-20-tabla-product-types.png)
+
+------------------------------------------------------------------------
+
+### Paso 110: Seeder de tipos de producto
+
+Creamos `product-types.seeder.ts` con el mismo patrón del ISS-04: genera nombres de categorías y descripciones con Faker y no inserta nada si la tabla ya tiene datos.
+
+![](images/express/iss06-21-cat-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 111: Registro del seeder en el SeedersRunner
+
+En `counts.ts` añadimos la clave `product_types` con 25 registros por defecto, configurable con la variable `SEED_PRODUCT_TYPES` o con el argumento `--product_types=N`. En el *runner* importamos el modelo y llamamos a `seedProductTypes` después de `seedClients`.
+
+![](images/express/iss06-22-seeders-registro.png)
+
+------------------------------------------------------------------------
+
+### Paso 112: Ejecución de los seeders
+
+Vaciamos la tabla `product_types` y ejecutamos `npm run db:seed`. Los clientes se omiten porque ya hay 5 (idempotencia) y se insertan 25 tipos de producto falsos.
+
+![](images/express/iss06-23-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 113: Documentación Swagger de tipos de producto
+
+Creamos `product-types.swagger.ts` siguiendo el modelo de clientes, con la etiqueta «TiposProducto», las rutas de `/api/product-types` y sus *schemas*, y lo añadimos a la lista `featureSwaggerModules` del *registry*.
+
+![](images/express/iss06-24-swagger-registro.png)
+
+------------------------------------------------------------------------
+
+### Paso 114: Swagger UI con las dos features
+
+En `http://localhost:3002/api/docs` aparecen ahora dos grupos: «Clientes» y «TiposProducto», cada uno con sus siete *endpoints*.
+
+![](images/express/iss06-25-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 115: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev` y comprobamos que el servidor levanta sin errores con las dos *features*; luego lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-06: la *feature* de tipos de producto tiene su modelo, DTOs, *repository*, *service*, *controller*, rutas y peticiones HTTP; está registrada en las rutas y en la configuración; su *seeder* está incluido en el SeedersRunner; su documentación aparece en Swagger; y las pruebas confirmaron el CRUD completo, el estado por defecto, que PUT no cambia el estado, los errores 404 y 400 y los borrados lógico y físico.
+
+![](images/express/iss06-26-npm-run-dev.png)
