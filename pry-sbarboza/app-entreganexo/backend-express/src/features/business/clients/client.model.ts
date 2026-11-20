@@ -46,7 +46,9 @@ Client.init(
     email: {
       type: DataTypes.STRING,
       allowNull: true,
-      unique: true,
+      // Nombre explícito: con `unique: true` sin nombre, cada `sync({ alter: true })`
+      // añadía otro índice duplicado (email_2, email_3, ...).
+      unique: "uq_clients_email",
       validate: {
         isEmail: { msg: "Email must be a valid email address" },
       },

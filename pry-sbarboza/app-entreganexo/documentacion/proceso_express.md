@@ -1745,3 +1745,185 @@ Actualizamos el cliente 6 con PATCH y después borramos los registros de prueba 
 Volvemos a contar las filas: son las mismas que en el Paso 197, así que la prueba no dejó datos sueltos. Con esto queda cerrada la Fase I. El *backend* tiene las cinco *features* de negocio por capas con sus DTOs, las cinco tablas con sus claves foráneas, las APIs `/api/clientes`, `/api/product-types`, `/api/productos`, `/api/ventas` y `/api/detalle-ventas`, el SeedersRunner y Swagger en `/api/docs`. Todas las rutas responden sin autenticación y el proyecto compila sin errores de tipos. A partir del ISS-09 empieza la Fase II, que protege estas rutas con autenticación y roles.
 
 ![](images/express/cierre1-09-tablas-final.png)
+
+------------------------------------------------------------------------
+
+## ISS-09: Base de seguridad y modelos de autenticación
+
+Con este issue empieza la Fase II: autenticación con JWT y autorización por roles (RBAC). El ISS-09 todavía no expone endpoints. Prepara la base que usarán los siguientes issues: las utilidades de seguridad compartidas (hash de contraseñas, tokens, firma JWT y comparación de rutas) y los seis modelos de la autorización con sus relaciones. La idea central es que no existe una tabla de «permisos»: un permiso es la combinación de un **rol** y un **recurso** (un método y una ruta, por ejemplo `POST /api/ventas`). Los usuarios reciben roles y los roles reciben recursos. Las rutas de negocio siguen sin autenticación hasta el ISS-13.
+
+------------------------------------------------------------------------
+
+### Paso 204: Instalar `jsonwebtoken`
+
+Instalamos `jsonwebtoken`, la librería que firma y verifica los JSON Web Tokens. npm responde «up to date» porque el paquete ya estaba descargado en `node_modules` como dependencia de otro paquete; la instalación lo añade como dependencia directa en `package.json`.
+
+![](images/express/iss09-01-npm-jsonwebtoken.png)
+
+------------------------------------------------------------------------
+
+### Paso 205: Instalar los tipos de `jsonwebtoken`
+
+Instalamos `@types/jsonwebtoken` como dependencia de desarrollo para que TypeScript conozca las funciones de la librería.
+
+![](images/express/iss09-02-npm-types-jsonwebtoken.png)
+
+------------------------------------------------------------------------
+
+### Paso 206: Variables de entorno de JWT
+
+Añadimos al final del `.env` tres variables nuevas. `JWT_SECRET` es el secreto con el que se firman los tokens; lo generamos con `openssl rand -base64 48` y en la captura aparece oculto, porque nunca debe publicarse (el `.env` está en `.gitignore`). `JWT_ACCESS_TTL` es la duración del *access token* en segundos (900, es decir, 15 minutos) y `JWT_REFRESH_TTL_DAYS` la del *refresh token* en días (7).
+
+![](images/express/iss09-03-env-jwt.png)
+
+------------------------------------------------------------------------
+
+### Paso 207: `password.ts`
+
+En `src/shared/auth/password.ts` reunimos las funciones de *hash*. `hashPassword` y `comparePassword` usan bcrypt con 12 rondas para las contraseñas. `sha256Hex` calcula el *hash* de los *refresh tokens*, que tampoco se guardan en claro. `generateOpaqueToken` crea un token aleatorio de 32 bytes, que será el *refresh token*.
+
+![](images/express/iss09-04-cat-password.png)
+
+------------------------------------------------------------------------
+
+### Paso 208: `jwt.ts`
+
+`jwt.ts` firma y verifica el *access token*. Fija el algoritmo HS256 tanto al firmar como al verificar, para que no se acepte un token sin firma o con otro algoritmo. Exige además un emisor (`app-entreganexo-express`), una audiencia (`app-entreganexo-api`), una caducidad y un identificador único (`jti`). El token solo lleva el id del usuario y su nombre de usuario, nunca los roles: así, si se le quita un permiso, el cambio vale desde la siguiente petición y no hay que esperar a que el token caduque. `extractBearerToken` lee el token de la cabecera `Authorization: Bearer ...`.
+
+![](images/express/iss09-05-cat-jwt.png)
+
+------------------------------------------------------------------------
+
+### Paso 209: `resource-match.ts`
+
+Un recurso se guarda con una ruta en forma de patrón, como `/api/productos/:id`, pero la petición llega con la ruta real, como `/api/productos/42`. `normalizePath` limpia la ruta (barra final, parámetros de consulta, barras repetidas) y `pathMatches` comprueba si una ruta real encaja con un patrón. El middleware de autorización del ISS-13 los usará para saber qué recurso se está pidiendo.
+
+![](images/express/iss09-06-cat-resource-match.png)
+
+------------------------------------------------------------------------
+
+### Paso 210: `auth-user.ts`
+
+`auth-user.ts` añade al tipo `Request` de Express la propiedad `auth`, donde el middleware de autenticación dejará al usuario identificado. `requireAuthUser` permite a un *controller* leer ese usuario y falla con 401 si no está.
+
+![](images/express/iss09-07-cat-auth-user.png)
+
+------------------------------------------------------------------------
+
+### Paso 211: `error-response.ts` y `BaseController`
+
+Hasta ahora la traducción de errores a respuestas HTTP estaba dentro del `BaseController`. Los middlewares de autenticación también la necesitarán, así que la sacamos a `sendError` en `src/shared/http/error-response.ts`, y el `BaseController` pasa a usarla. El comportamiento no cambia: un `AppError` responde con su código y cualquier otro error, con 500.
+
+![](images/express/iss09-08-cat-error-response.png)
+
+------------------------------------------------------------------------
+
+### Paso 212: `swagger-security.ts`
+
+Este archivo, que en la Fase I dejamos pendiente, define el esquema de seguridad `bearerAuth` de OpenAPI y las respuestas 401 y 403 reutilizables. Lo usaremos en los módulos de Swagger cuando las rutas pasen a estar protegidas.
+
+![](images/express/iss09-09-cat-swagger-security.png)
+
+------------------------------------------------------------------------
+
+### Paso 213: Modelo `User`
+
+La tabla `users` guarda el nombre de usuario, el correo, la contraseña, el avatar y el estado. El nombre de usuario y el correo tienen restricciones únicas con nombre propio (`uq_users_username` y `uq_users_email`). La contraseña nunca se guarda en claro: los *hooks* del modelo calculan el *hash* antes de crear o actualizar, así que ningún *service* ni *seeder* puede olvidarse de hacerlo. Son los mismos campos que usa el modelo `User` del *frontend*.
+
+![](images/express/iss09-10-cat-user-model.png)
+
+------------------------------------------------------------------------
+
+### Paso 214: Modelos `Role` y `RoleUser`
+
+`roles` guarda el nombre (único) y la descripción de cada rol. `role_users` es la tabla intermedia que asigna roles a usuarios, con una restricción única sobre el par usuario–rol para que no se pueda asignar dos veces el mismo rol.
+
+![](images/express/iss09-11-cat-role-models.png)
+
+------------------------------------------------------------------------
+
+### Paso 215: Modelos `Resource` y `ResourceRole`
+
+`resources` guarda los recursos protegibles como pares método–ruta, únicos en conjunto. `resource_roles` es el permiso propiamente dicho: concede un recurso a un rol, también con una restricción única sobre el par.
+
+![](images/express/iss09-12-cat-resource-models.png)
+
+------------------------------------------------------------------------
+
+### Paso 216: Modelo `RefreshToken`
+
+`refresh_tokens` guarda las sesiones renovables: el usuario, el *hash* del token (único), la familia de tokens a la que pertenece, información del dispositivo, la caducidad y el estado (un token revocado pasa a `inactive`). Lo usaremos en el ISS-14 para renovar y cerrar sesiones.
+
+![](images/express/iss09-13-cat-refresh-token-model.png)
+
+------------------------------------------------------------------------
+
+### Paso 217: Asociaciones de autenticación
+
+En `rbac.associations.ts` declaramos todas las relaciones en un solo archivo para que se lean de una vez: usuario y rol se relacionan muchos a muchos a través de `RoleUser`; rol y recurso, muchos a muchos a través de `ResourceRole`; y un usuario tiene muchos *refresh tokens*.
+
+![](images/express/iss09-14-cat-rbac-associations.png)
+
+------------------------------------------------------------------------
+
+### Paso 218: Registro de los modelos
+
+En `src/config/index.ts` y en `src/database/seeders/index.ts` importamos los seis modelos y después las asociaciones, en ese orden, porque las asociaciones necesitan que los modelos ya existan.
+
+![](images/express/iss09-15-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 219: Tipado
+
+`npx tsc --noEmit` compila el proyecto sin errores con todos los archivos nuevos.
+
+![](images/express/iss09-16-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 220: Crear las tablas
+
+Ejecutamos `npm run db:seed`. Todavía no hay *seeders* de autenticación, pero el `sync` crea las seis tablas nuevas vacías. Las tablas de negocio se omiten porque ya tienen datos.
+
+![](images/express/iss09-17-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 221: Corrección de los índices duplicados de `clients`
+
+Al revisar los índices de la base de datos encontramos que la tabla `clients` tenía 32 índices únicos sobre `email`: `email`, `email_2`, `email_3`… Es un fallo conocido de Sequelize: con `unique: true` sin nombre, cada `sync({ alter: true })` vuelve a crear el índice, así que se añadía uno nuevo en cada arranque. MySQL admite como máximo 64 índices por tabla, de modo que el servidor acabaría sin poder arrancar. Lo corregimos dando un nombre a la restricción (`unique: "uq_clients_email"`), igual que hacen los modelos de autenticación. Después eliminamos los índices duplicados y creamos una sola vez `uq_clients_email`, porque `alter` no añade restricciones con nombre a una tabla que ya existe (en una base de datos nueva se crea con la tabla).
+
+![](images/express/iss09-20-fix-client-email.png)
+
+------------------------------------------------------------------------
+
+### Paso 222: Índices de todas las tablas
+
+Listamos los índices de cada tabla. `clients` tiene ya solo `PRIMARY` y `uq_clients_email`, y no aparecen más aunque el servidor se reinicie. Las tablas de autenticación tienen sus restricciones únicas (`uq_...`) y sus índices (`ix_...`).
+
+![](images/express/iss09-18-tablas-indices.png)
+
+------------------------------------------------------------------------
+
+### Paso 223: Claves foráneas de autenticación
+
+`role_users` apunta a `users` y a `roles`, `resource_roles` apunta a `roles` y a `resources`, y `refresh_tokens` apunta a `users`.
+
+![](images/express/iss09-19-fks-auth.png)
+
+------------------------------------------------------------------------
+
+### Paso 224: El negocio sigue sin autenticación
+
+Como este issue no añade middlewares, las cinco APIs de negocio siguen respondiendo 200 sin enviar ningún token.
+
+![](images/express/iss09-21-business-sin-auth.png)
+
+------------------------------------------------------------------------
+
+### Paso 225: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-09. Las variables de JWT están en el `.env`. Las utilidades de contraseñas, tokens, JWT, comparación de rutas, usuario autenticado, errores y seguridad de Swagger están en `src/shared/`. Los seis modelos de autenticación tienen sus restricciones únicas, índices y claves foráneas, y sus asociaciones están registradas en la configuración y en el SeedersRunner. El proyecto compila sin errores, las rutas de negocio siguen funcionando sin autenticación y la tabla `clients` quedó libre de índices duplicados.
+
+![](images/express/iss09-22-npm-run-dev.png)
