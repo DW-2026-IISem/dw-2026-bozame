@@ -4,6 +4,9 @@ import "../../features/business/clients/client.model";
 import { seedClients } from "../../features/business/clients/clients.seeder";
 import "../../features/business/product-types/product-type.model";
 import { seedProductTypes } from "../../features/business/product-types/product-types.seeder";
+import "../../features/business/products/product.model";
+import "../../features/business/products/products.associations";
+import { seedProducts } from "../../features/business/products/products.seeder";
 import { resolveSeedCounts } from "./counts";
 
 dotenv.config();
@@ -18,6 +21,7 @@ dotenv.config();
  *   npm run db:seed
  *   npm run db:seed -- --clients=20
  *   SEED_CLIENTS=5 npm run db:seed
+ *   npm run db:seed -- --products=30
  */
 export async function runAllSeeders(): Promise<void> {
   const counts = resolveSeedCounts();
@@ -34,6 +38,7 @@ export async function runAllSeeders(): Promise<void> {
   // Orden: business (padres → hijos)
   await seedClients(counts.clients);
   await seedProductTypes(counts.product_types);
+  await seedProducts(counts.products);
 
   console.log("🌱 SeedersRunner finalizado");
 }

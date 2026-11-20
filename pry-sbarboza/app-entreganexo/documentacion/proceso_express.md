@@ -1023,3 +1023,265 @@ En `http://localhost:3002/api/docs` aparecen ahora dos grupos: «Clientes» y «
 Arrancamos con `npm run dev` y comprobamos que el servidor levanta sin errores con las dos *features*; luego lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-06: la *feature* de tipos de producto tiene su modelo, DTOs, *repository*, *service*, *controller*, rutas y peticiones HTTP; está registrada en las rutas y en la configuración; su *seeder* está incluido en el SeedersRunner; su documentación aparece en Swagger; y las pruebas confirmaron el CRUD completo, el estado por defecto, que PUT no cambia el estado, los errores 404 y 400 y los borrados lógico y físico.
 
 ![](images/express/iss06-26-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-07: Feature de Productos
+
+En este issue creamos la tercera entidad del negocio: los **productos** (tabla `products`). Es la primera *feature* que depende de otra: cada producto pertenece a un tipo de producto mediante la clave foránea `product_type_id`, y el *service* comprueba que ese tipo exista y esté activo antes de guardarlo. Seguimos el mismo patrón por capas y mantenemos la ruta `/api/productos` y las claves `products` / `product` que ya usa el *frontend* de EntregaNexo.
+
+------------------------------------------------------------------------
+
+### Paso 116: Estructura de la feature
+
+Creamos la carpeta `src/features/business/products/` con la organización de siempre: `dto/`, `http/` y un archivo por capa, más el *seeder* y el módulo de Swagger. Como novedad aparecen `products.associations.ts`, donde se declara la relación con los tipos de producto, y `dto/normalize-product-body.ts`, que explicamos en el Paso 119.
+
+![](images/express/iss07-01-arbol-products.png)
+
+------------------------------------------------------------------------
+
+### Paso 117: Modelo `Product`
+
+El modelo define la tabla `products` con nombre, marca, precio (`DECIMAL(12,2)`), stock mínimo, cantidad, el tipo de producto (`product_type_id`) y el estado. Como en las *features* anteriores, el estado por defecto en la base de datos es `inactive` por seguridad, y la API siempre crea los productos como `active`.
+
+![](images/express/iss07-02-cat-model.png)
+
+------------------------------------------------------------------------
+
+### Paso 118: DTOs
+
+`CreateProductDto` recibe todos los campos y el estado opcional; `UpdateProductDto` (PUT) no incluye `status`, porque el estado solo cambia con el borrado lógico; `PatchProductDto` hace opcionales esos campos; y `toProductResponse` convierte el modelo en un objeto plano para la respuesta.
+
+![](images/express/iss07-03-cat-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 119: Compatibilidad con el frontend
+
+El *frontend* de EntregaNexo envía el stock mínimo y el tipo de producto como `minStock` y `productTypeId` (en *camelCase*), porque se hizo para el *backend* NestJS anterior. Para no tener que modificar el *frontend*, añadimos `normalizeProductBody`, que traduce esas dos claves a `min_stock` y `product_type_id` antes de que el cuerpo llegue al *service*. Si la petición ya viene en *snake_case*, como en los archivos `.http` de la guía, se deja tal cual.
+
+![](images/express/iss07-04-cat-normalize.png)
+
+------------------------------------------------------------------------
+
+### Paso 120: Repository
+
+El *repository* es la única capa que habla con Sequelize. Además de las operaciones habituales, incluye `findByIdForUpdate`, que bloquea la fila con `SELECT ... FOR UPDATE`, y parámetros `transaction` opcionales. Todavía no se usan: los dejamos preparados para las ventas del ISS-08, que tendrán que descontar stock dentro de una transacción.
+
+![](images/express/iss07-05-cat-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 121: Service
+
+El *service* recibe dos *repositories*: el de productos y el de tipos de producto. Antes de crear o reemplazar un producto, `assertActiveProductType` comprueba la referencia: si el tipo no existe responde 404 y si está inactivo responde 400, porque el recurso de la URL es correcto y lo que falla es el dato que se quiere asignar. En el PATCH solo se valida cuando se envía `product_type_id`. El resto de reglas son las mismas que en las *features* anteriores: estado `active` por defecto, PUT sin cambio de estado, borrado lógico y `findOrFail`.
+
+![](images/express/iss07-06-cat-service.png)
+
+------------------------------------------------------------------------
+
+### Paso 122: Controller
+
+El *controller* lee la petición, normaliza el cuerpo en la creación y en las actualizaciones, llama al *service* y responde con `{ products }` o `{ product }`. Los errores los gestiona `run()` del `BaseController`.
+
+![](images/express/iss07-07-cat-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 123: Rutas
+
+Registramos las siete rutas bajo `/api/productos`, sin autenticación porque seguimos en la Fase I: listar, consultar, crear, PUT, PATCH, borrado físico y borrado lógico (`PATCH /:id/deactivate`).
+
+![](images/express/iss07-08-cat-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 124: Peticiones HTTP de prueba
+
+En la carpeta `http/` dejamos las peticiones agrupadas por operación. El archivo de creación incluye tres casos: el cuerpo en *snake_case* de la guía, el mismo cuerpo con las claves que envía el *frontend* y un producto con un tipo inexistente.
+
+![](images/express/iss07-09-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 125: Relación entre `Product` y `ProductType`
+
+En `products.associations.ts` declaramos la relación en los dos sentidos: un producto pertenece a un tipo (`belongsTo`) y un tipo tiene muchos productos (`hasMany`), ambos con la clave `product_type_id`. Con esto Sequelize crea la clave foránea al sincronizar y, más adelante, permitirá consultar datos relacionados con `include`.
+
+![](images/express/iss07-10-cat-associations.png)
+
+------------------------------------------------------------------------
+
+### Paso 126: Registro de la feature en la aplicación
+
+En `src/routes/index.ts` añadimos `ProductsRoutes`. En `src/config/index.ts` importamos el modelo y el archivo de asociaciones, para que la relación quede cargada antes del `sync`, y registramos las rutas debajo de las de tipos de producto.
+
+![](images/express/iss07-11-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 127: Lista vacía
+
+Con el servidor en marcha, `GET /api/productos` devuelve una lista vacía: la tabla `products` se creó al arrancar.
+
+![](images/express/iss07-12-get-all-vacio.png)
+
+------------------------------------------------------------------------
+
+### Paso 128: Crear un producto
+
+Creamos «Laptop Pro» con el tipo de producto 1. La API comprueba que el tipo exista y esté activo y responde 201 con el producto creado.
+
+![](images/express/iss07-13-create-laptop.png)
+
+------------------------------------------------------------------------
+
+### Paso 129: Crear con las claves del frontend
+
+Creamos «Mouse Inalámbrico» enviando `minStock` y `productTypeId`, tal como lo hace el *frontend*, y sin indicar el estado. La respuesta muestra que se guardaron como `min_stock` y `product_type_id` y que el estado es `active` por defecto.
+
+![](images/express/iss07-14-create-camelcase.png)
+
+------------------------------------------------------------------------
+
+### Paso 130: Listar los productos
+
+`GET /api/productos` devuelve los dos productos activos. El precio aparece como texto (`"1299.99"`) porque MySQL devuelve así las columnas `DECIMAL` para no perder precisión; el *frontend* ya lo convierte a número con `Number()`.
+
+![](images/express/iss07-15-get-all.png)
+
+------------------------------------------------------------------------
+
+### Paso 131: Reemplazo con PUT
+
+Actualizamos el producto 1 con PUT enviando también `"status": "inactive"`. Los datos cambian, pero el estado sigue en `active`, porque el PUT no permite modificarlo.
+
+![](images/express/iss07-16-put.png)
+
+------------------------------------------------------------------------
+
+### Paso 132: Actualización parcial con PATCH
+
+Con PATCH enviamos solo el precio y la cantidad, y únicamente esos dos campos cambian.
+
+![](images/express/iss07-17-patch.png)
+
+------------------------------------------------------------------------
+
+### Paso 133: Tipo de producto inexistente
+
+Si intentamos crear un producto con `product_type_id` 9999, el *service* responde 404 («Product type not found») y no se guarda nada.
+
+![](images/express/iss07-18-tipo-inexistente.png)
+
+------------------------------------------------------------------------
+
+### Paso 134: Preparar un tipo de producto inactivo
+
+Para probar la otra regla, creamos el tipo «Descontinuados» (id 26) y lo desactivamos con el borrado lógico de tipos de producto.
+
+![](images/express/iss07-19-tipo-inactivo.png)
+
+------------------------------------------------------------------------
+
+### Paso 135: Tipo de producto inactivo
+
+Intentamos asignar ese tipo al producto 2 con PATCH. Como el tipo existe pero está inactivo, la API responde 400 («Product type must be active») y el producto no cambia.
+
+![](images/express/iss07-20-tipo-inactivo-400.png)
+
+------------------------------------------------------------------------
+
+### Paso 136: Errores 404 y 400 del id
+
+Un producto que no existe responde 404 y un id no numérico responde 400, gracias a `paramId` del `BaseController`.
+
+![](images/express/iss07-21-errores-404-400.png)
+
+------------------------------------------------------------------------
+
+### Paso 137: Borrado lógico
+
+Con `PATCH /api/productos/2/deactivate` desactivamos «Mouse Inalámbrico»: la respuesta muestra el producto con `status: "inactive"`.
+
+![](images/express/iss07-22-delete-logico.png)
+
+------------------------------------------------------------------------
+
+### Paso 138: Un producto inactivo deja de ser visible
+
+Tras el borrado lógico, consultar el producto 2 devuelve 404 y la lista solo muestra el producto 1, con los cambios del PUT y el PATCH.
+
+![](images/express/iss07-23-inactivo-oculto.png)
+
+------------------------------------------------------------------------
+
+### Paso 139: Borrado físico
+
+Con `DELETE /api/productos/2` eliminamos definitivamente el registro, aunque ya estuviera desactivado.
+
+![](images/express/iss07-24-delete-fisico.png)
+
+------------------------------------------------------------------------
+
+### Paso 140: Tabla `products` en MySQL
+
+Consultamos la tabla uniéndola con `product_types` para ver el nombre del tipo. Solo queda el producto 1, asociado al tipo 1 («Health», generado por el *seeder* del ISS-06).
+
+![](images/express/iss07-25-tabla-products.png)
+
+------------------------------------------------------------------------
+
+### Paso 141: Clave foránea en la base de datos
+
+En `information_schema` comprobamos que Sequelize creó la restricción `products_ibfk_1`: la columna `product_type_id` apunta a `product_types.id`. Así la propia base de datos impide guardar un producto con un tipo que no existe.
+
+![](images/express/iss07-26-fk.png)
+
+------------------------------------------------------------------------
+
+### Paso 142: Seeder de productos
+
+Creamos `products.seeder.ts`. Genera productos falsos con Faker y asigna a cada uno un tipo de producto activo elegido al azar. Si no hay tipos activos o la tabla ya tiene datos, no inserta nada.
+
+![](images/express/iss07-27-cat-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 143: Registro del seeder en el SeedersRunner
+
+En `counts.ts` añadimos la clave `products` con 15 registros por defecto, configurable con la variable `SEED_PRODUCTS` o con el argumento `--products=N`. En el *runner* importamos el modelo y las asociaciones y llamamos a `seedProducts` después de los tipos de producto, porque los productos dependen de ellos.
+
+![](images/express/iss07-28-seeders-registro.png)
+
+------------------------------------------------------------------------
+
+### Paso 144: Ejecución de los seeders
+
+Vaciamos la tabla `products` y ejecutamos `npm run db:seed`. Los clientes y los tipos de producto se omiten porque ya tienen datos, y se insertan 15 productos falsos.
+
+![](images/express/iss07-29-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 145: Documentación Swagger de productos
+
+Creamos `products.swagger.ts` con la etiqueta «Productos», las rutas de `/api/productos` y sus *schemas*, y lo añadimos a `featureSwaggerModules` en el *registry*.
+
+![](images/express/iss07-30-swagger-registro.png)
+
+------------------------------------------------------------------------
+
+### Paso 146: Swagger UI con las tres features
+
+En `http://localhost:3002/api/docs` aparecen ahora tres grupos: «Clientes», «TiposProducto» y «Productos», cada uno con sus siete *endpoints*.
+
+![](images/express/iss07-31-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 147: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores con las tres *features* y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-07. La *feature* de productos tiene su modelo con la clave foránea `product_type_id`, sus DTOs, *repository*, *service*, *controller*, rutas y peticiones HTTP. Está registrada en las rutas y en la configuración, la relación con los tipos de producto está declarada y creada en MySQL, el *seeder* está incluido en el SeedersRunner y la documentación aparece en Swagger. Las pruebas confirmaron el CRUD completo, la compatibilidad con el *frontend*, la validación del tipo de producto (404 si no existe y 400 si está inactivo) y los borrados lógico y físico.
+
+![](images/express/iss07-32-npm-run-dev.png)

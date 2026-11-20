@@ -1,0 +1,28 @@
+### Feature Product — UPDATE (PUT) / UPDATE (PATCH)
+### SIN AUTH (Fase I — Business). `status` no se envía: el estado solo cambia con
+### PATCH {{baseUrl}}/api/productos/{{id}}/deactivate (borrado lógico).
+@baseUrl = http://localhost:3002
+@id = 1
+
+# @name updateProductPut
+PUT {{baseUrl}}/api/productos/{{id}}
+Content-Type: application/json
+
+{
+  "name": "Laptop Pro Max",
+  "brand": "TechBrand",
+  "price": 1499.99,
+  "min_stock": 5,
+  "quantity": 40,
+  "product_type_id": 1
+}
+
+###
+# @name updateProductPatch
+PATCH {{baseUrl}}/api/productos/{{id}}
+Content-Type: application/json
+
+{
+  "price": 1399.99,
+  "quantity": 45
+}

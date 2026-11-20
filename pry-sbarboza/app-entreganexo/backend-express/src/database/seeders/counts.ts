@@ -7,12 +7,13 @@
 export type SeedCounts = {
   clients: number;
   product_types: number;
-  // products?: number;
+  products: number;
 };
 
 export const DEFAULT_SEED_COUNTS: SeedCounts = {
   clients: 10,
   product_types: 25,
+  products: 15,
 };
 
 export function resolveSeedCounts(argv: string[] = process.argv.slice(2)): SeedCounts {
@@ -26,6 +27,11 @@ export function resolveSeedCounts(argv: string[] = process.argv.slice(2)): SeedC
   const envProductTypes = process.env.SEED_PRODUCT_TYPES;
   if (envProductTypes !== undefined && envProductTypes !== "") {
     counts.product_types = Number(envProductTypes);
+  }
+
+  const envProducts = process.env.SEED_PRODUCTS;
+  if (envProducts !== undefined && envProducts !== "") {
+    counts.products = Number(envProducts);
   }
 
   for (const arg of argv) {

@@ -1,0 +1,11 @@
+### Feature Product — DELETE físico / DELETE lógico (status = inactive)
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+@id = 1
+
+# @name deleteProductPhysical
+DELETE {{baseUrl}}/api/productos/{{id}}
+
+###
+# @name deleteProductLogical
+PATCH {{baseUrl}}/api/productos/{{id}}/deactivate

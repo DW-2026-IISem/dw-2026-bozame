@@ -1,0 +1,44 @@
+### Feature Product — CREATE
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+
+# @name createProduct
+POST {{baseUrl}}/api/productos
+Content-Type: application/json
+
+{
+  "name": "Laptop Pro",
+  "brand": "TechBrand",
+  "price": 1299.99,
+  "min_stock": 5,
+  "quantity": 50,
+  "product_type_id": 1,
+  "status": "active"
+}
+
+### CREATE con las claves camelCase que envía el frontend (minStock, productTypeId)
+# @name createProductCamelCase
+POST {{baseUrl}}/api/productos
+Content-Type: application/json
+
+{
+  "name": "Mouse Inalámbrico",
+  "brand": "TechBrand",
+  "price": 25.5,
+  "minStock": 10,
+  "quantity": 80,
+  "productTypeId": 1
+}
+
+### 404 — el tipo de producto no existe
+POST {{baseUrl}}/api/productos
+Content-Type: application/json
+
+{
+  "name": "Producto huérfano",
+  "brand": "Sin marca",
+  "price": 10,
+  "min_stock": 1,
+  "quantity": 5,
+  "product_type_id": 9999
+}
