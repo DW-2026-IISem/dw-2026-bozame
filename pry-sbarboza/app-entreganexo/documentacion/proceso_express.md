@@ -2101,3 +2101,209 @@ En `http://localhost:3002/api/docs` aparece el grupo «Usuarios» con sus ocho o
 Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-10. La *feature* de usuarios tiene sus DTOs, *repository*, *service*, *controller*, rutas protegidas, *seeder*, Swagger y peticiones HTTP, y los usuarios `admin` y `seller` existen con sus contraseñas cifradas. `authenticate` está operativo y `authorize` deniega todo hasta que el ISS-13 lo complete. Las respuestas nunca incluyen la contraseña. Las pruebas completas del CRUD (crear, 409 por duplicado y cambio de contraseña) se harán por HTTP en el ISS-13, cuando existan los permisos; como recoge la guía, en este punto las rutas responden 401 sin token.
 
 ![](images/express/iss10-21-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-11: Features de Roles y Recursos
+
+En este issue construimos los dos extremos de un permiso. Los **roles** (`/api/roles`) son a quién se concede, por ejemplo `ADMIN` o `SELLER`. Los **recursos** (`/api/recursos`) son qué se concede: un par método–ruta, como `GET /api/clientes`. Unirlos, es decir, conceder recursos a roles y asignar roles a usuarios, es el ISS-12. Aquí creamos su CRUD administrativo, protegido igual que los usuarios, y el **catálogo de recursos** del sistema. Adaptamos ese catálogo a EntregaNexo de dos formas: usa la ruta real `/api/product-types`, y cubre todas las operaciones de ventas y detalle de ventas. Por eso tiene 68 recursos en lugar de los 58 de la guía.
+
+------------------------------------------------------------------------
+
+### Paso 247: Estructura de las dos features
+
+Creamos `src/features/auth/roles/` y `src/features/auth/resources/` con sus DTOs, *repository*, *service*, *controller*, rutas, *seeder*, Swagger y peticiones HTTP. Los modelos ya existían desde el ISS-09. `resources/` incluye además `resource-catalog.ts`.
+
+![](images/express/iss11-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 248: DTOs de roles
+
+Un rol tiene nombre (único) y descripción. Como en el resto de *features*, el estado no se envía en el PUT ni en el PATCH: solo cambia con el borrado lógico. Crear un rol no le da ningún permiso; nace vacío.
+
+![](images/express/iss11-02-cat-roles-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 249: Repository de roles
+
+El *repository* de roles tiene el CRUD habitual y `findByName`, que usa el *service* para comprobar que el nombre no esté repetido.
+
+![](images/express/iss11-03-cat-roles-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 250: Service de roles
+
+El *service* exige un nombre (400 si falta), responde 409 si el nombre ya existe y 404 si el rol no existe o está inactivo.
+
+![](images/express/iss11-04-cat-roles-service.png)
+
+------------------------------------------------------------------------
+
+### Paso 251: Controller de roles
+
+El *controller* sigue el patrón de siempre y responde con `{ roles }` o `{ role }`.
+
+![](images/express/iss11-05-cat-roles-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 252: Rutas de roles
+
+Las siete rutas de `/api/roles` pasan por `authenticate` y `authorize`, igual que las de usuarios.
+
+![](images/express/iss11-06-cat-roles-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 253: Seeder de roles
+
+El *seeder* crea los dos roles del laboratorio, `ADMIN` y `SELLER`, con su descripción. No tiene conteo configurable porque es un catálogo fijo. Es idempotente: busca por nombre y, si un rol estaba inactivo, lo reactiva.
+
+![](images/express/iss11-07-cat-roles-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 254: DTOs de recursos
+
+Un recurso tiene método, ruta y descripción. El modelo normaliza el método a mayúsculas y limpia la ruta antes de guardarla, para que `get /api/clientes/` y `GET /api/clientes` se consideren el mismo recurso.
+
+![](images/express/iss11-08-cat-resources-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 255: Catálogo de recursos
+
+`resource-catalog.ts` es la fuente única de los recursos del sistema. De él salen las filas de la tabla `resources` y, en el ISS-12, los permisos de cada rol: `ADMIN` recibe todos y `SELLER` solo los 7 marcados con `seller: true` (ver clientes y productos, y ver y registrar ventas). Respecto a la guía hicimos dos cambios. Los tipos de producto usan `/api/product-types`, que es la ruta real de nuestra API. Y ventas y detalle de ventas tienen sus 7 operaciones cada uno, en lugar de 3 y 1, porque el *frontend* edita, desactiva y elimina ventas, y sin esos recursos ni siquiera el administrador podría hacerlo. El total queda en 68. Las operaciones de sesión (`/api/auth/*` y `/api/permisos`) no son recursos, porque solo exigen haber iniciado sesión.
+
+![](images/express/iss11-09-cat-resource-catalog.png)
+
+------------------------------------------------------------------------
+
+### Paso 256: Corrección del permiso en el frontend
+
+El *frontend* mostraba el menú y la página «Tipos de Producto» si el usuario tenía el permiso `GET /api/tipos-producto`, pero pedía los datos a `/api/product-types`. Con la autorización activa, esos dos nombres distintos harían que el menú y la API no coincidieran. Cambiamos las dos comprobaciones (en `shell.ts` y `app.routes.ts`) a `GET /api/product-types`. Así el mismo permiso decide si se ve el menú y si el *backend* entrega los datos. La URL de la página en Angular (`/tipos-producto`) no cambia.
+
+![](images/express/iss11-17-frontend-permiso.png)
+
+------------------------------------------------------------------------
+
+### Paso 257: Repository de recursos
+
+Además del CRUD, el *repository* tiene `findByOperation`, que busca un recurso por método y ruta normalizando ambos antes de buscar.
+
+![](images/express/iss11-10-cat-resources-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 258: Service de recursos
+
+El *service* exige método y ruta (400 si faltan) y responde 409 si el par método–ruta ya existe, comprobándolo antes de llegar a la restricción única de la base de datos.
+
+![](images/express/iss11-11-cat-resources-service.png)
+
+------------------------------------------------------------------------
+
+### Paso 259: Controller de recursos
+
+El *controller* responde con `{ resources }` o `{ resource }`.
+
+![](images/express/iss11-12-cat-resources-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 260: Rutas de recursos
+
+Las siete rutas de `/api/recursos` también pasan por `authenticate` y `authorize`.
+
+![](images/express/iss11-13-cat-resources-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 261: Seeder de recursos
+
+El *seeder* recorre el catálogo y crea cada recurso con `findOrCreate` por método y ruta, reactivando los que estuvieran inactivos. Ejecutarlo varias veces deja siempre el catálogo exacto, sin duplicados.
+
+![](images/express/iss11-14-cat-resources-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 262: Peticiones HTTP de prueba
+
+Como en el ISS-10, los archivos `.http` obtienen el token con `POST /api/auth/login` y usan el puerto 3002. Funcionarán cuando existan el *login* y los permisos.
+
+![](images/express/iss11-15-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 263: Registro de las features
+
+Registramos `RolesRoutes` y `ResourcesRoutes` en las rutas y en la configuración, y `rolesSwagger` y `resourcesSwagger` en el *registry*. En el SeedersRunner llamamos a `seedRoles` y `seedResources` antes que a `seedUsers`: primero los catálogos de seguridad, después las identidades y al final el negocio.
+
+![](images/express/iss11-16-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 264: Tipado
+
+`npx tsc --noEmit` compila el proyecto sin errores. Además comprobamos con un pequeño *script* que todas las rutas que existen en el código tienen su recurso en el catálogo: hay 57 rutas, todas catalogadas. Los 11 recursos restantes son las rutas de asignaciones, concesiones y permisos efectivos que construiremos en el ISS-12.
+
+![](images/express/iss11-18-tsc.png)
+
+------------------------------------------------------------------------
+
+### Paso 265: Ejecución de los seeders
+
+`npm run db:seed` crea los 2 roles y los 68 recursos. Los usuarios ya existían, así que no se inserta ninguno.
+
+![](images/express/iss11-19-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 266: Roles y recursos en MySQL
+
+En la base de datos aparecen los roles `ADMIN` y `SELLER` con sus descripciones, y los 68 recursos repartidos por grupos: 7 por cada CRUD de negocio y de administración, 9 de usuarios (incluido el cambio de contraseña y los permisos) y 5 de asignaciones y 5 de concesiones.
+
+![](images/express/iss11-20-roles-recursos.png)
+
+------------------------------------------------------------------------
+
+### Paso 267: Los seeders son idempotentes
+
+Al ejecutar `npm run db:seed` por segunda vez, los dos catálogos se reconcilian sin crear nada nuevo (0 nuevos).
+
+![](images/express/iss11-21-db-seed-idempotente.png)
+
+------------------------------------------------------------------------
+
+### Paso 268: Restricción única de los recursos
+
+Si intentamos insertar directamente en MySQL un recurso que ya existe (`GET /api/clientes`), la base de datos lo rechaza con un error de clave duplicada por la restricción `uq_resources_method_path`. La API devuelve 409 en ese caso antes de llegar a la base de datos.
+
+![](images/express/iss11-22-uk-duplicado.png)
+
+------------------------------------------------------------------------
+
+### Paso 269: Rutas protegidas
+
+`GET /api/roles` y `GET /api/recursos` responden 401 sin token y 403 con un token válido de `admin`, porque el `authorize` provisional sigue denegando todo hasta el ISS-13.
+
+![](images/express/iss11-23-rutas-protegidas.png)
+
+------------------------------------------------------------------------
+
+### Paso 270: Swagger UI
+
+En Swagger aparecen los grupos «Roles» y «Recursos» con sus siete operaciones protegidas (con candado), debajo de «Usuarios».
+
+![](images/express/iss11-24-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 271: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-11. Los roles y los recursos tienen su CRUD protegido, *seeders* idempotentes y Swagger. El catálogo de 68 recursos coincide con las rutas reales de la API. La base de datos tiene los roles `ADMIN` y `SELLER` (todavía sin permisos) y la restricción única impide recursos duplicados. Además, el *frontend* comprueba ya el permiso de tipos de producto con la ruta correcta.
+
+![](images/express/iss11-25-npm-run-dev.png)

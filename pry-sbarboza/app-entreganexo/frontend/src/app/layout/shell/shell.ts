@@ -17,7 +17,7 @@ const NAV: NavGroup[] = [
     items: [
       { label: 'Dashboard', routerLink: '/dashboard' },
       { label: 'Clientes', routerLink: '/clientes', permission: 'GET /api/clientes' },
-      { label: 'Tipos de Producto', routerLink: '/tipos-producto', permission: 'GET /api/tipos-producto' },
+      { label: 'Tipos de Producto', routerLink: '/tipos-producto', permission: 'GET /api/product-types' },
       { label: 'Productos', routerLink: '/productos', permission: 'GET /api/productos' },
       { label: 'Ventas', routerLink: '/ventas', permission: 'GET /api/ventas' },
       { label: 'Perfil', routerLink: '/perfil' },

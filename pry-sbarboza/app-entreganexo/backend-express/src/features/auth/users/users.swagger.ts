@@ -174,7 +174,7 @@ export const usersSwagger = {
         properties: {
           id: { type: "integer", example: 1 },
           username: { type: "string", example: "admin" },
-          email: { type: "string", format: "email", example: "admin@storelab.local" },
+          email: { type: "string", format: "email", example: "admin@entreganexo.local" },
           avatar: { type: "string", nullable: true, example: null },
           status: { type: "string", enum: ["active", "inactive"], example: "active" },
           createdAt: { type: "string", format: "date-time" },
@@ -186,7 +186,7 @@ export const usersSwagger = {
         required: ["username", "email", "password"],
         properties: {
           username: { type: "string", minLength: 3, maxLength: 80, example: "nuevo.usuario" },
-          email: { type: "string", format: "email", example: "nuevo@storelab.local" },
+          email: { type: "string", format: "email", example: "nuevo@entreganexo.local" },
           password: { type: "string", format: "password", minLength: 8, example: "Password123!" },
           avatar: { type: "string", nullable: true },
           status: { type: "string", enum: ["active", "inactive"], default: "active" },

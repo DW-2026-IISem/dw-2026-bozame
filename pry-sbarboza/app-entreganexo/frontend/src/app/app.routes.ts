@@ -34,7 +34,7 @@ export const routes: Routes = [
         path: 'tipos-producto',
         title: 'Tipos de producto · EntregaNexo',
         canActivate: [permissionGuard],
-        data: { permission: 'GET /api/tipos-producto' },
+        data: { permission: 'GET /api/product-types' },
         loadComponent: () =>
           import('./features/product-types/product-type-list/product-type-list').then(
             (m) => m.ProductTypeList,
