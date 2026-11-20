@@ -1,0 +1,12 @@
+### Feature ProductSale — GET ALL / GET ONE
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+@id = 1
+
+### GET ALL — líneas activas
+# @name getAllProductSales
+GET {{baseUrl}}/api/detalle-ventas
+
+### GET ONE — 404 si no existe o está inactiva
+# @name getOneProductSale
+GET {{baseUrl}}/api/detalle-ventas/{{id}}

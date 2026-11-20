@@ -1285,3 +1285,385 @@ En `http://localhost:3002/api/docs` aparecen ahora tres grupos: «Clientes», «
 Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores con las tres *features* y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-07. La *feature* de productos tiene su modelo con la clave foránea `product_type_id`, sus DTOs, *repository*, *service*, *controller*, rutas y peticiones HTTP. Está registrada en las rutas y en la configuración, la relación con los tipos de producto está declarada y creada en MySQL, el *seeder* está incluido en el SeedersRunner y la documentación aparece en Swagger. Las pruebas confirmaron el CRUD completo, la compatibilidad con el *frontend*, la validación del tipo de producto (404 si no existe y 400 si está inactivo) y los borrados lógico y físico.
 
 ![](images/express/iss07-32-npm-run-dev.png)
+
+------------------------------------------------------------------------
+
+## ISS-08: Features de Ventas y Detalle de Ventas
+
+En este issue cerramos la Fase I con las **ventas**. Una venta tiene una cabecera (tabla `sales`: cliente, fecha, subtotal, impuesto, descuentos y total) y varias líneas (tabla `product_sales`: producto, cantidad, precio unitario y total de la línea). Cada una es una *feature* propia: `sales/` expone `/api/ventas`, la ruta que ya usa el *frontend*, y `product-sales/` expone `/api/detalle-ventas` para gestionar las líneas por separado. Es el primer issue con **transacciones reales**: crear una venta descuenta stock de varios productos, y si algo falla a mitad de camino no debe quedar nada guardado. Aquí usamos por fin el helper `withTransaction` que creamos en el ISS-03 y los métodos `findByIdForUpdate` que dejamos preparados en el ISS-07.
+
+------------------------------------------------------------------------
+
+### Paso 148: Estructura de las dos features
+
+Creamos las carpetas `src/features/business/sales/` y `src/features/business/product-sales/`, cada una con su modelo, DTOs, *repository*, *service*, *controller*, rutas, asociaciones, *seeder*, Swagger y peticiones HTTP.
+
+![](images/express/iss08-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 149: Modelo `Sale`
+
+La cabecera de la venta guarda la fecha (por defecto, el momento de crearla), los importes como `DECIMAL(12,2)`, el cliente (`client_id`) y el estado. `subtotal` y `total` no los envía nunca el cliente de la API: los calcula el *service* a partir de las líneas.
+
+![](images/express/iss08-02-cat-sale-model.png)
+
+------------------------------------------------------------------------
+
+### Paso 150: Modelo `ProductSale`
+
+Cada línea relaciona una venta con un producto. `unit_price` guarda el precio del producto en el momento de la venta, para que un cambio de precio posterior no altere las ventas antiguas, y `line_total` es `quantity × unit_price`.
+
+![](images/express/iss08-03-cat-product-sale-model.png)
+
+------------------------------------------------------------------------
+
+### Paso 151: Asociaciones
+
+Declaramos las relaciones en dos archivos. En `sales.associations.ts`, una venta pertenece a un cliente y un cliente tiene muchas ventas. En `product-sales.associations.ts`, cada línea pertenece a una venta y a un producto, y una venta tiene muchas líneas con el alias `items`, que es el nombre con el que aparecen en las respuestas.
+
+![](images/express/iss08-04-cat-associations.png)
+
+------------------------------------------------------------------------
+
+### Paso 152: DTOs del detalle de ventas
+
+Para crear una línea se envían `sale_id`, `product_id` y `quantity`. Al actualizarla solo se puede cambiar la cantidad: ni la venta ni el producto cambian, y el estado tampoco, porque desactivar una línea obliga a devolver el stock y eso lo hace el borrado lógico.
+
+![](images/express/iss08-05-cat-product-sales-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 153: Repository del detalle de ventas
+
+Además de las operaciones habituales, el *repository* busca las líneas activas de una venta (para recalcular sus totales) y borra o desactiva todas las líneas de una venta. Todos los métodos aceptan una `transaction` opcional.
+
+![](images/express/iss08-06-cat-product-sales-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 154: Service del detalle de ventas (lectura y creación)
+
+Añadir una línea se hace dentro de `withTransaction`. Primero se bloquea la venta y después el producto con `SELECT ... FOR UPDATE`; se comprueba que ambos estén activos y que haya stock suficiente; se crea la línea con el precio actual del producto; se descuenta el stock y se recalculan los totales de la venta. Si cualquier paso falla, la transacción se revierte entera.
+
+![](images/express/iss08-07-cat-product-sales-service-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 155: Service del detalle de ventas (actualización y borrado)
+
+Al cambiar la cantidad de una línea, el stock se ajusta solo por la diferencia: si pasa de 2 a 1 se devuelve una unidad. El borrado lógico y el físico devuelven al stock la cantidad de la línea, si estaba activa, y recalculan la venta.
+
+![](images/express/iss08-08-cat-product-sales-service-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 156: Service del detalle de ventas (helpers)
+
+`lockLine` bloquea las filas siempre en el mismo orden: venta, producto y línea. Si dos peticiones simultáneas bloquearan las mismas filas en distinto orden, MySQL podría quedar en un interbloqueo (*deadlock*). `applyQuantityDelta` ajusta el stock y `recalcSaleTotals` vuelve a calcular `subtotal = suma de las líneas activas` y `total = subtotal + tax − discounts`.
+
+![](images/express/iss08-09-cat-product-sales-service-3.png)
+
+------------------------------------------------------------------------
+
+### Paso 157: Controller del detalle de ventas
+
+El *controller* responde con `{ product_sales }` o `{ product_sale }` y delega los errores en `run()` del `BaseController`.
+
+![](images/express/iss08-10-cat-product-sales-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 158: Rutas del detalle de ventas
+
+Registramos las siete rutas bajo `/api/detalle-ventas`, sin autenticación porque seguimos en la Fase I.
+
+![](images/express/iss08-11-cat-product-sales-routes.png)
+
+------------------------------------------------------------------------
+
+### Paso 159: DTOs de ventas
+
+Para crear una venta se envían el cliente, el impuesto y los descuentos opcionales y la lista de `items` (producto y cantidad). El PUT y el PATCH solo modifican la cabecera; las líneas se gestionan con `/api/detalle-ventas`. La respuesta de una venta incluye sus `items`.
+
+![](images/express/iss08-12-cat-sales-dtos.png)
+
+------------------------------------------------------------------------
+
+### Paso 160: Compatibilidad con el frontend
+
+Igual que con los productos en el ISS-07, el *frontend* envía la venta con `clientId` y cada línea con `productId`, porque se hizo para el *backend* NestJS. `normalizeSaleBody` traduce esas claves a `client_id` y `product_id`, y deja tal cual los cuerpos que ya vienen en *snake_case*.
+
+![](images/express/iss08-13-cat-normalize-sale.png)
+
+------------------------------------------------------------------------
+
+### Paso 161: Repository de ventas
+
+Las lecturas incluyen las líneas de la venta con `include: [{ model: ProductSale, as: "items" }]`. Esto solo funciona porque declaramos las asociaciones en el Paso 151.
+
+![](images/express/iss08-14-cat-sales-repository.png)
+
+------------------------------------------------------------------------
+
+### Paso 162: Service de ventas (lectura y creación)
+
+Crear una venta exige al menos una línea y un cliente activo. Dentro de una sola transacción se bloquean los productos en orden ascendente de id (de nuevo, para evitar interbloqueos), se comprueba el stock de cada uno, se calculan los totales, se crea la cabecera, se crean las líneas y se descuenta el stock. Si un solo producto no tiene stock, no se guarda nada.
+
+![](images/express/iss08-15-cat-sales-service-1.png)
+
+------------------------------------------------------------------------
+
+### Paso 163: Service de ventas (actualización y borrado)
+
+El PUT y el PATCH cambian la cabecera y recalculan el total si cambian el impuesto o los descuentos. El borrado lógico desactiva la venta y todas sus líneas, y el físico las elimina; en ambos casos se devuelve antes al stock la cantidad de cada línea activa.
+
+![](images/express/iss08-16-cat-sales-service-2.png)
+
+------------------------------------------------------------------------
+
+### Paso 164: Controller y rutas de ventas
+
+El *controller* normaliza el cuerpo antes de llamar al *service*. Al crear responde `{ sale, items }`; en el resto de operaciones, `{ sales }` o `{ sale }`. Las siete rutas quedan bajo `/api/ventas`.
+
+![](images/express/iss08-17-cat-sales-controller.png)
+
+------------------------------------------------------------------------
+
+### Paso 165: Peticiones HTTP de prueba
+
+En las carpetas `http/` de las dos *features* dejamos las peticiones sin autenticación y con el puerto 3002. El archivo de creación de ventas incluye una venta con dos productos, la misma venta con las claves del *frontend* y un caso de stock insuficiente.
+
+![](images/express/iss08-18-cat-http.png)
+
+------------------------------------------------------------------------
+
+### Paso 166: Registro de las features en la aplicación
+
+En `src/routes/index.ts` añadimos `SalesRoutes` y `ProductSalesRoutes`. En `src/config/index.ts` importamos los dos modelos y los dos archivos de asociaciones, y registramos las rutas. Con esto la aplicación tiene las cinco *features* de negocio.
+
+![](images/express/iss08-19-cableado.png)
+
+------------------------------------------------------------------------
+
+### Paso 167: Lista vacía
+
+Con el servidor en marcha, `GET /api/ventas` devuelve una lista vacía: las tablas `sales` y `product_sales` se crearon al arrancar.
+
+![](images/express/iss08-20-get-all-vacio.png)
+
+------------------------------------------------------------------------
+
+### Paso 168: Stock antes de vender
+
+Consultamos en MySQL el precio y el stock de los productos 1, 2 y 3 para comprobar después cómo cambian.
+
+![](images/express/iss08-21-stock-antes.png)
+
+------------------------------------------------------------------------
+
+### Paso 169: Crear una venta
+
+Creamos una venta para el cliente 1 con dos unidades del producto 1 y una del producto 2, un impuesto de 19 y un descuento de 5. La API responde 201 con la cabecera y sus dos líneas. El subtotal es 762,60 + 215,89 = 978,49, y el total, 978,49 + 19 − 5 = 992,49.
+
+![](images/express/iss08-22-create-venta.png)
+
+------------------------------------------------------------------------
+
+### Paso 170: El stock se descuenta
+
+El producto 1 pasa de 40 a 38 unidades y el producto 2, de 97 a 96. El producto 3 no cambia.
+
+![](images/express/iss08-23-stock-despues.png)
+
+------------------------------------------------------------------------
+
+### Paso 171: Crear con las claves del frontend
+
+Creamos una segunda venta enviando `clientId` y `productId`, como hace el *frontend*. La venta se guarda con `client_id` 2 y una línea del producto 3.
+
+![](images/express/iss08-24-create-camelcase.png)
+
+------------------------------------------------------------------------
+
+### Paso 172: Consultar una venta con sus líneas
+
+`GET /api/ventas/1` devuelve la venta con su array `items`. Los importes llegan como texto (`"978.49"`) porque MySQL devuelve así las columnas `DECIMAL`; el *frontend* los convierte con `Number()`.
+
+![](images/express/iss08-25-get-one-items.png)
+
+------------------------------------------------------------------------
+
+### Paso 173: Stock insuficiente y rollback
+
+Intentamos vender una unidad del producto 2 y 99 999 del producto 1. La API responde 400 y, como todo ocurre dentro de la transacción, no se guarda nada: siguen existiendo solo 2 ventas y el stock de los productos 1 y 2 no cambia.
+
+![](images/express/iss08-26-stock-insuficiente.png)
+
+------------------------------------------------------------------------
+
+### Paso 174: Otros errores al crear
+
+Un cliente que no existe responde 404 («Client not found») y una venta sin líneas responde 400 («Sale requires at least one item»).
+
+![](images/express/iss08-27-errores-create.png)
+
+------------------------------------------------------------------------
+
+### Paso 175: Actualizar la cabecera con PATCH
+
+Cambiamos el impuesto a 15 y el descuento a 0 en la venta 1. El *service* recalcula el total: 978,49 + 15 − 0 = 993,49. Las líneas no cambian.
+
+![](images/express/iss08-28-patch-venta.png)
+
+------------------------------------------------------------------------
+
+### Paso 176: Añadir una línea a una venta
+
+Con `POST /api/detalle-ventas` añadimos dos unidades del producto 3 a la venta 1. La línea se crea con el precio actual del producto (431,69) y un total de 863,38.
+
+![](images/express/iss08-29-create-linea.png)
+
+------------------------------------------------------------------------
+
+### Paso 177: Totales y stock tras añadir la línea
+
+En MySQL vemos que la venta 1 se recalculó: subtotal 978,49 + 863,38 = 1841,87 y total 1856,87. El stock del producto 3 bajó de 71 a 69.
+
+![](images/express/iss08-30-totales-linea.png)
+
+------------------------------------------------------------------------
+
+### Paso 178: Cambiar la cantidad de una línea
+
+Con PATCH reducimos la línea 4 a una unidad. Su total pasa a 431,69 y, por la diferencia, se devuelve una unidad al stock.
+
+![](images/express/iss08-31-patch-linea.png)
+
+------------------------------------------------------------------------
+
+### Paso 179: Borrado lógico de una línea
+
+Con `PATCH /api/detalle-ventas/4/deactivate` desactivamos la línea: la respuesta la muestra con `status: "inactive"`.
+
+![](images/express/iss08-32-deactivate-linea.png)
+
+------------------------------------------------------------------------
+
+### Paso 180: Totales y stock tras desactivar la línea
+
+La venta 1 vuelve a su subtotal de 978,49 y a un total de 993,49, porque la línea inactiva ya no cuenta. El stock del producto 3 recupera la unidad: 71.
+
+![](images/express/iss08-33-totales-tras-linea.png)
+
+------------------------------------------------------------------------
+
+### Paso 181: Listar el detalle de ventas
+
+`GET /api/detalle-ventas` devuelve solo las líneas activas: las dos de la venta 1 y la de la venta 2. La línea 4 ya no aparece.
+
+![](images/express/iss08-34-get-detalle.png)
+
+------------------------------------------------------------------------
+
+### Paso 182: Borrado lógico de una venta
+
+Con `PATCH /api/ventas/2/deactivate` desactivamos la venta 2. La respuesta muestra la venta y su línea con `status: "inactive"`.
+
+![](images/express/iss08-35-delete-logico-venta.png)
+
+------------------------------------------------------------------------
+
+### Paso 183: Una venta inactiva deja de ser visible
+
+Consultar la venta 2 devuelve 404. En MySQL su línea sigue existiendo pero inactiva, y el producto 3 recuperó la unidad vendida: vuelve a tener 72, el stock inicial.
+
+![](images/express/iss08-36-venta-inactiva.png)
+
+------------------------------------------------------------------------
+
+### Paso 184: Borrado físico de una venta
+
+Con `DELETE /api/ventas/2` eliminamos definitivamente la venta y sus líneas, aunque ya estuviera desactivada.
+
+![](images/express/iss08-37-delete-fisico-venta.png)
+
+------------------------------------------------------------------------
+
+### Paso 185: Errores 404 y 400 del id
+
+Una venta que no existe responde 404 y un id no numérico responde 400.
+
+![](images/express/iss08-38-errores-404-400.png)
+
+------------------------------------------------------------------------
+
+### Paso 186: Tablas `sales` y `product_sales` en MySQL
+
+Solo queda la venta 1, con sus dos líneas activas y la línea 4 inactiva. La venta 2 y su línea ya no existen.
+
+![](images/express/iss08-39-tablas-mysql.png)
+
+------------------------------------------------------------------------
+
+### Paso 187: Claves foráneas en la base de datos
+
+En `information_schema` comprobamos las tres claves foráneas nuevas: `sales.client_id` apunta a `clients`, y `product_sales.sale_id` y `product_sales.product_id` apuntan a `sales` y `products`.
+
+![](images/express/iss08-40-fks.png)
+
+------------------------------------------------------------------------
+
+### Paso 188: Seeder de ventas
+
+`sales.seeder.ts` crea cabeceras de venta para clientes activos elegidos al azar, sin líneas, con impuesto y descuentos aleatorios.
+
+![](images/express/iss08-41-cat-sales-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 189: Seeder del detalle de ventas
+
+`product-sales.seeder.ts` reparte líneas entre esas ventas. Como escribe directamente en la base de datos sin pasar por el *service*, repite sus reglas: bloquea el producto, descuenta el stock y recalcula los totales de la venta, todo en una transacción por línea.
+
+![](images/express/iss08-42-cat-product-sales-seeder.png)
+
+------------------------------------------------------------------------
+
+### Paso 190: Registro de los seeders
+
+Reemplazamos `counts.ts` y el *runner* por su versión final de la guía. Se añaden `sales` (5) y `product_sales` (12), configurables con `SEED_SALES` / `SEED_PRODUCT_SALES` o `--sales=N` / `--product_sales=N`. Los *seeders* se ejecutan de padres a hijos: clientes, tipos de producto, productos, ventas y líneas.
+
+![](images/express/iss08-43-seeders-registro.png)
+
+------------------------------------------------------------------------
+
+### Paso 191: Ejecución de los seeders
+
+Antes borramos la venta de prueba con `DELETE /api/ventas/1`, para que se devolviera su stock, y vaciamos las tablas de ventas. Al ejecutar `npm run db:seed` se omiten las tres tablas que ya tienen datos y se insertan 5 ventas y 12 líneas.
+
+![](images/express/iss08-44-db-seed.png)
+
+------------------------------------------------------------------------
+
+### Paso 192: Documentación Swagger
+
+Creamos `sales.swagger.ts` y `product-sales.swagger.ts` y los añadimos a `featureSwaggerModules`. Como en las *features* anteriores, los documentamos sin seguridad, porque la autenticación llega en la Fase II.
+
+![](images/express/iss08-45-swagger-registro.png)
+
+------------------------------------------------------------------------
+
+### Paso 193: Swagger UI con las cinco features
+
+En `http://localhost:3002/api/docs` aparecen los cinco grupos de la Fase I: «Clientes», «TiposProducto», «Productos», «Ventas» y «DetalleVentas».
+
+![](images/express/iss08-46-swagger-ui.png)
+
+------------------------------------------------------------------------
+
+### Paso 194: Arranque del servidor (GATE)
+
+Arrancamos con `npm run dev`, comprobamos que el servidor levanta sin errores con las cinco *features* y lo detenemos con Ctrl+C. Con esto queda cerrado el ISS-08 y, con él, todo el negocio de la Fase I. Las ventas y su detalle tienen modelos, DTOs, *repositories*, *services*, *controllers*, rutas, peticiones HTTP, asociaciones, *seeders* y documentación Swagger. Las pruebas confirmaron que crear una venta descuenta stock y calcula los totales; que si falta stock la transacción se revierte sin guardar nada; que añadir, modificar o desactivar líneas ajusta el stock y recalcula la venta; que los borrados lógico y físico devuelven el stock; y que el *frontend* puede crear ventas con sus propias claves.
+
+![](images/express/iss08-47-npm-run-dev.png)

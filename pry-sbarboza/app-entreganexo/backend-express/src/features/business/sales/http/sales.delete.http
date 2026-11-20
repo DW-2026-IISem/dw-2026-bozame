@@ -1,0 +1,11 @@
+### Feature Sale — DELETE físico / DELETE lógico (status = inactive)
+### SIN AUTH (Fase I — Business). Ambos restauran el stock de las líneas activas.
+@baseUrl = http://localhost:3002
+@id = 1
+
+# @name deleteSalePhysical
+DELETE {{baseUrl}}/api/ventas/{{id}}
+
+###
+# @name deleteSaleLogical
+PATCH {{baseUrl}}/api/ventas/{{id}}/deactivate

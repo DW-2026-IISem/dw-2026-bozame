@@ -1,0 +1,15 @@
+### Feature Sale — GET ALL / GET ONE
+### SIN AUTH (Fase I — Business)
+@baseUrl = http://localhost:3002
+@id = 1
+
+### GET ALL — ventas activas con sus líneas (items)
+# @name getAllSales
+GET {{baseUrl}}/api/ventas
+
+### GET ONE — 404 si no existe o está inactiva
+# @name getOneSale
+GET {{baseUrl}}/api/ventas/{{id}}
+
+### 400 — :id no numérico
+GET {{baseUrl}}/api/ventas/abc

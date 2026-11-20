@@ -1,0 +1,13 @@
+### Feature ProductSale — CREATE (añade una línea a una venta existente)
+### SIN AUTH (Fase I — Business). Descuenta stock y recalcula los totales de la venta.
+@baseUrl = http://localhost:3002
+
+# @name createProductSale
+POST {{baseUrl}}/api/detalle-ventas
+Content-Type: application/json
+
+{
+  "sale_id": 1,
+  "product_id": 3,
+  "quantity": 2
+}

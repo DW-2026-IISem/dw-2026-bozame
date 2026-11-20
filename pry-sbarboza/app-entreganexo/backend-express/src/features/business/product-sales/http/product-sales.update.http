@@ -1,0 +1,23 @@
+### Feature ProductSale — UPDATE (PUT) / UPDATE (PATCH)
+### SIN AUTH (Fase I — Business). Solo cambia `quantity`: ajusta el stock por la
+### diferencia y recalcula la venta. Para desactivar una línea (restaurando stock)
+### se usa PATCH {{baseUrl}}/api/detalle-ventas/{{id}}/deactivate.
+@baseUrl = http://localhost:3002
+@id = 1
+
+# @name updateProductSalePut
+PUT {{baseUrl}}/api/detalle-ventas/{{id}}
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+
+###
+# @name updateProductSalePatch
+PATCH {{baseUrl}}/api/detalle-ventas/{{id}}
+Content-Type: application/json
+
+{
+  "quantity": 1
+}

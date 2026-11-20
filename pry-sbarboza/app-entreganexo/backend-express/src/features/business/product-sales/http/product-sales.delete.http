@@ -1,0 +1,11 @@
+### Feature ProductSale — DELETE físico / DELETE lógico (status = inactive)
+### SIN AUTH (Fase I — Business). Ambos restauran stock y recalculan la venta.
+@baseUrl = http://localhost:3002
+@id = 1
+
+# @name deleteProductSalePhysical
+DELETE {{baseUrl}}/api/detalle-ventas/{{id}}
+
+###
+# @name deleteProductSaleLogical
+PATCH {{baseUrl}}/api/detalle-ventas/{{id}}/deactivate
