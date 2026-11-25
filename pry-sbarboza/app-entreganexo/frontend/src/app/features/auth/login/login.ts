@@ -14,7 +14,7 @@ import { toApiMessage } from '../../../core/utils/api-error';
   template: `
     <div class="flex min-h-screen items-center justify-center bg-slate-100 p-4">
       <div class="card w-full max-w-md p-8">
-        <h1 class="text-2xl font-bold text-center text-slate-900 mb-6">StoreLab Express II</h1>
+        <h1 class="text-2xl font-bold text-center text-slate-900 mb-6">EntregaNexo</h1>
         
         @if (error()) {
           <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>

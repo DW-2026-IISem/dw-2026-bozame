@@ -17,3 +17,6 @@ pry-sbarboza/app-entreganexo/backup/
 
 # Scripts de capturas de Claude (copia local, no se sube)
 pry-sbarboza/app-entreganexo/documentacion/herramientas-capturas/
+
+# Guías del curso (copias locales, no se suben)
+pry-sbarboza/app-entreganexo/documentacion/*.docx
