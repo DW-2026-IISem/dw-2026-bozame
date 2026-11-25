@@ -1,0 +1,70 @@
+<app-page-header title="Mis sesiones" subtitle="Tus inicios de sesión guardados (tabla refresh_tokens). Cierra los que no reconozcas.">
+  <p-tag [value]="activeCount() + ' abiertas'" severity="success" [rounded]="true" />
+  <button pButton severity="secondary" outlined [disabled]="closedCount() === 0" (click)="purge()">
+    <i class="pi pi-trash" pButtonIcon></i><span pButtonLabel>Limpiar historial</span>
+  </button>
+  <button pButton severity="danger" [disabled]="activeCount() === 0" (click)="revokeAll()">
+    <i class="pi pi-sign-out" pButtonIcon></i><span pButtonLabel>Cerrar todas</span>
+  </button>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>
+}
+
+<div class="card">
+  <div class="card-body">
+    <p-table
+      [value]="rows()"
+      [loading]="loading()"
+      [paginator]="rows().length > 10"
+      [rows]="10"
+      dataKey="id"
+      [tableStyle]="{ 'min-width': '52rem' }"
+    >
+      <ng-template #header pTemplate="header">
+        <tr>
+          <th>Dispositivo</th>
+          <th>Iniciada</th>
+          <th>Caduca</th>
+          <th>Estado</th>
+          <th class="w-24 text-right">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row pTemplate="body">
+        <tr>
+          <td>
+            <div class="flex items-center gap-3">
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600">
+                <i class="pi pi-desktop"></i>
+              </span>
+              <div>
+                <div class="font-medium text-slate-800">{{ device(row) }}</div>
+                <div class="text-xs text-slate-400">#{{ row.id }}</div>
+              </div>
+            </div>
+          </td>
+          <td class="text-sm text-slate-600">{{ row.createdAt | date: 'medium' }}</td>
+          <td class="text-sm text-slate-600">{{ row.expires_at | date: 'medium' }}</td>
+          <td><p-tag [value]="state(row).label" [severity]="state(row).severity" [rounded]="true" /></td>
+          <td>
+            <div class="flex justify-end gap-1">
+              @if (isOpen(row)) {
+                <button pButton text rounded severity="warn" pTooltip="Cerrar esta sesión" (click)="revoke(row)">
+                  <i class="pi pi-sign-out" pButtonIcon></i>
+                </button>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage pTemplate="emptymessage">
+        <tr>
+          <td colspan="5">
+            <app-empty-state icon="pi pi-desktop" title="Sin sesiones" message="No hay sesiones guardadas." />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

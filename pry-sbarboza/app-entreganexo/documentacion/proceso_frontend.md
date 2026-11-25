@@ -923,3 +923,31 @@ El botón «Iniciar Sesión», que antes se veía vacío, ya muestra su texto. E
 `npx ng build` genera la aplicación sin errores.
 
 ![](images/frontend/front-08-ng-build.png)
+
+------------------------------------------------------------------------
+
+## Issue 10 (complemento): Pantalla «Mis sesiones» (tabla `refresh_tokens`)
+
+Para que todas las tablas de la base de datos aparezcan en el panel, añadimos la pantalla de la tabla que faltaba, `refresh_tokens`. Cada fila de esa tabla es una sesión abierta con un *login*. La API del ISS-14 (`/api/sesiones`) solo permite a cada usuario ver y cerrar **sus propias** sesiones: son rutas protegidas con JWT pero sin RBAC, así que no tienen recurso en el catálogo ni `permissionGuard`. La pantalla sigue ese diseño y no modifica el *backend*.
+
+### Paso 91: Servicio y ruta de sesiones
+
+`SessionApi` (`features/admin/sessions/session-api.ts`) lista las sesiones (`{ sessions }`), cierra una (`PATCH /:id/deactivate`), cierra todas (`PATCH /deactivate-all`) y borra las ya cerradas o caducadas (`DELETE /api/sesiones`). El *backend* nunca devuelve `token_hash`. La ruta `/admin/sesiones` y la opción «Mis sesiones» del grupo «Seguridad» no llevan permiso, porque cualquier usuario autenticado puede gestionar sus sesiones. Por eso `seller` también ve ahora el desplegable «Seguridad», solo con esa opción.
+
+![](images/frontend/front-26-menu-sesiones.png)
+
+------------------------------------------------------------------------
+
+### Paso 92: Listado de sesiones
+
+La tabla muestra el dispositivo (deducido del navegador y sistema guardados en `device_info`), la fecha de inicio, la de caducidad (7 días) y el estado: Abierta, Cerrada o Caducada. Arriba están «Limpiar historial», que borra las cerradas o caducadas, y «Cerrar todas», que revoca todas las sesiones, también la de este navegador, y devuelve al *login*.
+
+![](images/frontend/front-27-mis-sesiones.png)
+
+------------------------------------------------------------------------
+
+### Paso 93: Cerrar una sesión
+
+El botón de cada sesión abierta pide confirmación y la revoca. Si alguien tenía esa sesión, ya no podrá renovar su token y tendrá que volver a iniciar sesión cuando caduque el actual (15 minutos).
+
+![](images/frontend/front-28-cerrar-sesion.png)

@@ -34,6 +34,8 @@ const NAV: NavGroup[] = [
       { label: 'Recursos', routerLink: '/admin/recursos', permission: 'GET /api/recursos' },
       { label: 'Asignaciones', routerLink: '/admin/asignaciones', permission: 'GET /api/asignaciones-rol' },
       { label: 'Permisos', routerLink: '/admin/permisos', permission: 'GET /api/concesiones-rol' },
+      // Sin permiso: cualquier usuario autenticado puede ver y cerrar sus sesiones.
+      { label: 'Mis sesiones', routerLink: '/admin/sesiones' },
     ],
   },
 ];

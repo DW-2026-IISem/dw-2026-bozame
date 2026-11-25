@@ -116,6 +116,13 @@ export const routes: Routes = [
           import('./features/admin/resource-roles/resource-role-list/resource-role-list').then((m) => m.ResourceRoleList),
       },
       {
+        // Sesiones propias (refresh_tokens): rutas JWT sin RBAC, sin permissionGuard.
+        path: 'admin/sesiones',
+        title: 'Mis sesiones · EntregaNexo',
+        loadComponent: () =>
+          import('./features/admin/sessions/session-list/session-list').then((m) => m.SessionList),
+      },
+      {
         path: 'perfil',
         title: 'Mi Perfil · EntregaNexo',
         // El perfil no lleva permissionGuard porque todo usuario autenticado puede verlo
