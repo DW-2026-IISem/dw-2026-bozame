@@ -1,4 +1,4 @@
-<app-page-header title="Tipos de producto" subtitle="Catálogo base de clasificación de productos.">
+<app-page-header title="Tipos de producto">
   <p-tag [value]="rows().length + ' registros'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/product-types'">
     <button pButton (click)="openCreate()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nuevo tipo</span></button>

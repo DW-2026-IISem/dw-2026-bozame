@@ -1,4 +1,4 @@
-<app-page-header title="Ventas" subtitle="Historial de transacciones y registro de nuevas ventas.">
+<app-page-header title="Ventas">
   <p-tag [value]="rows().length + ' ventas registradas'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/ventas'">
     <button pButton routerLink="/ventas/nueva"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nueva venta</span></button>

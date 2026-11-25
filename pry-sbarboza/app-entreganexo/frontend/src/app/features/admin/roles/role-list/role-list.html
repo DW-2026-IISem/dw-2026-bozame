@@ -1,4 +1,4 @@
-<app-page-header title="Roles" subtitle="Agrupadores de permisos. El nombre del rol no autoriza nada: lo que cuenta son sus concesiones.">
+<app-page-header title="Roles">
   <p-tag [value]="rows().length + ' roles'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/roles'">
     <button pButton (click)="openCreate()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nuevo rol</span></button>

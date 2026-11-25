@@ -1,4 +1,4 @@
-<app-page-header title="Permisos" subtitle="Concesiones rol → recurso (tabla resource_roles). Cada fila activa es un permiso; los cambios valen desde la siguiente petición.">
+<app-page-header title="Permisos">
   <p-tag [value]="visibleRows().length + ' de ' + rows().length + ' concesiones'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/concesiones-rol'">
     <button pButton (click)="openGrant()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Conceder permiso</span></button>

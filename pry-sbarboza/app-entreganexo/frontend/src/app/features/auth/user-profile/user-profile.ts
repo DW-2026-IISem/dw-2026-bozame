@@ -9,7 +9,7 @@ import { PageHeader } from '../../../shared/ui/page-header/page-header';
   selector: 'app-user-profile',
   imports: [ButtonModule, TableModule, TagModule, PageHeader],
   template: `
-    <app-page-header title="Perfil y Permisos" subtitle="Auditoría de sesión y privilegios activos en el token JWT."></app-page-header>
+    <app-page-header title="Perfil y Permisos"></app-page-header>
 
     <div class="card mb-6">
       <div class="card-body space-y-3">

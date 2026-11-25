@@ -1,4 +1,4 @@
-<app-page-header title="Detalle de ventas" subtitle="Líneas de venta: añadir, corregir cantidades o retirar líneas ajusta el stock y los totales.">
+<app-page-header title="Detalle de ventas">
   <p-tag [value]="rows().length + ' líneas activas'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/detalle-ventas'">
     <button pButton (click)="openCreate()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nueva línea</span></button>

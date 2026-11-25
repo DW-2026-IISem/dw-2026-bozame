@@ -1,7 +1,4 @@
-<app-page-header
-  title="Clientes"
-  subtitle="El backend solo lista status = active; la baja es lógica (PATCH /deactivate)."
->
+<app-page-header title="Clientes">
   <p-tag [value]="rows().length + ' activos'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/clientes'">
     <button pButton type="button" (click)="openCreate()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nuevo cliente</span></button>

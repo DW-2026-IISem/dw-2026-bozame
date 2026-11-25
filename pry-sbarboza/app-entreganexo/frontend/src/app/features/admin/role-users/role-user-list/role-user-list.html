@@ -1,4 +1,4 @@
-<app-page-header title="Asignaciones" subtitle="Qué rol tiene cada usuario (tabla role_users). Retirar un rol es una baja lógica: queda el historial.">
+<app-page-header title="Asignaciones">
   <p-tag [value]="rows().length + ' asignaciones activas'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/asignaciones-rol'">
     <button pButton (click)="openAssign()"><i class="pi pi-user-plus" pButtonIcon></i><span pButtonLabel>Asignar rol</span></button>

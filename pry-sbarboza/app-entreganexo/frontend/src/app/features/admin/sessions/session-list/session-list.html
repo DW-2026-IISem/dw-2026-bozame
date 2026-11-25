@@ -1,4 +1,4 @@
-<app-page-header title="Mis sesiones" subtitle="Tus inicios de sesión guardados (tabla refresh_tokens). Cierra los que no reconozcas.">
+<app-page-header title="Mis sesiones">
   <p-tag [value]="activeCount() + ' abiertas'" severity="success" [rounded]="true" />
   <button pButton severity="secondary" outlined [disabled]="closedCount() === 0" (click)="purge()">
     <i class="pi pi-trash" pButtonIcon></i><span pButtonLabel>Limpiar historial</span>

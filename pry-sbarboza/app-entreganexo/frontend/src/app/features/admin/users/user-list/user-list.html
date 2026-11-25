@@ -1,4 +1,4 @@
-<app-page-header title="Usuarios" subtitle="Identidades del sistema. Los permisos llegan por sus roles; usa «Ver permisos» para diagnosticar un 403.">
+<app-page-header title="Usuarios">
   <p-tag [value]="rows().length + ' usuarios'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/usuarios'">
     <button pButton (click)="openCreate()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nuevo usuario</span></button>

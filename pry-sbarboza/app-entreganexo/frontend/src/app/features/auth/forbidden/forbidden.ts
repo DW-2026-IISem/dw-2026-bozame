@@ -9,7 +9,7 @@ import { PageHeader } from '../../../shared/ui/page-header/page-header';
   template: `
     <div class="flex flex-col items-center justify-center min-h-[60vh] text-center">
       <i class="pi pi-lock text-6xl text-slate-300 mb-6"></i>
-      <app-page-header title="Acceso Denegado" subtitle="No tienes los privilegios necesarios."></app-page-header>
+      <app-page-header title="Acceso Denegado"></app-page-header>
       
       @if (permission) {
         <div class="rounded-xl bg-slate-900 px-6 py-4 mt-2 mb-6 inline-block text-left">

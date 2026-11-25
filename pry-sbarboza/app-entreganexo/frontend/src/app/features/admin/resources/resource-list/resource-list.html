@@ -1,4 +1,4 @@
-<app-page-header title="Recursos" subtitle="Catálogo de operaciones protegibles: cada recurso es un par método + ruta.">
+<app-page-header title="Recursos">
   @for (item of countsByMethod(); track item.method) {
     <p-tag [value]="item.method + ' ' + item.count" [severity]="methodSeverity(item.method)" [rounded]="true" />
   }
