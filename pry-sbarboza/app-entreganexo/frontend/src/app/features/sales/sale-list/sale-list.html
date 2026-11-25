@@ -1,7 +1,7 @@
 <app-page-header title="Ventas" subtitle="Historial de transacciones y registro de nuevas ventas.">
   <p-tag [value]="rows().length + ' ventas registradas'" severity="info" [rounded]="true" />
   <ng-container *appHasPermission="'POST /api/ventas'">
-    <button pButton label="Nueva venta" icon="pi pi-plus" routerLink="/ventas/nueva"></button>
+    <button pButton routerLink="/ventas/nueva"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nueva venta</span></button>
   </ng-container>
 </app-page-header>
 
@@ -35,7 +35,7 @@
           <th class="text-center">Ítems</th>
           <th class="text-right">Total</th>
           <th>Estado</th>
-          <th class="w-32 text-right">Acciones</th>
+          <th class="w-40 text-right">Acciones</th>
         </tr>
       </ng-template>
       <ng-template #body let-sale pTemplate="body">
@@ -50,13 +50,17 @@
           <td><app-status-tag [status]="sale.status" /></td>
           <td>
             <div class="flex justify-end gap-1">
+              <ng-container *appHasPermission="'GET /api/ventas/:id'">
+                <button pButton text rounded severity="info"
+                        pTooltip="Ver detalle" (click)="openDetail(sale)"><i class="pi pi-eye" pButtonIcon></i></button>
+              </ng-container>
               <ng-container *appHasPermission="'PATCH /api/ventas/:id/deactivate'">
-                <button pButton text rounded severity="warn" icon="pi pi-ban"
-                        pTooltip="Cancelar venta" (click)="deactivate(sale)"></button>
+                <button pButton text rounded severity="warn"
+                        pTooltip="Cancelar venta" (click)="deactivate(sale)"><i class="pi pi-ban" pButtonIcon></i></button>
               </ng-container>
               <ng-container *appHasPermission="'DELETE /api/ventas/:id'">
-                <button pButton text rounded severity="danger" icon="pi pi-trash"
-                        pTooltip="Eliminar" (click)="remove(sale)"></button>
+                <button pButton text rounded severity="danger"
+                        pTooltip="Eliminar" (click)="remove(sale)"><i class="pi pi-trash" pButtonIcon></i></button>
               </ng-container>
             </div>
           </td>
@@ -76,3 +80,16 @@
     </p-table>
   </div>
 </div>
+
+<p-dialog
+  [visible]="detailVisible()"
+  (visibleChange)="detailVisible.set($event)"
+  [header]="detailTitle()"
+  [modal]="true"
+  [draggable]="false"
+  [style]="{ width: '52rem', maxWidth: '95vw' }"
+>
+  @if (selected(); as sale) {
+    <app-sale-detail [sale]="sale" [products]="products()" [clientName]="clientName()(sale.client_id)" />
+  }
+</p-dialog>

@@ -1,0 +1,26 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div>
+    <label for="role-name" class="field-label">Nombre *</label>
+    <input id="role-name" pInputText formControlName="name" placeholder="SUPERVISOR" class="uppercase" />
+    @if (form.controls.name.touched && form.controls.name.invalid) {
+      <small class="field-error">El nombre es obligatorio (máx. 60).</small>
+    }
+  </div>
+  <div>
+    <label for="role-description" class="field-label">Descripción</label>
+    <textarea id="role-description" pTextarea formControlName="description" rows="3"
+              placeholder="Qué responsabilidades agrupa este rol"></textarea>
+  </div>
+  <div>
+    <label for="role-status" class="field-label">Estado</label>
+    <p-select inputId="role-status" formControlName="status" [options]="statusOptions"
+              optionLabel="label" optionValue="value" styleClass="w-full" />
+  </div>
+  <p class="text-xs text-slate-500">
+    Un rol nuevo no concede nada: sus permisos se asignan en «Permisos» (concesiones rol-recurso).
+  </p>
+  <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+    <button pButton type="button" severity="secondary" outlined (click)="cancelled.emit()"><span pButtonLabel>Cancelar</span></button>
+    <button pButton type="submit" [loading]="saving()"><i class="pi pi-check" pButtonIcon></i><span pButtonLabel>Guardar</span></button>
+  </div>
+</form>

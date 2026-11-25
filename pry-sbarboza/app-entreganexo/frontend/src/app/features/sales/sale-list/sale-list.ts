@@ -3,6 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
@@ -10,6 +11,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { catchError, forkJoin, of } from 'rxjs';
 import { Client } from '../../../core/models/client.model';
+import { Product } from '../../../core/models/product.model';
 import { Sale } from '../../../core/models/sale.model';
 import { NotificationService } from '../../../core/services/notification';
 import { SessionStore } from '../../../core/services/session-store';
@@ -20,6 +22,8 @@ import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { PageHeader } from '../../../shared/ui/page-header/page-header';
 import { StatusTag } from '../../../shared/ui/status-tag/status-tag';
 import { ClientApi } from '../../clients/client-api';
+import { ProductApi } from '../../products/product-api';
+import { SaleDetail } from '../sale-detail/sale-detail';
 import { SaleApi } from '../sale-api';
 
 @Component({
@@ -29,6 +33,7 @@ import { SaleApi } from '../sale-api';
     DatePipe,
     RouterLink,
     ButtonModule,
+    DialogModule,
     InputTextModule,
     MessageModule,
     TableModule,
@@ -38,6 +43,7 @@ import { SaleApi } from '../sale-api';
     EmptyState,
     PageHeader,
     StatusTag,
+    SaleDetail,
   ],
   templateUrl: './sale-list.html',
   styleUrl: './sale-list.css',
@@ -45,12 +51,22 @@ import { SaleApi } from '../sale-api';
 export class SaleList {
   private readonly api = inject(SaleApi);
   private readonly clientsApi = inject(ClientApi);
+  private readonly productsApi = inject(ProductApi);
   private readonly notify = inject(NotificationService);
   private readonly confirmation = inject(ConfirmationService);
   private readonly session = inject(SessionStore);
 
   readonly rows = signal<Sale[]>([]);
   readonly clients = signal<Client[]>([]);
+  readonly products = signal<Product[]>([]);
+
+  // Diálogo de detalle (cabecera + líneas)
+  readonly selected = signal<Sale | null>(null);
+  readonly detailVisible = signal(false);
+  readonly detailTitle = computed(() => {
+    const sale = this.selected();
+    return sale ? `Venta #${sale.id}` : 'Detalle de venta';
+  });
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
   readonly filter = signal('');
@@ -78,10 +94,12 @@ export class SaleList {
     forkJoin({
       sales: this.api.list(),
       clients: this.clientsApi.list().pipe(catchError(() => of([]))),
+      products: this.productsApi.list().pipe(catchError(() => of([] as Product[]))),
     }).subscribe({
-      next: ({ sales, clients }) => {
+      next: ({ sales, clients, products }) => {
         this.rows.set(Array.isArray(sales) ? sales : []);
         this.clients.set(Array.isArray(clients) ? clients : []);
+        this.products.set(Array.isArray(products) ? products : []);
         this.loading.set(false);
       },
       error: (error: unknown) => {
@@ -89,6 +107,11 @@ export class SaleList {
         this.loading.set(false);
       },
     });
+  }
+
+  openDetail(sale: Sale): void {
+    this.selected.set(sale);
+    this.detailVisible.set(true);
   }
 
   itemCount(sale: Sale): number {

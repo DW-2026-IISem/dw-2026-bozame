@@ -1,0 +1,63 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="user-username" class="field-label">Usuario *</label>
+      <input id="user-username" pInputText formControlName="username" placeholder="cajero" autocomplete="off" />
+      @if (form.controls.username.touched && form.controls.username.invalid) {
+        <small class="field-error">Mínimo 3 caracteres.</small>
+      }
+    </div>
+    <div>
+      <label for="user-email" class="field-label">Correo *</label>
+      <input id="user-email" pInputText formControlName="email" placeholder="cajero@entreganexo.local" autocomplete="off" />
+      @if (form.controls.email.touched && form.controls.email.invalid) {
+        <small class="field-error">Correo no válido.</small>
+      }
+    </div>
+  </div>
+
+  @if (!user()) {
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="user-password" class="field-label">Contraseña *</label>
+        <p-password
+          inputId="user-password"
+          formControlName="password"
+          [feedback]="false"
+          [toggleMask]="true"
+          styleClass="w-full"
+          inputStyleClass="w-full"
+          autocomplete="new-password"
+        />
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <small class="field-error">Mínimo 8 caracteres.</small>
+        }
+      </div>
+      <div>
+        <label for="user-status" class="field-label">Estado</label>
+        <p-select
+          inputId="user-status"
+          formControlName="status"
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        />
+      </div>
+    </div>
+  } @else {
+    <p class="text-xs text-slate-500">
+      La contraseña la cambia cada usuario desde su sesión, y el estado se cambia con la baja lógica.
+    </p>
+  }
+
+  <div>
+    <label for="user-avatar" class="field-label">Avatar (URL)</label>
+    <input id="user-avatar" pInputText formControlName="avatar" placeholder="https://…" />
+  </div>
+
+  <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+    <button pButton type="button" severity="secondary" outlined (click)="cancelled.emit()"><span pButtonLabel>Cancelar</span></button>
+    <button pButton type="submit" [loading]="saving()"><i class="pi pi-check" pButtonIcon></i><span pButtonLabel>Guardar</span></button>
+  </div>
+</form>

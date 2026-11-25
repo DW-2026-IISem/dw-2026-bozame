@@ -17,7 +17,7 @@ import { PageHeader } from '../../../shared/ui/page-header/page-header';
           <code class="text-sm font-semibold text-emerald-300">{{ permission }}</code>
         </div>
       }
-      <button pButton label="Volver al Dashboard" icon="pi pi-home" routerLink="/dashboard"></button>
+      <button pButton routerLink="/dashboard"><i class="pi pi-home" pButtonIcon></i><span pButtonLabel>Volver al Dashboard</span></button>
     </div>
   `
 })

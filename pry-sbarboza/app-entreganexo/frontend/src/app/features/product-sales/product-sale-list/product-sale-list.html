@@ -1,0 +1,101 @@
+<app-page-header title="Detalle de ventas" subtitle="Líneas de venta: añadir, corregir cantidades o retirar líneas ajusta el stock y los totales.">
+  <p-tag [value]="rows().length + ' líneas activas'" severity="info" [rounded]="true" />
+  <ng-container *appHasPermission="'POST /api/detalle-ventas'">
+    <button pButton (click)="openCreate()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nueva línea</span></button>
+  </ng-container>
+</app-page-header>
+
+@if (error()) {
+  <p-message severity="error" styleClass="mb-4 w-full">{{ error() }}</p-message>
+}
+
+<div class="card">
+  <div class="card-body">
+    <p-table
+      [value]="visibleRows()"
+      [loading]="loading()"
+      [paginator]="visibleRows().length > 10"
+      [rows]="10"
+      dataKey="id"
+      [tableStyle]="{ 'min-width': '58rem' }"
+    >
+      <ng-template #caption pTemplate="caption">
+        <input
+          pInputText
+          placeholder="Buscar por venta o producto…"
+          [value]="filter()"
+          (input)="filter.set($any($event.target).value)"
+        />
+      </ng-template>
+      <ng-template #header pTemplate="header">
+        <tr>
+          <th pSortableColumn="id">Línea <p-sort-icon field="id" /></th>
+          <th pSortableColumn="sale_id">Venta <p-sort-icon field="sale_id" /></th>
+          <th>Producto</th>
+          <th class="text-center">Cantidad</th>
+          <th class="text-right">Precio unit.</th>
+          <th class="text-right">Total línea</th>
+          <th>Estado</th>
+          <th class="w-36 text-right">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-row pTemplate="body">
+        <tr>
+          <td><span class="font-semibold text-slate-800">#{{ row.id }}</span></td>
+          <td>Venta #{{ row.sale_id }}</td>
+          <td>{{ productName()(row.product_id) }}</td>
+          <td class="text-center">{{ row.quantity }}</td>
+          <td class="text-right">{{ row.unit_price | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+          <td class="text-right font-semibold text-slate-900">{{ row.line_total | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+          <td><app-status-tag [status]="row.status" /></td>
+          <td>
+            <div class="flex justify-end gap-1">
+              <ng-container *appHasPermission="'PATCH /api/detalle-ventas/:id'">
+                <button pButton text rounded severity="secondary"
+                        pTooltip="Editar cantidad" (click)="openEdit(row)"><i class="pi pi-pencil" pButtonIcon></i></button>
+              </ng-container>
+              <ng-container *appHasPermission="'PATCH /api/detalle-ventas/:id/deactivate'">
+                <button pButton text rounded severity="warn"
+                        pTooltip="Baja lógica" (click)="deactivate(row)"><i class="pi pi-ban" pButtonIcon></i></button>
+              </ng-container>
+              <ng-container *appHasPermission="'DELETE /api/detalle-ventas/:id'">
+                <button pButton text rounded severity="danger"
+                        pTooltip="Eliminar" (click)="remove(row)"><i class="pi pi-trash" pButtonIcon></i></button>
+              </ng-container>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage pTemplate="emptymessage">
+        <tr>
+          <td colspan="8">
+            <app-empty-state
+              icon="pi pi-list"
+              title="Sin líneas de venta"
+              message="Las líneas se crean al registrar una venta o con el botón superior."
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-dialog
+  [visible]="dialogVisible()"
+  (visibleChange)="dialogVisible.set($event)"
+  [header]="title()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '42rem', maxWidth: '95vw' }"
+>
+  <app-product-sale-form
+    [line]="editing()"
+    [sales]="sales()"
+    [products]="products()"
+    [saving]="saving()"
+    (saved)="save($event)"
+    (cancelled)="dialogVisible.set(false)"
+  />
+</p-dialog>

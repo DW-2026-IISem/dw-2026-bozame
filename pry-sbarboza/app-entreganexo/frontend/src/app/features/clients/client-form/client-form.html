@@ -34,7 +34,7 @@
     />
   </div>
   <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
-    <button pButton type="button" label="Cancelar" severity="secondary" outlined (click)="cancelled.emit()"></button>
-    <button pButton type="submit" label="Guardar" icon="pi pi-check" [loading]="saving()"></button>
+    <button pButton type="button" severity="secondary" outlined (click)="cancelled.emit()"><span pButtonLabel>Cancelar</span></button>
+    <button pButton type="submit" [loading]="saving()"><i class="pi pi-check" pButtonIcon></i><span pButtonLabel>Guardar</span></button>
   </div>
 </form>

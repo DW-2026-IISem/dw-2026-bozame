@@ -711,3 +711,215 @@ Tu frontend ya cuenta con un modelo de seguridad RBAC visible y estructural:
 - **`permissionGuard` y `/forbidden`:** Evalúan si el JWT contiene los permisos exactos para la ruta solicitada y, de no ser así, muestran el acceso denegado con el permiso faltante.
 
 - **Rutas blindadas:** Toda la matriz de navegación en `app.routes.ts` ya exige los permisos adecuados por endpoint.
+
+------------------------------------------------------------------------
+
+## Issue 7 (complemento): Detalle de ventas y vista de una venta (ISS-07)
+
+Completamos lo que faltaba del ISS-07 de la guía. Añadimos la pantalla del detalle de ventas (`/detalle-ventas`), que gestiona las líneas de venta como un CRUD independiente contra `/api/detalle-ventas`, y una vista de cada venta con su cabecera y sus líneas. Con esto todas las tablas de negocio tienen su pantalla.
+
+### Paso 66: Estructura de los componentes nuevos
+
+Creamos `features/product-sales/` (servicio, listado y formulario de líneas), `features/sales/sale-detail/` (vista de una venta) y `features/admin/` con los servicios y pantallas de administración del Issue 10.
+
+![](images/frontend/front-01-arbol.png)
+
+------------------------------------------------------------------------
+
+### Paso 67: Servicio del detalle de ventas (`product-sale-api.ts`)
+
+`ProductSaleApi` habla con `/api/detalle-ventas`: lista las líneas (`{ product_sales }`), las crea, las consulta, las desactiva y las elimina. La edición (`PATCH`) solo envía `quantity`, porque es el único campo que el backend permite cambiar: la venta y el producto de una línea no se modifican, y el estado se cambia con `/deactivate`.
+
+![](images/frontend/front-02-product-sale-api.png)
+
+------------------------------------------------------------------------
+
+### Paso 68: Listado del detalle de ventas
+
+La pantalla muestra cada línea con su venta, el nombre del producto, la cantidad, el precio unitario y el total de la línea. Los botones de crear, editar, desactivar y eliminar solo aparecen si el usuario tiene el permiso correspondiente (`*appHasPermission`). Cada cambio descuenta o devuelve stock y recalcula los totales de la venta en el backend.
+
+![](images/frontend/front-10-detalle-ventas.png)
+
+------------------------------------------------------------------------
+
+### Paso 69: Editar la cantidad de una línea
+
+Al editar una línea, el formulario deshabilita la venta, el producto y el estado, y deja editable solo la cantidad. Al crear una línea nueva sí se eligen la venta y el producto.
+
+![](images/frontend/front-11-editar-linea.png)
+
+------------------------------------------------------------------------
+
+### Paso 70: Vista de una venta (`sale-detail`)
+
+En el listado de ventas añadimos un botón con un ojo que abre la venta en un diálogo. `SaleDetail` es un componente que solo presenta datos: recibe la venta ya cargada y la lista de productos para mostrar sus nombres. Muestra la fecha, el cliente, las unidades, el estado, las líneas con su total, y el subtotal, el impuesto, los descuentos y el total.
+
+![](images/frontend/front-12-detalle-venta.png)
+
+------------------------------------------------------------------------
+
+### Paso 71: Ruta del detalle de ventas y guard definitivo
+
+Registramos `/detalle-ventas` protegida con el permiso `GET /api/detalle-ventas`. Además, las rutas usan ahora el guard de la guía (`permission-guard.ts`), que envía a `/forbidden` indicando el permiso que falta, en lugar de volver al dashboard con un aviso.
+
+![](images/frontend/front-03-ruta-detalle.png)
+
+------------------------------------------------------------------------
+
+## Issue 10: Administración del RBAC: usuarios, roles, recursos, asignaciones y permisos (ISS-10)
+
+Construimos el panel de administración del modelo de autorización: `/admin/usuarios`, `/admin/roles`, `/admin/recursos`, `/admin/asignaciones` (usuario ↔ rol) y `/admin/permisos` (rol ↔ recurso). Con esto todas las tablas de la base de datos aparecen en el panel. La única excepción es `refresh_tokens`, que guarda las sesiones de *login* y no es un dato de administración. Las pantallas están agrupadas en un desplegable «Seguridad» del menú y solo aparecen si el usuario tiene el permiso de lectura de cada una.
+
+### Paso 72: Servicios de administración
+
+Creamos un servicio por cada API, con los mismos nombres que el *backend*: `UserApi` (`/api/usuarios`), `RoleApi` (`/api/roles`), `ResourceApi` (`/api/recursos`), `RoleUserApi` (`/api/asignaciones-rol`) y `ResourceRoleApi` (`/api/concesiones-rol`). Este último admite los filtros `?role_id=` y `?resource_id=` para consultar la matriz desde los dos lados.
+
+![](images/frontend/front-04-resource-role-api.png)
+
+------------------------------------------------------------------------
+
+### Paso 73: Rutas de administración
+
+Registramos las cinco rutas `/admin/*`, cada una protegida por `permissionGuard` con su permiso `GET` correspondiente.
+
+![](images/frontend/front-05-rutas-admin.png)
+
+------------------------------------------------------------------------
+
+### Paso 74: Grupo «Seguridad» en el menú
+
+En el `shell` añadimos un segundo grupo, «Seguridad», con las cinco pantallas. Como el menú es una barra horizontal, este grupo se muestra como un desplegable para no saturarla. El menú se calcula con un `computed`, así que cada opción aparece o desaparece según los permisos del usuario. También añadimos al menú de usuario la opción «Actualizar permisos», que vuelve a pedir perfil y permisos sin recargar la página.
+
+![](images/frontend/front-06-menu-seguridad.png)
+
+------------------------------------------------------------------------
+
+### Paso 75: El desplegable «Seguridad» en el navegador
+
+Con `admin`, el menú muestra el grupo «Seguridad» con Usuarios, Roles, Recursos, Asignaciones y Permisos.
+
+![](images/frontend/front-13-menu-seguridad.png)
+
+------------------------------------------------------------------------
+
+### Paso 76: Usuarios
+
+La pantalla lista los usuarios con su avatar, correo, estado y fecha de alta. La contraseña y el estado solo se envían al crear un usuario: el `PATCH` del *backend* solo acepta usuario, correo y avatar, y el estado se cambia con la baja lógica. Para evitar que alguien se bloquee a sí mismo, los botones de desactivar y eliminar están deshabilitados en el propio usuario (marcado como «Tú»).
+
+![](images/frontend/front-14-usuarios.png)
+
+------------------------------------------------------------------------
+
+### Paso 77: Ver permisos de un usuario
+
+El botón con la llave abre los permisos efectivos del usuario (`GET /api/usuarios/:id/permisos`): sus roles y cada método y ruta que puede usar. Es la forma más rápida de entender por qué alguien recibe un 403. En la captura, `seller` tiene sus 7 permisos a través del rol `SELLER`.
+
+![](images/frontend/front-15-ver-permisos.png)
+
+------------------------------------------------------------------------
+
+### Paso 78: Roles
+
+Listado de roles con su descripción y estado. El nombre de un rol no autoriza nada por sí solo: sus permisos se conceden en la pantalla de Permisos.
+
+![](images/frontend/front-16-roles.png)
+
+------------------------------------------------------------------------
+
+### Paso 79: Crear un rol
+
+El formulario guarda el nombre en mayúsculas (ADMIN, SELLER…) y, como en el resto de pantallas, el estado solo se elige al crear.
+
+![](images/frontend/front-17-nuevo-rol.png)
+
+------------------------------------------------------------------------
+
+### Paso 80: Recursos
+
+El catálogo de operaciones protegibles, cada una un par método + ruta. Arriba se ve cuántos recursos hay de cada método, y la tabla se puede filtrar por texto y por método. El formulario exige que la ruta empiece por `/`.
+
+![](images/frontend/front-18-recursos.png)
+
+------------------------------------------------------------------------
+
+### Paso 81: Asignaciones
+
+Muestra qué rol tiene cada usuario (tabla `role_users`) y se puede filtrar por usuario y por rol. Retirar un rol es una baja lógica, así que queda constancia de quién tuvo qué rol.
+
+![](images/frontend/front-19-asignaciones.png)
+
+------------------------------------------------------------------------
+
+### Paso 82: Asignar un rol
+
+El diálogo «Asignar rol» pide un usuario y un rol. Si la asignación existía y estaba retirada, el *backend* la reactiva; si ya está activa, responde 409 y la pantalla muestra el error.
+
+![](images/frontend/front-20-asignar-rol.png)
+
+------------------------------------------------------------------------
+
+### Paso 83: Permisos (concesiones)
+
+Cada fila es un permiso: un rol con un recurso (tabla `resource_roles`). Se puede filtrar por rol y buscar por ruta o método. Retirar un permiso tiene efecto inmediato, porque el *backend* consulta la matriz en cada petición.
+
+![](images/frontend/front-21-permisos.png)
+
+------------------------------------------------------------------------
+
+### Paso 84: Conceder un permiso
+
+El diálogo pide un rol y un recurso. El selector de recursos usa plantillas (`#selectedItem` e `#item`) para mostrar el método con su color y la ruta, en lugar de `[object Object]`.
+
+![](images/frontend/front-22-conceder-permiso.png)
+
+------------------------------------------------------------------------
+
+### Paso 85: El menú de seller
+
+Con `seller`, el menú se reduce a Dashboard, Clientes, Productos, Ventas y Perfil: no aparecen Tipos de Producto, Detalle de ventas ni el grupo «Seguridad», porque no tiene esos permisos.
+
+![](images/frontend/front-23-seller-menu.png)
+
+------------------------------------------------------------------------
+
+### Paso 86: Botones según los permisos
+
+En Ventas, `seller` solo ve el botón para consultar el detalle y el de «Nueva venta». Los de cancelar y eliminar no aparecen, porque no tiene esos permisos.
+
+![](images/frontend/front-24-seller-ventas.png)
+
+------------------------------------------------------------------------
+
+### Paso 87: Acceso denegado
+
+Si `seller` escribe a mano `/admin/usuarios`, el guard lo envía a `/forbidden`, que muestra el permiso exacto que le falta (`GET /api/usuarios`). Aunque se saltara la interfaz, el *backend* respondería 403: la interfaz solo oculta lo que no se puede usar, y quien protege los datos es el *backend*.
+
+![](images/frontend/front-25-seller-forbidden.png)
+
+------------------------------------------------------------------------
+
+## Issue 11: Build, calidad y corrección de los botones (ISS-11)
+
+Al probar las pantallas en el navegador encontramos que ningún botón mostraba su texto ni su icono, ni los nuevos ni los anteriores. En PrimeNG 22 la directiva `pButton` ya no tiene las entradas `label` ni `icon`. Angular no da error, porque las trata como atributos normales del botón, pero PrimeNG ya no las dibuja.
+
+### Paso 88: Texto e icono como elementos hijos
+
+Sustituimos los atributos por los elementos que espera PrimeNG 22: `<i class="..." pButtonIcon></i>` para el icono y `<span pButtonLabel>...</span>` para el texto. Lo aplicamos a los 64 botones del proyecto, en todas las pantallas.
+
+![](images/frontend/front-07-pbutton-hijos.png)
+
+------------------------------------------------------------------------
+
+### Paso 89: Login corregido
+
+El botón «Iniciar Sesión», que antes se veía vacío, ya muestra su texto. El aviso rojo «Invalid PrimeUI License» de la esquina lo muestra PrimeNG 22 cuando no se ha configurado una clave de licencia; no afecta al funcionamiento.
+
+![](images/frontend/front-09-login.png)
+
+------------------------------------------------------------------------
+
+### Paso 90: Compilación de producción
+
+`npx ng build` genera la aplicación sin errores.
+
+![](images/frontend/front-08-ng-build.png)

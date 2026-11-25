@@ -1,0 +1,32 @@
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div class="grid gap-4 sm:grid-cols-[10rem_1fr]">
+    <div>
+      <label for="resource-method" class="field-label">Método *</label>
+      <p-select inputId="resource-method" formControlName="method" [options]="methodOptions"
+                optionLabel="label" optionValue="value" styleClass="w-full" />
+    </div>
+    <div>
+      <label for="resource-path" class="field-label">Ruta *</label>
+      <input id="resource-path" pInputText formControlName="path" placeholder="/api/clientes/:id" class="font-mono" />
+      @if (form.controls.path.touched && form.controls.path.invalid) {
+        <small class="field-error">La ruta es obligatoria y debe empezar por «/».</small>
+      }
+    </div>
+  </div>
+  <div>
+    <label for="resource-description" class="field-label">Descripción</label>
+    <input id="resource-description" pInputText formControlName="description" placeholder="Consultar cliente" />
+  </div>
+  <div>
+    <label for="resource-status" class="field-label">Estado</label>
+    <p-select inputId="resource-status" formControlName="status" [options]="statusOptions"
+              optionLabel="label" optionValue="value" styleClass="w-full" />
+  </div>
+  <p class="text-xs text-slate-500">
+    El par método + ruta es único. Crear un recurso no crea una pantalla: solo permite conceder esa operación a un rol.
+  </p>
+  <div class="flex justify-end gap-2 border-t border-slate-100 pt-4">
+    <button pButton type="button" severity="secondary" outlined (click)="cancelled.emit()"><span pButtonLabel>Cancelar</span></button>
+    <button pButton type="submit" [loading]="saving()"><i class="pi pi-check" pButtonIcon></i><span pButtonLabel>Guardar</span></button>
+  </div>
+</form>

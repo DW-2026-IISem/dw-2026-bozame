@@ -6,7 +6,7 @@
     }
   </div>
   <ng-container *appHasPermission="'POST /api/productos'">
-    <button pButton label="Nuevo producto" icon="pi pi-plus" (click)="openCreate()"></button>
+    <button pButton (click)="openCreate()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Nuevo producto</span></button>
   </ng-container>
 </app-page-header>
 
@@ -64,16 +64,16 @@
           <td>
             <div class="flex justify-end gap-1">
               <ng-container *appHasPermission="'PATCH /api/productos/:id'">
-                <button pButton text rounded severity="secondary" icon="pi pi-pencil"
-                        pTooltip="Editar" (click)="openEdit(row)"></button>
+                <button pButton text rounded severity="secondary"
+                        pTooltip="Editar" (click)="openEdit(row)"><i class="pi pi-pencil" pButtonIcon></i></button>
               </ng-container>
               <ng-container *appHasPermission="'PATCH /api/productos/:id/deactivate'">
-                <button pButton text rounded severity="warn" icon="pi pi-ban"
-                        pTooltip="Baja lógica" (click)="deactivate(row)"></button>
+                <button pButton text rounded severity="warn"
+                        pTooltip="Baja lógica" (click)="deactivate(row)"><i class="pi pi-ban" pButtonIcon></i></button>
               </ng-container>
               <ng-container *appHasPermission="'DELETE /api/productos/:id'">
-                <button pButton text rounded severity="danger" icon="pi pi-trash"
-                        pTooltip="Eliminar" (click)="remove(row)"></button>
+                <button pButton text rounded severity="danger"
+                        pTooltip="Eliminar" (click)="remove(row)"><i class="pi pi-trash" pButtonIcon></i></button>
               </ng-container>
             </div>
           </td>

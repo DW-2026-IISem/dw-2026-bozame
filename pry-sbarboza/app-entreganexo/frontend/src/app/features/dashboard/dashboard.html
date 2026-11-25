@@ -1,5 +1,5 @@
 <app-page-header title="Dashboard EntregaNexo" subtitle="Resumen general del marketplace y alertas de inventario.">
-  <button pButton label="Actualizar" icon="pi pi-refresh" severity="secondary" outlined (click)="load()"></button>
+  <button pButton severity="secondary" outlined (click)="load()"><i class="pi pi-refresh" pButtonIcon></i><span pButtonLabel>Actualizar</span></button>
 </app-page-header>
 
 @if (error()) {
@@ -90,7 +90,7 @@
     <div class="card-body space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-base font-semibold text-slate-800">Ventas Recientes</h3>
-        <button pButton label="Ver todas" icon="pi pi-arrow-right" iconPos="right" text routerLink="/ventas"></button>
+        <button pButton iconPos="right" text routerLink="/ventas"><i class="pi pi-arrow-right" pButtonIcon></i><span pButtonLabel>Ver todas</span></button>
       </div>
       <p-table [value]="recentSales()" [loading]="loading()" [tableStyle]="{ 'min-width': '100%' }">
         <ng-template #header pTemplate="header">

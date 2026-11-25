@@ -51,7 +51,7 @@
           </div>
         </div>
         <div class="flex justify-end">
-          <button pButton type="button" label="Agregar línea" icon="pi pi-plus" (click)="addLine()"></button>
+          <button pButton type="button" (click)="addLine()"><i class="pi pi-plus" pButtonIcon></i><span pButtonLabel>Agregar línea</span></button>
         </div>
 
         <!-- Tabla de líneas de borrador -->
@@ -72,7 +72,7 @@
               <td class="text-right">{{ line.quantity }}</td>
               <td class="text-right font-medium">{{ lineTotal(line) | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
               <td class="text-right">
-                <button pButton text rounded severity="danger" icon="pi pi-times" (click)="removeLine(index)"></button>
+                <button pButton text rounded severity="danger" (click)="removeLine(index)"><i class="pi pi-times" pButtonIcon></i></button>
               </td>
             </tr>
           </ng-template>
@@ -123,8 +123,8 @@
         </dl>
 
         <div class="flex gap-2 pt-2">
-          <button pButton type="button" label="Cancelar" severity="secondary" outlined routerLink="/ventas" class="flex-1"></button>
-          <button pButton type="button" label="Registrar venta" icon="pi pi-check" [loading]="saving()" (click)="save()" class="flex-1"></button>
+          <button pButton type="button" severity="secondary" outlined routerLink="/ventas" class="flex-1"><span pButtonLabel>Cancelar</span></button>
+          <button pButton type="button" [loading]="saving()" (click)="save()" class="flex-1"><i class="pi pi-check" pButtonIcon></i><span pButtonLabel>Registrar venta</span></button>
         </div>
       </div>
     </div>

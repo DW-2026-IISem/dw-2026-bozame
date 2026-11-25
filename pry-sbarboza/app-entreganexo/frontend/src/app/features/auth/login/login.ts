@@ -29,7 +29,7 @@ import { toApiMessage } from '../../../core/utils/api-error';
             <label class="field-label">Contraseña</label>
             <p-password formControlName="password" [feedback]="false" [toggleMask]="true" styleClass="w-full" />
           </div>
-          <button pButton type="submit" label="Iniciar Sesión" class="w-full mt-4" [loading]="loading()"></button>
+          <button pButton type="submit" class="w-full mt-4" [loading]="loading()"><span pButtonLabel>Iniciar Sesión</span></button>
         </form>
       </div>
     </div>

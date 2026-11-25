@@ -1,0 +1,51 @@
+<div class="space-y-4">
+  <div class="grid gap-3 sm:grid-cols-4">
+    <div class="rounded-xl bg-slate-50 p-3">
+      <p class="text-[11px] uppercase text-slate-400">Fecha</p>
+      <p class="text-sm font-medium text-slate-800">{{ sale().sale_date | date: 'medium' }}</p>
+    </div>
+    <div class="rounded-xl bg-slate-50 p-3">
+      <p class="text-[11px] uppercase text-slate-400">Cliente</p>
+      <p class="text-sm font-medium text-slate-800">{{ clientName() || 'Cliente #' + sale().client_id }}</p>
+    </div>
+    <div class="rounded-xl bg-slate-50 p-3">
+      <p class="text-[11px] uppercase text-slate-400">Unidades</p>
+      <p class="text-sm font-medium text-slate-800">{{ itemCount() }}</p>
+    </div>
+    <div class="rounded-xl bg-slate-50 p-3">
+      <p class="text-[11px] uppercase text-slate-400">Estado</p>
+      <app-status-tag [status]="sale().status" />
+    </div>
+  </div>
+
+  <p-table [value]="sale().items ?? []" dataKey="id" [tableStyle]="{ 'min-width': '40rem' }">
+    <ng-template #header pTemplate="header">
+      <tr>
+        <th>Producto</th>
+        <th class="text-center">Cantidad</th>
+        <th class="text-right">Precio unit.</th>
+        <th class="text-right">Total línea</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-item pTemplate="body">
+      <tr>
+        <td>{{ productName()(item.product_id) }}</td>
+        <td class="text-center">{{ item.quantity }}</td>
+        <td class="text-right">{{ item.unit_price | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+        <td class="text-right font-semibold">{{ lineTotal(item) | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage pTemplate="emptymessage">
+      <tr><td colspan="4" class="text-center text-slate-500">La venta no tiene líneas activas.</td></tr>
+    </ng-template>
+  </p-table>
+
+  <div class="ml-auto w-full max-w-xs space-y-1 text-sm">
+    <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span>{{ sale().subtotal | currency: 'USD' : 'symbol' : '1.2-2' }}</span></div>
+    <div class="flex justify-between"><span class="text-slate-500">Impuesto</span><span>{{ sale().tax | currency: 'USD' : 'symbol' : '1.2-2' }}</span></div>
+    <div class="flex justify-between"><span class="text-slate-500">Descuentos</span><span>− {{ sale().discounts | currency: 'USD' : 'symbol' : '1.2-2' }}</span></div>
+    <div class="flex justify-between border-t border-slate-200 pt-1 text-base font-semibold text-slate-900">
+      <span>Total</span><span>{{ sale().total | currency: 'USD' : 'symbol' : '1.2-2' }}</span>
+    </div>
+  </div>
+</div>

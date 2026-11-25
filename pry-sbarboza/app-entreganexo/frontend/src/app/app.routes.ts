@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
 import { guestGuard } from './core/guards/guest-guard';
-import { permissionGuard } from './core/guards/permission.guard';
+import { permissionGuard } from './core/guards/permission-guard';
 
 export const routes: Routes = [
   {
@@ -63,6 +63,57 @@ export const routes: Routes = [
         data: { permission: 'POST /api/ventas' },
         loadComponent: () =>
           import('./features/sales/sale-form/sale-form').then((m) => m.SaleForm),
+      },
+      {
+        path: 'detalle-ventas',
+        title: 'Detalle de ventas · EntregaNexo',
+        canActivate: [permissionGuard],
+        data: { permission: 'GET /api/detalle-ventas' },
+        loadComponent: () =>
+          import('./features/product-sales/product-sale-list/product-sale-list').then(
+            (m) => m.ProductSaleList,
+          ),
+      },
+      // ── Seguridad (Fase II · ISS-10): administración del RBAC ──
+      {
+        path: 'admin/usuarios',
+        title: 'Usuarios · EntregaNexo',
+        canActivate: [permissionGuard],
+        data: { permission: 'GET /api/usuarios' },
+        loadComponent: () =>
+          import('./features/admin/users/user-list/user-list').then((m) => m.UserList),
+      },
+      {
+        path: 'admin/roles',
+        title: 'Roles · EntregaNexo',
+        canActivate: [permissionGuard],
+        data: { permission: 'GET /api/roles' },
+        loadComponent: () =>
+          import('./features/admin/roles/role-list/role-list').then((m) => m.RoleList),
+      },
+      {
+        path: 'admin/recursos',
+        title: 'Recursos · EntregaNexo',
+        canActivate: [permissionGuard],
+        data: { permission: 'GET /api/recursos' },
+        loadComponent: () =>
+          import('./features/admin/resources/resource-list/resource-list').then((m) => m.ResourceList),
+      },
+      {
+        path: 'admin/asignaciones',
+        title: 'Asignaciones · EntregaNexo',
+        canActivate: [permissionGuard],
+        data: { permission: 'GET /api/asignaciones-rol' },
+        loadComponent: () =>
+          import('./features/admin/role-users/role-user-list/role-user-list').then((m) => m.RoleUserList),
+      },
+      {
+        path: 'admin/permisos',
+        title: 'Permisos · EntregaNexo',
+        canActivate: [permissionGuard],
+        data: { permission: 'GET /api/concesiones-rol' },
+        loadComponent: () =>
+          import('./features/admin/resource-roles/resource-role-list/resource-role-list').then((m) => m.ResourceRoleList),
       },
       {
         path: 'perfil',
